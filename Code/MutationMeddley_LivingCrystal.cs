@@ -9,6 +9,8 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_MovedKey = "lc_moved";
         private const string MutationMeddley_StationaryKey = "lc_stationary";
         private const string MutationMeddley_CadenceKey = "lc_cadence";
+        private const string MutationMeddley_FracturedChoirUnlockedKey = "lc_hidden_choir";
+        private const string MutationMeddley_FracturedChoirProgressKey = "lc_hidden_choir_progress";
 
         public override string MutationMeddley_EvolutionDisplayName
         {
@@ -39,10 +41,9 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
                 if (MutationMeddley_HasEvolution("resonant_crystal"))
                 {
-                    int cadence = MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
                     MutationMeddley_SetStateInt(
                         MutationMeddley_CadenceKey,
-                        Math.Min(cadence + 1, 5)
+                        Math.Min(MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0) + 1, 6)
                     );
                 }
 
@@ -51,10 +52,7 @@ namespace XRL.World.Parts.Mutation
             else if (E.ID == "EndTurn")
             {
                 int moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0);
-                MutationMeddley_SetStateInt(
-                    MutationMeddley_StationaryKey,
-                    moved == 0 ? 1 : 0
-                );
+                MutationMeddley_SetStateInt(MutationMeddley_StationaryKey, moved == 0 ? 1 : 0);
 
                 if (MutationMeddley_HasEvolution("resonant_crystal") && moved == 0)
                 {
@@ -68,6 +66,7 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetStateInt(MutationMeddley_CadenceKey, 0);
                 }
 
+                MutationMeddley_TrackFracturedChoirDiscovery();
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
                 MutationMeddley_RefreshPassiveEffects();
             }
@@ -78,7 +77,7 @@ namespace XRL.World.Parts.Mutation
         public override string GetDescription()
         {
             return "Your body is slowly replacing pliant tissue with living crystal.\n\n"
-                + "Living Crystal is a build-defining mutation focused on branch identity, posture changes, and hard tradeoffs.";
+                + "Living Crystal is a build-defining mutation focused on branch identity, posture changes, hard tradeoffs, and visible interactions with other mutations.";
         }
 
         public override string GetLevelText(int Level)
@@ -91,7 +90,9 @@ namespace XRL.World.Parts.Mutation
                 + MutationMeddley_DescribeModeState()
                 + "\n"
                 + "Cadence: "
-                + MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
+                + MutationMeddley_GetEffectiveCadence()
+                + "\n"
+                + MutationMeddley_GetSynergySummary();
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -122,7 +123,6 @@ namespace XRL.World.Parts.Mutation
                     1,
                     detailText: "Rhythm identity. Movement builds cadence that branches spend differently."
                 ),
-
                 new MutationMeddley_EvolutionChoice(
                     "faceted_bulwark",
                     "Faceted Bulwark",
@@ -177,7 +177,6 @@ namespace XRL.World.Parts.Mutation
                     "resonant_crystal",
                     "Cadence becomes steadiness and timing."
                 ),
-
                 new MutationMeddley_EvolutionChoice(
                     "impact_cathedral",
                     "Impact Cathedral",
@@ -224,6 +223,16 @@ namespace XRL.World.Parts.Mutation
                     "Capstone mobile cadence line."
                 ),
                 new MutationMeddley_EvolutionChoice(
+                    "fractured_choir",
+                    "Fractured Choir",
+                    "Sonic trauma teaches your lattice to sing through its own fractures.",
+                    9,
+                    3,
+                    "choral_spines",
+                    "UNUSUAL ADAPTATION. Requires sustained high cadence with a resonance-friendly build.",
+                    true
+                ),
+                new MutationMeddley_EvolutionChoice(
                     "stilltone_engine",
                     "Stilltone Engine",
                     "Stored rhythm resolves into an uncanny, poised defensive engine.",
@@ -233,6 +242,34 @@ namespace XRL.World.Parts.Mutation
                     "Capstone guarded cadence line."
                 )
             };
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetIntrinsicSemanticTags()
+        {
+            return new string[] { "KEYSTONE", "CRYSTALLINE", "STRUCTURAL", "BIOLOGICAL" };
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetEvolutionSemanticTags()
+        {
+            List<string> tags = new List<string>();
+            if (MutationMeddley_HasEvolution("diamond_lattice"))
+            {
+                tags.Add("KINETIC");
+            }
+
+            if (MutationMeddley_HasEvolution("prismatic_matrix"))
+            {
+                tags.Add("RADIANT");
+                tags.Add("LIGHT_INTERACTION");
+            }
+
+            if (MutationMeddley_HasEvolution("resonant_crystal"))
+            {
+                tags.Add("RESONANT");
+                tags.Add("SOUND_INTERACTION");
+            }
+
+            return tags;
         }
 
         protected override List<MutationMeddley_ModeChoice> MutationMeddley_GetModeChoices()
@@ -267,17 +304,104 @@ namespace XRL.World.Parts.Mutation
             return new List<MutationMeddley_ModeChoice>();
         }
 
+        protected override List<MutationMeddley_SynergyDefinition> MutationMeddley_GetSynergyDefinitions()
+        {
+            return new List<MutationMeddley_SynergyDefinition>
+            {
+                new MutationMeddley_SynergyDefinition("electrical_generation", "Electrical Generation", "Piezoelectric lattice hardens or quickens under stored charge."),
+                new MutationMeddley_SynergyDefinition("light_manipulation", "Light Manipulation", "Refracted geometry becomes easier to weaponize and defend with."),
+                new MutationMeddley_SynergyDefinition("flaming_ray", "Flaming Ray", "Heat-loaded facets reward bright, aggressive crystalline play."),
+                new MutationMeddley_SynergyDefinition("freezing_ray", "Freezing Ray", "Thermal shock deepens cold-space and stillness patterns."),
+                new MutationMeddley_SynergyDefinition("phasing", "Phasing", "Your lattice slips half a beat out of phase and becomes harder to pin down."),
+                new MutationMeddley_SynergyDefinition("heightened_hearing", "Heightened Hearing", "Fine resonance awareness stabilizes cadence and sonic timing."),
+                new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Saltglass physiology mineralizes the lattice differently by branch."),
+                new MutationMeddley_SynergyDefinition("carapace_pair", "Carapace Evolution", "Crystalline shell integration changes how your body carries armor and rhythm."),
+                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Your shell, crystal, and saltglass defenses behave like one organ system."),
+                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Wet movement compounds cadence, pursuit, and saline violence."),
+                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Light, weather, and saline metabolism fold into one refractive ecology."),
+                new MutationMeddley_SynergyDefinition("fractured_choir_state", "Fractured Choir", "Your lattice now answers motion with dangerous harmonic fracture.", isUnusual: true)
+            };
+        }
+
+        protected override bool MutationMeddley_IsSynergyActive(MutationMeddley_SynergyDefinition synergy)
+        {
+            switch (synergy.Id)
+            {
+                case "electrical_generation":
+                    return MutationMeddley_HasMutation("Electrical Generation")
+                        && (MutationMeddley_HasEvolution("diamond_lattice") || MutationMeddley_HasEvolution("resonant_crystal"));
+                case "light_manipulation":
+                    return MutationMeddley_HasMutation("Light Manipulation") && MutationMeddley_HasEvolution("prismatic_matrix");
+                case "flaming_ray":
+                    return MutationMeddley_HasMutation("Flaming Ray")
+                        && (MutationMeddley_HasEvolution("diamond_lattice") || MutationMeddley_HasEvolution("prismatic_matrix"));
+                case "freezing_ray":
+                    return MutationMeddley_HasMutation("Freezing Ray")
+                        && (MutationMeddley_HasEvolution("diamond_lattice") || MutationMeddley_HasEvolution("prismatic_matrix"));
+                case "phasing":
+                    return MutationMeddley_HasMutation("Phasing")
+                        && (MutationMeddley_HasEvolution("prismatic_matrix") || MutationMeddley_HasEvolution("resonant_crystal"));
+                case "heightened_hearing":
+                    return MutationMeddley_HasMutation("Heightened Hearing") && MutationMeddley_HasEvolution("resonant_crystal");
+                case "brineborn_pair":
+                    return MutationMeddley_HasMutation("Brineborn") && MutationMeddley_HasAnyEvolution();
+                case "carapace_pair":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && (
+                            MutationMeddley_HasEvolution("diamond_lattice")
+                            || MutationMeddley_HasEvolution("prismatic_matrix")
+                            || MutationMeddley_HasEvolution("resonant_crystal")
+                        );
+                case "cathedral_organism":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress")
+                        && MutationMeddley_HasEvolution("diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom");
+                case "breakwater_predator":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
+                        && MutationMeddley_HasEvolution("resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary");
+                case "prism_estuary":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace")
+                        && MutationMeddley_HasEvolution("prismatic_matrix")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh");
+                case "fractured_choir_state":
+                    return MutationMeddley_HasEvolution("fractured_choir");
+                default:
+                    return false;
+            }
+        }
+
+        protected override bool MutationMeddley_IsChoiceUnlocked(MutationMeddley_EvolutionChoice choice)
+        {
+            if (!choice.IsUnusual)
+            {
+                return true;
+            }
+
+            if (choice.Id == "fractured_choir")
+            {
+                return MutationMeddley_GetStateInt(MutationMeddley_FracturedChoirUnlockedKey, 0) > 0;
+            }
+
+            return false;
+        }
+
         protected override void MutationMeddley_RefreshPassiveEffects()
         {
             MutationMeddley_ClearCommonStatShifts();
 
+            bool engaged = ParentObject != null && ParentObject.IsEngagedInMelee();
+            bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
+            bool lit = MutationMeddley_IsCurrentCellLit();
+            bool saline = MutationMeddley_IsCurrentCellSaline();
+            int cadence = MutationMeddley_GetEffectiveCadence();
+
             if (MutationMeddley_HasEvolution("diamond_lattice"))
             {
-                bool engaged = ParentObject != null && ParentObject.IsEngagedInMelee();
-                bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
-
                 MutationMeddley_SetShift("AV", 1);
-
                 if (MutationMeddley_HasEvolution("faceted_bulwark"))
                 {
                     if (engaged)
@@ -306,13 +430,25 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("AV", engaged ? 3 : 2);
                 }
+
+                if (MutationMeddley_HasMutation("Electrical Generation"))
+                {
+                    MutationMeddley_SetShift("AV", stationary ? 1 : 0);
+                    MutationMeddley_SetShift("DV", engaged ? 1 : 0);
+                }
+
+                if (MutationMeddley_HasMutation("Flaming Ray"))
+                {
+                    MutationMeddley_SetShift("HeatResistance", 10 + (lit ? 5 : 0));
+                }
+
+                if (MutationMeddley_HasMutation("Freezing Ray"))
+                {
+                    MutationMeddley_SetShift("ColdResistance", 10 + (stationary ? 5 : 0));
+                }
             }
             else if (MutationMeddley_HasEvolution("prismatic_matrix"))
             {
-                bool lit = ParentObject != null
-                    && ParentObject.CurrentCell != null
-                    && ParentObject.CurrentCell.IsLit();
-
                 if (MutationMeddley_HasEvolution("sunlens_array"))
                 {
                     if (lit)
@@ -345,43 +481,205 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "dawn_glare" ? 15 : 5);
                     MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "dusk_glare" ? 15 : 5);
                 }
+
+                if (MutationMeddley_HasMutation("Light Manipulation"))
+                {
+                    MutationMeddley_SetShift("DV", lit ? 1 : 0);
+                }
+
+                if (MutationMeddley_HasMutation("Flaming Ray"))
+                {
+                    MutationMeddley_SetShift("HeatResistance", 10);
+                    if (lit)
+                    {
+                        MutationMeddley_SetShift("DV", 1);
+                    }
+                }
+
+                if (MutationMeddley_HasMutation("Freezing Ray"))
+                {
+                    MutationMeddley_SetShift("ColdResistance", 10);
+                    if (!lit)
+                    {
+                        MutationMeddley_SetShift("DV", 1);
+                    }
+                }
+
+                if (MutationMeddley_HasMutation("Phasing"))
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                    if (!lit)
+                    {
+                        MutationMeddley_SetShift("Quickness", 1);
+                    }
+                }
             }
             else if (MutationMeddley_HasEvolution("resonant_crystal"))
             {
-                int cadence = MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
-
                 if (MutationMeddley_HasEvolution("choral_spines"))
                 {
-                    MutationMeddley_SetShift(
-                        "Quickness",
-                        cadence + (MutationMeddley_HasEvolution("song_of_fracture") ? 2 : 0)
-                    );
+                    MutationMeddley_SetShift("Quickness", cadence + (MutationMeddley_HasEvolution("song_of_fracture") ? 2 : 0));
                     MutationMeddley_SetShift(
                         "DV",
-                        MutationMeddley_GetCurrentModeId() == "pulse_step"
-                            ? Math.Max(cadence - 1, 0)
-                            : cadence / 2
+                        MutationMeddley_GetCurrentModeId() == "pulse_step" ? Math.Max(cadence - 1, 0) : cadence / 2
                     );
                 }
                 else if (MutationMeddley_HasEvolution("tuning_fork_frame"))
                 {
-                    MutationMeddley_SetShift(
-                        "DV",
-                        cadence + (MutationMeddley_HasEvolution("stilltone_engine") ? 2 : 0)
-                    );
-                    MutationMeddley_SetShift(
-                        "AV",
-                        MutationMeddley_GetCurrentModeId() == "humming_guard"
-                            ? cadence / 2
-                            : 0
-                    );
+                    MutationMeddley_SetShift("DV", cadence + (MutationMeddley_HasEvolution("stilltone_engine") ? 2 : 0));
+                    MutationMeddley_SetShift("AV", MutationMeddley_GetCurrentModeId() == "humming_guard" ? cadence / 2 : 0);
                 }
                 else
                 {
                     MutationMeddley_SetShift("Quickness", cadence / 2);
                     MutationMeddley_SetShift("DV", cadence / 2);
                 }
+
+                if (MutationMeddley_HasEvolution("fractured_choir"))
+                {
+                    MutationMeddley_SetShift("Quickness", 2);
+                    MutationMeddley_SetShift("DV", 1);
+                }
+
+                if (MutationMeddley_HasMutation("Phasing"))
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
             }
+
+            if (MutationMeddley_HasMutation("Heightened Hearing") && MutationMeddley_HasEvolution("resonant_crystal"))
+            {
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasMutation("Electrical Generation") && MutationMeddley_HasEvolution("resonant_crystal"))
+            {
+                MutationMeddley_SetShift("Quickness", 1);
+            }
+
+            if (MutationMeddley_HasMutation("Brineborn"))
+            {
+                if (MutationMeddley_HasEvolution("diamond_lattice") && saline)
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("prismatic_matrix") && saline && lit)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("resonant_crystal") && saline)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution"))
+            {
+                if (MutationMeddley_HasEvolution("diamond_lattice")
+                    && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress")
+                    && stationary)
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("prismatic_matrix")
+                    && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace")
+                    && lit)
+                {
+                    MutationMeddley_SetShift("HeatResistance", 5);
+                    MutationMeddley_SetShift("ColdResistance", 5);
+                }
+                else if (MutationMeddley_HasEvolution("resonant_crystal")
+                    && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell"))
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_IsTriadActive("cathedral_organism") && stationary && saline)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("breakwater_predator")
+                && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0
+                && MutationMeddley_IsCurrentCellWet())
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("prism_estuary") && lit && saline)
+            {
+                MutationMeddley_SetShift("HeatResistance", 10);
+                MutationMeddley_SetShift("ColdResistance", 10);
+                MutationMeddley_SetShift("DV", 1);
+            }
+        }
+
+        private int MutationMeddley_GetEffectiveCadence()
+        {
+            int cadence = MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
+            if (MutationMeddley_HasMutation("Heightened Hearing"))
+            {
+                cadence += 1;
+            }
+
+            if (MutationMeddley_HasMutation("Electrical Generation") && MutationMeddley_HasEvolution("diamond_lattice"))
+            {
+                cadence += 1;
+            }
+
+            if (MutationMeddley_HasMutation("Brineborn") && MutationMeddley_IsCurrentCellSaline())
+            {
+                cadence += 1;
+            }
+
+            if (MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
+                && MutationMeddley_HasEvolution("resonant_crystal"))
+            {
+                cadence += 1;
+            }
+
+            if (MutationMeddley_HasEvolution("fractured_choir"))
+            {
+                cadence += 1;
+            }
+
+            return Math.Min(cadence, 8);
+        }
+
+        private void MutationMeddley_TrackFracturedChoirDiscovery()
+        {
+            if (MutationMeddley_GetStateInt(MutationMeddley_FracturedChoirUnlockedKey, 0) > 0)
+            {
+                return;
+            }
+
+            if (MutationMeddley_HasSelectionAtTier(3))
+            {
+                return;
+            }
+
+            if (!MutationMeddley_HasEvolution("choral_spines") || !MutationMeddley_HasMutation("Heightened Hearing"))
+            {
+                return;
+            }
+
+            if (MutationMeddley_GetEffectiveCadence() >= 4)
+            {
+                int progress = MutationMeddley_GetStateInt(MutationMeddley_FracturedChoirProgressKey, 0) + 1;
+                MutationMeddley_SetStateInt(MutationMeddley_FracturedChoirProgressKey, progress);
+                if (progress >= 4)
+                {
+                    MutationMeddley_SetStateInt(MutationMeddley_FracturedChoirUnlockedKey, 1);
+                }
+            }
+        }
+
+        private bool MutationMeddley_IsTriadActive(string id)
+        {
+            return MutationMeddley_IsSynergyActive(new MutationMeddley_SynergyDefinition(id, "", ""));
         }
     }
 }

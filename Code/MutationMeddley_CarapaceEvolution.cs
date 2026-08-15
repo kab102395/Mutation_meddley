@@ -8,6 +8,8 @@ namespace XRL.World.Parts.Mutation
     {
         private const string MutationMeddley_MovedKey = "carapace_moved";
         private const string MutationMeddley_StationaryKey = "carapace_stationary";
+        private const string MutationMeddley_PorcupineUnlockedKey = "carapace_hidden_porcupine";
+        private const string MutationMeddley_PorcupineProgressKey = "carapace_hidden_porcupine_progress";
 
         public override string MutationMeddley_EvolutionDisplayName
         {
@@ -44,6 +46,16 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_StationaryKey,
                     MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) == 0 ? 1 : 0
                 );
+
+                MutationMeddley_TrackPorcupineDiscovery();
+                if (MutationMeddley_HasMutation("Regeneration")
+                    && MutationMeddley_IsFunctionallyActive()
+                    && MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0
+                    && ParentObject != null)
+                {
+                    ParentObject.Heal(1);
+                }
+
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
                 MutationMeddley_RefreshPassiveEffects();
             }
@@ -54,7 +66,7 @@ namespace XRL.World.Parts.Mutation
         public override string GetDescription()
         {
             return "A Mutation Meddley companion evolution intended to pair with vanilla Carapace.\n\n"
-                + "This mutation does not replace vanilla Carapace. Instead, it offers a separate branching shell-specialization layer that can be taken alongside it.";
+                + "This mutation does not replace vanilla Carapace. Instead, it offers a separate branching shell-specialization layer that can be taken alongside it, with explicit shell synergies that go dormant safely when vanilla Carapace is missing.";
         }
 
         public override string GetLevelText(int Level)
@@ -72,7 +84,9 @@ namespace XRL.World.Parts.Mutation
             return intro
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
-                + MutationMeddley_DescribeModeState();
+                + MutationMeddley_DescribeModeState()
+                + "\n"
+                + MutationMeddley_GetSynergySummary();
         }
 
         protected override bool MutationMeddley_IsFunctionallyActive()
@@ -113,7 +127,6 @@ namespace XRL.World.Parts.Mutation
                     1,
                     detailText: "Environmental shell identity."
                 ),
-
                 new MutationMeddley_EvolutionChoice(
                     "faceted_keep",
                     "Faceted Keep",
@@ -168,7 +181,6 @@ namespace XRL.World.Parts.Mutation
                     "adaptive_carapace",
                     "Adaptive specialization for terrain contact."
                 ),
-
                 new MutationMeddley_EvolutionChoice(
                     "living_fortress",
                     "Living Fortress",
@@ -177,6 +189,16 @@ namespace XRL.World.Parts.Mutation
                     3,
                     "faceted_keep",
                     "Capstone contact-defense line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "porcupine_redoubt",
+                    "Porcupine Redoubt",
+                    "Quilled shell growth turns your fortification into a patient thorn wall.",
+                    9,
+                    3,
+                    "faceted_keep",
+                    "UNUSUAL ADAPTATION. Requires repeated rooted shell behavior with Quills.",
+                    true
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "redoubt_engine",
@@ -226,6 +248,35 @@ namespace XRL.World.Parts.Mutation
             };
         }
 
+        protected override IEnumerable<string> MutationMeddley_GetIntrinsicSemanticTags()
+        {
+            return new string[] { "BIOLOGICAL", "STRUCTURAL", "CHITINOUS", "BODY_PART_INTERACTION" };
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetEvolutionSemanticTags()
+        {
+            List<string> tags = new List<string>();
+            if (MutationMeddley_HasEvolution("fortress"))
+            {
+                tags.Add("RETALIATORY");
+            }
+
+            if (MutationMeddley_HasEvolution("hunter_shell"))
+            {
+                tags.Add("PREDATORY");
+                tags.Add("PURSUIT");
+                tags.Add("MOBILE");
+            }
+
+            if (MutationMeddley_HasEvolution("adaptive_carapace"))
+            {
+                tags.Add("ENVIRONMENTAL");
+                tags.Add("TERRAIN_INTERACTION");
+            }
+
+            return tags;
+        }
+
         protected override List<MutationMeddley_ModeChoice> MutationMeddley_GetModeChoices()
         {
             if (MutationMeddley_HasEvolution("fortress"))
@@ -258,6 +309,96 @@ namespace XRL.World.Parts.Mutation
             return new List<MutationMeddley_ModeChoice>();
         }
 
+        protected override List<MutationMeddley_SynergyDefinition> MutationMeddley_GetSynergyDefinitions()
+        {
+            return new List<MutationMeddley_SynergyDefinition>
+            {
+                new MutationMeddley_SynergyDefinition("vanilla_carapace", "Carapace", "The evolution layer is currently augmenting a live vanilla shell."),
+                new MutationMeddley_SynergyDefinition("multiple_legs", "Multiple Legs", "Articulated shell segments reward pursuit or repositioning."),
+                new MutationMeddley_SynergyDefinition("quills", "Quills", "Your shell can reinterpret quills as a wall, hook, or hazard."),
+                new MutationMeddley_SynergyDefinition("regeneration", "Regeneration", "Still shell stances recover more cleanly when the shell can repair itself."),
+                new MutationMeddley_SynergyDefinition("burrowing_claws", "Burrowing Claws", "Terrain and shell framing now cooperate instead of competing."),
+                new MutationMeddley_SynergyDefinition("amphibious", "Amphibious", "Wet ground and shell tuning interact more naturally."),
+                new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Crystalline shell integration changes how the shell carries force or light."),
+                new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Mineral deposition turns saline biology into shell architecture."),
+                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Shell, crystal, and saline crust have become one fortification."),
+                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Liquid movement now compounds shell pursuit, cadence, and reserve pressure."),
+                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Weather tuning, light, and saline metabolism now share one shell logic."),
+                new MutationMeddley_SynergyDefinition("porcupine_redoubt_state", "Porcupine Redoubt", "Your rooted shell now treats quills as part of its fortification.", isUnusual: true)
+            };
+        }
+
+        protected override bool MutationMeddley_IsSynergyActive(MutationMeddley_SynergyDefinition synergy)
+        {
+            switch (synergy.Id)
+            {
+                case "vanilla_carapace":
+                    return MutationMeddley_HasVanillaCarapace();
+                case "multiple_legs":
+                    return MutationMeddley_HasMutation("Multiple Legs")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("hunter_shell");
+                case "quills":
+                    return MutationMeddley_HasMutation("Quills")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && (MutationMeddley_HasEvolution("fortress") || MutationMeddley_HasEvolution("hunter_shell"));
+                case "regeneration":
+                    return MutationMeddley_HasMutation("Regeneration")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress");
+                case "burrowing_claws":
+                    return MutationMeddley_HasMutation("Burrowing Claws")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && (MutationMeddley_HasEvolution("hunter_shell") || MutationMeddley_HasEvolution("adaptive_carapace"));
+                case "amphibious":
+                    return MutationMeddley_HasMutation("Amphibious")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("adaptive_carapace");
+                case "living_crystal_pair":
+                    return MutationMeddley_HasMutation("Living Crystal")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasAnyEvolution();
+                case "brineborn_pair":
+                    return MutationMeddley_HasMutation("Brineborn")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasAnyEvolution();
+                case "cathedral_organism":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom");
+                case "breakwater_predator":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("hunter_shell")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary");
+                case "prism_estuary":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("adaptive_carapace")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh");
+                case "porcupine_redoubt_state":
+                    return MutationMeddley_HasEvolution("porcupine_redoubt");
+                default:
+                    return false;
+            }
+        }
+
+        protected override bool MutationMeddley_IsChoiceUnlocked(MutationMeddley_EvolutionChoice choice)
+        {
+            if (!choice.IsUnusual)
+            {
+                return true;
+            }
+
+            if (choice.Id == "porcupine_redoubt")
+            {
+                return MutationMeddley_GetStateInt(MutationMeddley_PorcupineUnlockedKey, 0) > 0;
+            }
+
+            return false;
+        }
+
         protected override void MutationMeddley_RefreshPassiveEffects()
         {
             MutationMeddley_ClearCommonStatShifts();
@@ -269,7 +410,9 @@ namespace XRL.World.Parts.Mutation
 
             bool engaged = ParentObject != null && ParentObject.IsEngagedInMelee();
             bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
-            bool wetGround = MutationMeddley_IsWetGround();
+            bool wetGround = MutationMeddley_IsCurrentCellWet();
+            bool lit = MutationMeddley_IsCurrentCellLit();
+            bool saline = MutationMeddley_IsCurrentCellSaline();
 
             if (MutationMeddley_HasEvolution("fortress"))
             {
@@ -292,6 +435,17 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("AV", 2);
                 }
+
+                if (MutationMeddley_HasMutation("Quills") && stationary)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                    MutationMeddley_SetShift("AV", 1);
+                }
+
+                if (MutationMeddley_HasMutation("Regeneration") && stationary)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
@@ -311,6 +465,22 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("Quickness", 1);
                     MutationMeddley_SetShift("DV", 2);
+                }
+
+                if (MutationMeddley_HasMutation("Multiple Legs") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+                {
+                    MutationMeddley_SetShift("Quickness", 2);
+                    MutationMeddley_SetShift("DV", 1);
+                }
+
+                if (MutationMeddley_HasMutation("Quills") && engaged)
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+
+                if (MutationMeddley_HasMutation("Burrowing Claws"))
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
                 }
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
@@ -342,48 +512,124 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "ember_veil" ? 15 : 5);
                     MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "rime_veil" ? 15 : 5);
                 }
+
+                if (MutationMeddley_HasMutation("Amphibious") && wetGround)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+
+                if (MutationMeddley_HasMutation("Burrowing Claws"))
+                {
+                    MutationMeddley_SetShift("DV", wetGround ? 1 : 0);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Living Crystal"))
+            {
+                if (MutationMeddley_HasEvolution("fortress")
+                    && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
+                    && stationary)
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("hunter_shell")
+                    && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal"))
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("adaptive_carapace")
+                    && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
+                    && lit)
+                {
+                    MutationMeddley_SetShift("HeatResistance", 5);
+                    MutationMeddley_SetShift("ColdResistance", 5);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Brineborn"))
+            {
+                if (MutationMeddley_HasEvolution("fortress")
+                    && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom")
+                    && saline)
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("hunter_shell")
+                    && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary")
+                    && wetGround)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("adaptive_carapace")
+                    && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh")
+                    && saline)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+            }
+
+            if (MutationMeddley_IsTriadActive("cathedral_organism") && stationary && saline)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("breakwater_predator")
+                && wetGround
+                && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("prism_estuary") && lit && saline)
+            {
+                MutationMeddley_SetShift("HeatResistance", 10);
+                MutationMeddley_SetShift("ColdResistance", 10);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasEvolution("porcupine_redoubt") && stationary)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("DV", 1);
             }
         }
 
         private bool MutationMeddley_HasVanillaCarapace()
         {
-            if (ParentObject == null)
-            {
-                return false;
-            }
-
-            global::XRL.World.Parts.Mutations mutations = ParentObject.GetPart("Mutations")
-                as global::XRL.World.Parts.Mutations;
-
-            return mutations != null
-                && mutations.GetMutationByName("Carapace") != null;
+            return MutationMeddley_HasMutation("Carapace");
         }
 
-        private bool MutationMeddley_IsWetGround()
+        private void MutationMeddley_TrackPorcupineDiscovery()
         {
-            if (ParentObject == null || ParentObject.CurrentCell == null)
+            if (MutationMeddley_GetStateInt(MutationMeddley_PorcupineUnlockedKey, 0) > 0)
             {
-                return false;
+                return;
             }
 
-            object liquid = ParentObject.CurrentCell.GetOpenLiquidVolume();
-            if (liquid != null)
+            if (MutationMeddley_HasSelectionAtTier(3))
             {
-                return true;
+                return;
             }
 
-            string cellDescription = ParentObject.CurrentCell.ToString();
-            if (string.IsNullOrEmpty(cellDescription))
+            if (!MutationMeddley_HasMutation("Quills")
+                || !MutationMeddley_HasEvolution("faceted_keep")
+                || MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) == 0)
             {
-                return false;
+                return;
             }
 
-            string loweredTerrain = cellDescription.ToLowerInvariant();
-            return loweredTerrain.Contains("water")
-                || loweredTerrain.Contains("pool")
-                || loweredTerrain.Contains("mire")
-                || loweredTerrain.Contains("bog")
-                || loweredTerrain.Contains("marsh");
+            int progress = MutationMeddley_GetStateInt(MutationMeddley_PorcupineProgressKey, 0) + 1;
+            MutationMeddley_SetStateInt(MutationMeddley_PorcupineProgressKey, progress);
+            if (progress >= 5)
+            {
+                MutationMeddley_SetStateInt(MutationMeddley_PorcupineUnlockedKey, 1);
+            }
+        }
+
+        private bool MutationMeddley_IsTriadActive(string id)
+        {
+            return MutationMeddley_IsSynergyActive(new MutationMeddley_SynergyDefinition(id, "", ""));
         }
     }
 }

@@ -9,6 +9,8 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_ReserveKey = "brine_reserve";
         private const string MutationMeddley_MovedKey = "brine_moved";
         private const string MutationMeddley_SalineKey = "brine_saline";
+        private const string MutationMeddley_SaltGhostUnlockedKey = "brine_hidden_saltghost";
+        private const string MutationMeddley_SaltGhostProgressKey = "brine_hidden_saltghost_progress";
         private const int MutationMeddley_MaxReserve = 6;
 
         public override string MutationMeddley_EvolutionDisplayName
@@ -50,7 +52,7 @@ namespace XRL.World.Parts.Mutation
         public override string GetDescription()
         {
             return "Salt, brine, and mineral saturation have become core to your metabolism.\n\n"
-                + "Brineborn is an environmental mutation about terrain affinity, conversion, and abrasive survivability.";
+                + "Brineborn is an environmental mutation about terrain affinity, conversion, abrasive survivability, and visible interaction with the rest of your biology.";
         }
 
         public override string GetLevelText(int Level)
@@ -65,8 +67,10 @@ namespace XRL.World.Parts.Mutation
                 + "Saline reserve: "
                 + MutationMeddley_GetReserve()
                 + "/"
-                + MutationMeddley_MaxReserve
-                + (MutationMeddley_IsSalineEnvironment() ? " (saline ground)" : " (dry ground)");
+                + MutationMeddley_GetMaxReserve()
+                + (MutationMeddley_IsSalineEnvironment() ? " (saline ground)" : " (dry ground)")
+                + "\n"
+                + MutationMeddley_GetSynergySummary();
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -206,8 +210,46 @@ namespace XRL.World.Parts.Mutation
                     3,
                     "brackish_jet",
                     "Capstone fresh-contact burst line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "salt_ghost",
+                    "Salt Ghost",
+                    "Your saline body starts treating brine as a phase-anchor rather than mere nourishment.",
+                    9,
+                    3,
+                    "brackish_jet",
+                    "UNUSUAL ADAPTATION. Requires prolonged saline exposure while carrying a phase-compatible body.",
+                    true
                 )
             };
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetIntrinsicSemanticTags()
+        {
+            return new string[] { "ENVIRONMENTAL", "AQUATIC", "SALINE", "LIQUID_INTERACTION", "METABOLIC", "BIOLOGICAL" };
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetEvolutionSemanticTags()
+        {
+            List<string> tags = new List<string>();
+            if (MutationMeddley_HasEvolution("wellspring_flesh"))
+            {
+                tags.Add("REGENERATIVE");
+            }
+
+            if (MutationMeddley_HasEvolution("saltglass_bloom"))
+            {
+                tags.Add("CONTROL");
+                tags.Add("STRUCTURAL");
+            }
+
+            if (MutationMeddley_HasEvolution("scouring_estuary"))
+            {
+                tags.Add("TERRAIN_INTERACTION");
+                tags.Add("MOBILE");
+            }
+
+            return tags;
         }
 
         protected override List<MutationMeddley_ModeChoice> MutationMeddley_GetModeChoices()
@@ -242,12 +284,91 @@ namespace XRL.World.Parts.Mutation
             return new List<MutationMeddley_ModeChoice>();
         }
 
+        protected override List<MutationMeddley_SynergyDefinition> MutationMeddley_GetSynergyDefinitions()
+        {
+            return new List<MutationMeddley_SynergyDefinition>
+            {
+                new MutationMeddley_SynergyDefinition("amphibious", "Amphibious", "Aquatic familiarity increases reserve stability and wet-ground comfort."),
+                new MutationMeddley_SynergyDefinition("regeneration", "Regeneration", "Reserve recycles into tougher, more reliable recovery loops."),
+                new MutationMeddley_SynergyDefinition("photosynthetic_skin", "Photosynthetic Skin", "Sunlit brine becomes a metabolic estuary you can actually exploit."),
+                new MutationMeddley_SynergyDefinition("multiple_legs", "Multiple Legs", "Shallow-liquid routing and reserve carry reward mobile saline builds."),
+                new MutationMeddley_SynergyDefinition("electrical_generation", "Electrical Generation", "Conductive brine amplifies motion and pressure at a defensive cost."),
+                new MutationMeddley_SynergyDefinition("burrowing_claws", "Burrowing Claws", "Harsh ground becomes easier to cross and hold with stored reserve."),
+                new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Saltglass physiology mineralizes the lattice according to your crystal branch."),
+                new MutationMeddley_SynergyDefinition("carapace_pair", "Carapace Evolution", "Mineral deposition changes how your shell or body carries saline armor."),
+                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Salt, shell, and crystal now fortify each other as one structure."),
+                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Wet pursuit compounds cadence and reserve pressure together."),
+                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Light and climate begin feeding the same saline metabolism."),
+                new MutationMeddley_SynergyDefinition("salt_ghost_state", "Salt Ghost", "Brine and phase-state now overlap in a dangerous, temporary ecology.", isUnusual: true)
+            };
+        }
+
+        protected override bool MutationMeddley_IsSynergyActive(MutationMeddley_SynergyDefinition synergy)
+        {
+            switch (synergy.Id)
+            {
+                case "amphibious":
+                    return MutationMeddley_HasMutation("Amphibious") && MutationMeddley_HasAnyEvolution();
+                case "regeneration":
+                    return MutationMeddley_HasMutation("Regeneration") && MutationMeddley_HasEvolution("wellspring_flesh");
+                case "photosynthetic_skin":
+                    return MutationMeddley_HasMutation("Photosynthetic Skin") && MutationMeddley_HasAnyEvolution();
+                case "multiple_legs":
+                    return MutationMeddley_HasMutation("Multiple Legs") && MutationMeddley_HasEvolution("scouring_estuary");
+                case "electrical_generation":
+                    return MutationMeddley_HasMutation("Electrical Generation") && MutationMeddley_HasAnyEvolution();
+                case "burrowing_claws":
+                    return MutationMeddley_HasMutation("Burrowing Claws")
+                        && (MutationMeddley_HasEvolution("scouring_estuary") || MutationMeddley_HasEvolution("wellspring_flesh"));
+                case "living_crystal_pair":
+                    return MutationMeddley_HasMutation("Living Crystal") && MutationMeddley_HasAnyEvolution();
+                case "carapace_pair":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution") && MutationMeddley_HasAnyEvolution();
+                case "cathedral_organism":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("saltglass_bloom")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress");
+                case "breakwater_predator":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("scouring_estuary")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell");
+                case "prism_estuary":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("wellspring_flesh")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace");
+                case "salt_ghost_state":
+                    return MutationMeddley_HasEvolution("salt_ghost");
+                default:
+                    return false;
+            }
+        }
+
+        protected override bool MutationMeddley_IsChoiceUnlocked(MutationMeddley_EvolutionChoice choice)
+        {
+            if (!choice.IsUnusual)
+            {
+                return true;
+            }
+
+            if (choice.Id == "salt_ghost")
+            {
+                return MutationMeddley_GetStateInt(MutationMeddley_SaltGhostUnlockedKey, 0) > 0;
+            }
+
+            return false;
+        }
+
         protected override void MutationMeddley_RefreshPassiveEffects()
         {
             MutationMeddley_ClearCommonStatShifts();
 
             int reserve = MutationMeddley_GetReserve();
             bool saline = MutationMeddley_IsSalineEnvironment();
+            bool wet = MutationMeddley_IsCurrentCellWet();
+            bool lit = MutationMeddley_IsCurrentCellLit();
 
             if (MutationMeddley_HasEvolution("wellspring_flesh"))
             {
@@ -323,6 +444,99 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("DV", reserve / 4);
                 }
             }
+
+            if (MutationMeddley_HasMutation("Amphibious"))
+            {
+                MutationMeddley_SetShift("DV", wet ? 1 : 0);
+            }
+
+            if (MutationMeddley_HasMutation("Regeneration") && MutationMeddley_HasEvolution("wellspring_flesh"))
+            {
+                MutationMeddley_SetShift("AV", reserve > 0 ? 1 : 0);
+            }
+
+            if (MutationMeddley_HasMutation("Photosynthetic Skin") && lit && saline)
+            {
+                MutationMeddley_SetShift("DV", 1);
+                MutationMeddley_SetShift("HeatResistance", 5);
+            }
+
+            if (MutationMeddley_HasMutation("Multiple Legs") && MutationMeddley_HasEvolution("scouring_estuary") && wet)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
+            if (MutationMeddley_HasMutation("Electrical Generation") && saline)
+            {
+                MutationMeddley_SetShift("Quickness", 1);
+                MutationMeddley_SetShift("AV", -1);
+            }
+
+            if (MutationMeddley_HasMutation("Burrowing Claws") && !saline)
+            {
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasMutation("Living Crystal"))
+            {
+                if (MutationMeddley_HasEvolution("saltglass_bloom"))
+                {
+                    MutationMeddley_SetShift("AV", saline ? 1 : 0);
+                }
+                else if (MutationMeddley_HasEvolution("wellspring_flesh") && lit && saline)
+                {
+                    MutationMeddley_SetShift("ColdResistance", 5);
+                    MutationMeddley_SetShift("HeatResistance", 5);
+                }
+                else if (MutationMeddley_HasEvolution("scouring_estuary") && wet)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution"))
+            {
+                if (MutationMeddley_HasEvolution("saltglass_bloom")
+                    && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress"))
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("scouring_estuary")
+                    && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell"))
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("wellspring_flesh")
+                    && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace")
+                    && wet)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+            }
+
+            if (MutationMeddley_IsTriadActive("cathedral_organism") && saline && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) == 0)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("breakwater_predator") && wet && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("prism_estuary") && lit && saline)
+            {
+                MutationMeddley_SetShift("HeatResistance", 10);
+                MutationMeddley_SetShift("ColdResistance", 10);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasEvolution("salt_ghost"))
+            {
+                MutationMeddley_SetShift("Quickness", saline ? 3 : 0);
+                MutationMeddley_SetShift("DV", saline ? 2 : 0);
+            }
         }
 
         private int MutationMeddley_GetReserve()
@@ -330,19 +544,52 @@ namespace XRL.World.Parts.Mutation
             return MutationMeddley_GetStateInt(MutationMeddley_ReserveKey, 0);
         }
 
+        private int MutationMeddley_GetMaxReserve()
+        {
+            int maxReserve = MutationMeddley_MaxReserve;
+            if (MutationMeddley_HasMutation("Amphibious"))
+            {
+                maxReserve += 1;
+            }
+
+            if (MutationMeddley_HasMutation("Photosynthetic Skin") && MutationMeddley_IsCurrentCellLit())
+            {
+                maxReserve += 1;
+            }
+
+            return maxReserve;
+        }
+
         private void MutationMeddley_ProcessBrineTurn()
         {
             bool saline = MutationMeddley_IsSalineEnvironment();
             int reserve = MutationMeddley_GetReserve();
             int moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0);
+            int maxReserve = MutationMeddley_GetMaxReserve();
 
             if (saline)
             {
-                reserve = Math.Min(MutationMeddley_MaxReserve, reserve + (MutationMeddley_HasEvolution("saltwind_hunter") ? 2 : 1));
+                int gain = MutationMeddley_HasEvolution("saltwind_hunter") ? 2 : 1;
+                if (MutationMeddley_HasMutation("Photosynthetic Skin") && MutationMeddley_IsCurrentCellLit())
+                {
+                    gain += 1;
+                }
+
+                reserve = Math.Min(maxReserve, reserve + gain);
             }
             else
             {
-                reserve = Math.Max(0, reserve - (MutationMeddley_HasEvolution("glacier_brine") ? 0 : 1));
+                int decay = MutationMeddley_HasEvolution("glacier_brine") ? 0 : 1;
+                if (MutationMeddley_HasMutation("Amphibious"))
+                {
+                    decay = Math.Max(decay - 1, 0);
+                }
+                if (MutationMeddley_HasMutation("Burrowing Claws") && MutationMeddley_HasEvolution("scouring_estuary"))
+                {
+                    decay = Math.Max(decay - 1, 0);
+                }
+
+                reserve = Math.Max(0, reserve - decay);
             }
 
             if (MutationMeddley_HasEvolution("tidal_marrows")
@@ -350,7 +597,7 @@ namespace XRL.World.Parts.Mutation
                 && reserve > 0
                 && ParentObject != null)
             {
-                ParentObject.Heal(1);
+                ParentObject.Heal(MutationMeddley_HasMutation("Regeneration") ? 2 : 1);
                 reserve -= 1;
             }
 
@@ -389,7 +636,28 @@ namespace XRL.World.Parts.Mutation
                 reserve -= 1;
             }
 
-            MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Max(0, Math.Min(reserve, MutationMeddley_MaxReserve)));
+            if (MutationMeddley_HasMutation("Multiple Legs")
+                && MutationMeddley_HasEvolution("scouring_estuary")
+                && moved > 0
+                && saline)
+            {
+                reserve = Math.Min(maxReserve, reserve + 1);
+            }
+
+            if (!MutationMeddley_HasSelectionAtTier(3)
+                && MutationMeddley_HasMutation("Phasing")
+                && saline
+                && MutationMeddley_HasEvolution("brackish_jet"))
+            {
+                int progress = MutationMeddley_GetStateInt(MutationMeddley_SaltGhostProgressKey, 0) + 1;
+                MutationMeddley_SetStateInt(MutationMeddley_SaltGhostProgressKey, progress);
+                if (progress >= 6)
+                {
+                    MutationMeddley_SetStateInt(MutationMeddley_SaltGhostUnlockedKey, 1);
+                }
+            }
+
+            MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Max(0, Math.Min(reserve, maxReserve)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
             MutationMeddley_SetStateInt(MutationMeddley_SalineKey, saline ? 1 : 0);
             MutationMeddley_RefreshPassiveEffects();
@@ -397,32 +665,12 @@ namespace XRL.World.Parts.Mutation
 
         private bool MutationMeddley_IsSalineEnvironment()
         {
-            if (ParentObject == null || ParentObject.CurrentCell == null)
-            {
-                return false;
-            }
+            return MutationMeddley_IsCurrentCellSaline();
+        }
 
-            string cellDescription = ParentObject.CurrentCell.ToString();
-            if (!string.IsNullOrEmpty(cellDescription))
-            {
-                string loweredTerrain = cellDescription.ToLowerInvariant();
-                if (loweredTerrain.Contains("salt") || loweredTerrain.Contains("brine"))
-                {
-                    return true;
-                }
-            }
-
-            object liquid = ParentObject.CurrentCell.GetOpenLiquidVolume();
-            if (liquid != null)
-            {
-                string liquidName = liquid.ToString().ToLowerInvariant();
-                if (liquidName.Contains("salt") || liquidName.Contains("brine"))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+        private bool MutationMeddley_IsTriadActive(string id)
+        {
+            return MutationMeddley_IsSynergyActive(new MutationMeddley_SynergyDefinition(id, "", ""));
         }
     }
 }

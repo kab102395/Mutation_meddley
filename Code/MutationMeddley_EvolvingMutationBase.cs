@@ -16,6 +16,7 @@ namespace XRL.World.Parts.Mutation
         public int RequiredLevel;
         public int Tier;
         public string PrerequisiteId;
+        public bool IsUnusual;
 
         public MutationMeddley_EvolutionChoice(
             string id,
@@ -24,7 +25,8 @@ namespace XRL.World.Parts.Mutation
             int requiredLevel,
             int tier,
             string prerequisiteId = "",
-            string detailText = "")
+            string detailText = "",
+            bool isUnusual = false)
         {
             Id = id;
             Name = name;
@@ -33,6 +35,7 @@ namespace XRL.World.Parts.Mutation
             RequiredLevel = requiredLevel;
             Tier = tier;
             PrerequisiteId = prerequisiteId ?? "";
+            IsUnusual = isUnusual;
         }
     }
 
@@ -112,6 +115,31 @@ namespace XRL.World.Parts.Mutation
             return MutationMeddley_EvolutionDisplayName + " is currently inactive.";
         }
 
+        protected virtual IEnumerable<string> MutationMeddley_GetIntrinsicSemanticTags()
+        {
+            return new string[0];
+        }
+
+        protected virtual IEnumerable<string> MutationMeddley_GetEvolutionSemanticTags()
+        {
+            return new string[0];
+        }
+
+        protected virtual List<MutationMeddley_SynergyDefinition> MutationMeddley_GetSynergyDefinitions()
+        {
+            return new List<MutationMeddley_SynergyDefinition>();
+        }
+
+        protected virtual bool MutationMeddley_IsSynergyActive(MutationMeddley_SynergyDefinition synergy)
+        {
+            return false;
+        }
+
+        protected virtual bool MutationMeddley_IsChoiceUnlocked(MutationMeddley_EvolutionChoice choice)
+        {
+            return !choice.IsUnusual;
+        }
+
         protected bool MutationMeddley_HasEvolution(string id)
         {
             List<string> selected = MutationMeddley_GetSelectedEvolutionIds();
@@ -155,6 +183,285 @@ namespace XRL.World.Parts.Mutation
             }
 
             return result.ToString();
+        }
+
+        protected string MutationMeddley_GetSynergySummary()
+        {
+            List<MutationMeddley_SynergyDefinition> active = MutationMeddley_GetActiveSynergies();
+            if (active.Count == 0)
+            {
+                return "Synergies: none active.";
+            }
+
+            StringBuilder normal = new StringBuilder("Synergies:");
+            StringBuilder unusual = new StringBuilder("UNUSUAL ADAPTATION:");
+            bool wroteNormal = false;
+            bool wroteUnusual = false;
+
+            for (int i = 0; i < active.Count; i++)
+            {
+                StringBuilder target = active[i].IsUnusual ? unusual : normal;
+                target.Append("\n- ");
+                target.Append(active[i].Title);
+                target.Append(" - ");
+                target.Append(active[i].Summary);
+
+                if (active[i].IsUnusual)
+                {
+                    wroteUnusual = true;
+                }
+                else
+                {
+                    wroteNormal = true;
+                }
+            }
+
+            if (!wroteNormal)
+            {
+                normal.Append("\n- none active");
+            }
+
+            if (wroteUnusual)
+            {
+                normal.Append("\n");
+                normal.Append(unusual.ToString());
+            }
+
+            return normal.ToString();
+        }
+
+        protected List<MutationMeddley_SynergyDefinition> MutationMeddley_GetActiveSynergies()
+        {
+            List<MutationMeddley_SynergyDefinition> result = new List<MutationMeddley_SynergyDefinition>();
+            List<MutationMeddley_SynergyDefinition> definitions = MutationMeddley_GetSynergyDefinitions();
+
+            for (int i = 0; i < definitions.Count; i++)
+            {
+                if (MutationMeddley_IsSynergyActive(definitions[i]))
+                {
+                    result.Add(definitions[i]);
+                }
+            }
+
+            return result;
+        }
+
+        protected bool MutationMeddley_HasMutation(string mutationName)
+        {
+            return MutationMeddley_GetMutationByName(mutationName) != null;
+        }
+
+        protected bool MutationMeddley_MutationHasEvolution(string mutationName, string evolutionId)
+        {
+            MutationMeddley_EvolvingMutationBase mutation = MutationMeddley_GetMutationByName(mutationName)
+                as MutationMeddley_EvolvingMutationBase;
+
+            return mutation != null && mutation.MutationMeddley_HasEvolution(evolutionId);
+        }
+
+        protected bool MutationMeddley_MutationIsFunctionallyActive(string mutationName)
+        {
+            MutationMeddley_EvolvingMutationBase mutation = MutationMeddley_GetMutationByName(mutationName)
+                as MutationMeddley_EvolvingMutationBase;
+
+            return mutation != null && mutation.MutationMeddley_PeekIsFunctionallyActive();
+        }
+
+        protected bool MutationMeddley_MutationHasMode(string mutationName, string modeId)
+        {
+            MutationMeddley_AdaptiveMutationBase mutation = MutationMeddley_GetMutationByName(mutationName)
+                as MutationMeddley_AdaptiveMutationBase;
+
+            return mutation != null && mutation.MutationMeddley_PeekCurrentModeId() == modeId;
+        }
+
+        protected bool MutationMeddley_MutationHasSemanticTag(string mutationName, string tag)
+        {
+            BaseMutation liveMutation = MutationMeddley_GetMutationByName(mutationName);
+            if (liveMutation == null)
+            {
+                return false;
+            }
+
+            MutationMeddley_EvolvingMutationBase mutation = liveMutation
+                as MutationMeddley_EvolvingMutationBase;
+
+            if (mutation != null)
+            {
+                return mutation.MutationMeddley_GetCurrentSemanticTags().Contains(tag);
+            }
+
+            foreach (string mutationTag in MutationMeddley_TagRegistry.MutationMeddley_GetTagsForVanillaMutation(mutationName))
+            {
+                if (mutationTag == tag)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal bool MutationMeddley_PeekIsFunctionallyActive()
+        {
+            return MutationMeddley_IsFunctionallyActive();
+        }
+
+        protected BaseMutation MutationMeddley_GetMutationByName(string mutationName)
+        {
+            if (ParentObject == null)
+            {
+                return null;
+            }
+
+            global::XRL.World.Parts.Mutations mutations = ParentObject.GetPart("Mutations")
+                as global::XRL.World.Parts.Mutations;
+
+            if (mutations == null)
+            {
+                return null;
+            }
+
+            return mutations.GetMutationByName(mutationName);
+        }
+
+        protected bool MutationMeddley_HasSemanticTag(string tag)
+        {
+            return MutationMeddley_GetCurrentSemanticTags().Contains(tag);
+        }
+
+        protected bool MutationMeddley_HasOtherMutationWithTag(string tag)
+        {
+            if (ParentObject == null)
+            {
+                return false;
+            }
+
+            global::XRL.World.Parts.Mutations mutations = ParentObject.GetPart("Mutations")
+                as global::XRL.World.Parts.Mutations;
+
+            if (mutations == null)
+            {
+                return false;
+            }
+
+            foreach (BaseMutation mutation in mutations.MutationList)
+            {
+                if (mutation == null || mutation == this)
+                {
+                    continue;
+                }
+
+                MutationMeddley_EvolvingMutationBase evolving = mutation as MutationMeddley_EvolvingMutationBase;
+                if (evolving != null)
+                {
+                    if (evolving.MutationMeddley_GetCurrentSemanticTags().Contains(tag))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                foreach (string mutationTag in MutationMeddley_TagRegistry.MutationMeddley_GetTagsForVanillaMutation(mutation.Name))
+                {
+                    if (mutationTag == tag)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        protected HashSet<string> MutationMeddley_GetCurrentSemanticTags()
+        {
+            HashSet<string> tags = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (string tag in MutationMeddley_GetIntrinsicSemanticTags())
+            {
+                if (!string.IsNullOrEmpty(tag))
+                {
+                    tags.Add(tag);
+                }
+            }
+
+            foreach (string tag in MutationMeddley_GetEvolutionSemanticTags())
+            {
+                if (!string.IsNullOrEmpty(tag))
+                {
+                    tags.Add(tag);
+                }
+            }
+
+            return tags;
+        }
+
+        protected bool MutationMeddley_IsCurrentCellLit()
+        {
+            return ParentObject != null
+                && ParentObject.CurrentCell != null
+                && ParentObject.CurrentCell.IsLit();
+        }
+
+        protected bool MutationMeddley_IsCurrentCellWet()
+        {
+            if (ParentObject == null || ParentObject.CurrentCell == null)
+            {
+                return false;
+            }
+
+            object liquid = ParentObject.CurrentCell.GetOpenLiquidVolume();
+            if (liquid != null)
+            {
+                return true;
+            }
+
+            string cellDescription = ParentObject.CurrentCell.ToString();
+            if (string.IsNullOrEmpty(cellDescription))
+            {
+                return false;
+            }
+
+            string loweredTerrain = cellDescription.ToLowerInvariant();
+            return loweredTerrain.Contains("water")
+                || loweredTerrain.Contains("pool")
+                || loweredTerrain.Contains("mire")
+                || loweredTerrain.Contains("bog")
+                || loweredTerrain.Contains("marsh")
+                || loweredTerrain.Contains("brine")
+                || loweredTerrain.Contains("salt");
+        }
+
+        protected bool MutationMeddley_IsCurrentCellSaline()
+        {
+            if (ParentObject == null || ParentObject.CurrentCell == null)
+            {
+                return false;
+            }
+
+            string cellDescription = ParentObject.CurrentCell.ToString();
+            if (!string.IsNullOrEmpty(cellDescription))
+            {
+                string loweredTerrain = cellDescription.ToLowerInvariant();
+                if (loweredTerrain.Contains("salt") || loweredTerrain.Contains("brine"))
+                {
+                    return true;
+                }
+            }
+
+            object liquid = ParentObject.CurrentCell.GetOpenLiquidVolume();
+            if (liquid != null)
+            {
+                string liquidName = liquid.ToString().ToLowerInvariant();
+                if (liquidName.Contains("salt") || liquidName.Contains("brine"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         protected string MutationMeddley_GetStateValue(string key)
@@ -285,6 +592,11 @@ namespace XRL.World.Parts.Mutation
                 return false;
             }
 
+            if (!MutationMeddley_IsChoiceUnlocked(choice))
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -329,6 +641,12 @@ namespace XRL.World.Parts.Mutation
             for (int i = 0; i < available.Count; i++)
             {
                 StringBuilder option = new StringBuilder();
+                if (available[i].IsUnusual)
+                {
+                    option.Append("UNUSUAL ADAPTATION");
+                    option.Append("\n");
+                }
+
                 option.Append(available[i].Name);
                 option.Append("\n");
                 option.Append(available[i].Description);

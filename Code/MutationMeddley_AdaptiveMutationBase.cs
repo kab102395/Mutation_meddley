@@ -23,6 +23,9 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_AdaptiveMutationBase : MutationMeddley_EvolvingMutationBase
     {
+        private readonly Dictionary<string, int> MutationMeddley_PendingStatShifts =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
         public Guid MutationMeddley_ModeAbilityID = Guid.Empty;
 
         protected virtual string MutationMeddley_ModeAbilityClass
@@ -133,6 +136,8 @@ namespace XRL.World.Parts.Mutation
                 "Quickness"
             };
 
+            MutationMeddley_PendingStatShifts.Clear();
+
             for (int i = 0; i < stats.Length; i++)
             {
                 StatShifter.SetStatShift(stats[i], 0, true);
@@ -141,7 +146,15 @@ namespace XRL.World.Parts.Mutation
 
         protected void MutationMeddley_SetShift(string stat, int amount)
         {
-            StatShifter.SetStatShift(stat, amount, true);
+            int currentAmount;
+            if (!MutationMeddley_PendingStatShifts.TryGetValue(stat, out currentAmount))
+            {
+                currentAmount = 0;
+            }
+
+            currentAmount += amount;
+            MutationMeddley_PendingStatShifts[stat] = currentAmount;
+            StatShifter.SetStatShift(stat, currentAmount, true);
         }
 
         protected string MutationMeddley_DescribeModeState()
@@ -157,6 +170,11 @@ namespace XRL.World.Parts.Mutation
         protected string MutationMeddley_GetCurrentModeId()
         {
             return MutationMeddley_GetStateValue("mode");
+        }
+
+        internal string MutationMeddley_PeekCurrentModeId()
+        {
+            return MutationMeddley_GetCurrentModeId();
         }
 
         protected void MutationMeddley_SetCurrentModeId(string id)
