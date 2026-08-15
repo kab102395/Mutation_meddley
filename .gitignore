@@ -1,0 +1,9 @@
+workshop.json
+Mods.csproj
+*.log
+bin/
+obj/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
