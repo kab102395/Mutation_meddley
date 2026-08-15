@@ -83,7 +83,7 @@ Verify:
 21. removing the mutation removes its activated abilities
 22. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
-Supported vanilla synergy pack for `0.6.1`:
+Supported vanilla synergy pack for `0.6.2`:
 
 - `Carapace`
 - `Regeneration`
@@ -121,9 +121,12 @@ Verify:
 
 1. one outgoing stored-hit branch spends once, resolves its defender through the shared outgoing-hit helper, and dispatches one bonus-damage follow-through
 2. one incoming retaliatory branch spends once, resolves its source through the shared incoming-pressure helper, and dispatches one retaliation
-3. no bonus-damage spend recursively re-enters the same mutation handler and burns extra stored state
-4. when target or source resolution fails, tracing reports the miss and the mutation falls back cleanly without corrupting path, stance, or meter state
-5. after the controlled check, turn damage tracing back off before ordinary gameplay validation
+3. no Mutation Meddley bonus-damage dispatch recursively re-enters any Mutation Meddley damage handler while that nested dispatch is active
+4. multiple primed mutations may each respond once to the original Qud damage event, but a bonus-damage event must not start a nested Mutation Meddley proc chain
+5. tracing distinguishes target resolution, event dispatch, the `FireEvent` continuation result, and whether HP loss was observed
+6. a `false` `FireEvent` continuation result after dispatch must not be treated as "damage was never dispatched" or trigger a failure fallback by itself
+7. when target or source resolution fails, tracing reports the miss and the mutation falls back cleanly without corrupting path, stance, or meter state
+8. after the controlled check, turn damage tracing back off before ordinary gameplay validation
 
 ## Synergy and hidden-adaptation test
 
