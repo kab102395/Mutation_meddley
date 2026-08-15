@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mutations>
+  <category Name="Physical">
+    <mutation Name="Evolution Seed [DEV]" Cost="1" MaxSelected="1" Class="MutationMeddley_EvolutionSeed" Exclusions="" BearerDescription="the evolution-seeded" Code="m1"></mutation>
+  </category>
+</mutations>
