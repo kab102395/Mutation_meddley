@@ -234,6 +234,39 @@ This pass touches shared event routing and resource behavior. It must not destab
 
 Load a v0.6.2 save, verify paths/stances/resources, save under v0.6.3, reload, remove/re-add vanilla Carapace, and confirm no dormant stats/tags/discoveries or reactions leak through.
 
+## Issue 11: Spiteful Wall consumed Brace without an exchange
+
+### Problem
+
+The existing Fortress turn processor removed one Brace simply for remaining engaged in `Spiteful Wall`. That could erase the resource that the stance needs for its actual retaliation before an enemy applied pressure, recreating the earlier self-sabotaging stance problem.
+
+### Fix
+
+When the character held position and remained engaged in Spiteful Wall, the shared completion pass restores the Brace point that the old turn processor removed. Moving can still lose Brace; rooted engagement now preserves it for an actual incoming-pressure spend.
+
+### Acceptance test
+
+Build Brace in Spiteful Wall while stationary beside an enemy. Ending the turn must not drain Brace merely because the enemy is adjacent. When the enemy actually damages the character, Brace can then be spent into the spiteful retaliation.
+
+## Issue 12: incoming capstones used a transient movement flag after EndTurn
+
+### Problem
+
+The shared moved-this-turn flag is intentionally cleared at EndTurn. Incoming enemy attacks commonly happen after that point, so using the transient flag to decide whether Porcupine Redoubt or Burrowed Nursery was rooted would incorrectly treat a character as stationary after every EndTurn.
+
+### Fix
+
+Use state that survives the turn boundary for incoming rooted checks:
+
+- Porcupine Redoubt reads Carapace Evolution's persisted `carapace_stationary` state
+- Burrowed Nursery reads Walking Colony's persisted stride streak (`0` means the preceding colony turn was stationary)
+
+The transient moved flag remains appropriate for within-turn outgoing contact/refund checks.
+
+### Acceptance test
+
+Move and end the turn, then allow an enemy to hit. Rooted-only Porcupine/Burrowed behavior must not fire for that moved turn. Spend a full turn stationary and repeat; the rooted reaction may then fire when its other requirements are met.
+
 ## Static-freeze exit criteria
 
 Do not add another flagship mutation before these are tested.
@@ -249,6 +282,7 @@ The code is a static-freeze candidate when:
 - every rank-9 choice changes that loop or produces a visible event consequence
 - non-contact damage does not consume contact meters
 - Brine movement bonuses update while moved
+- rooted-only post-turn reactions respect the preceding movement state
 - environment diagnostics match real representative cells
 - save/reload and Carapace dormancy remain correct
 
