@@ -2,7 +2,7 @@
 
 Mutation Meddley is a Caves of Qud mutation-evolution framework and content mod.
 
-The long-term goal is to make mutations branch into mechanically distinct builds instead of following a single linear scaling path. The framework is designed around milestone evolutions, prerequisites, mutually exclusive branches, and cross-mutation synergies.
+The long-term goal is to make mutations branch into mechanically distinct builds instead of following a single linear scaling path. The framework is designed around milestone evolutions, prerequisites, mutually exclusive branches, actionable stances, stored-state verbs, and cross-mutation synergies.
 
 ## Target development platform
 
@@ -12,24 +12,28 @@ The tooling assumes a normal Linux shell and supports both the standard Steam la
 
 ## Current status
 
-Version `0.6.2` is the current damage-dispatch correctness release on top of the event-driven verb milestone. It contains:
+Version `0.6.3` is the static-freeze candidate for the first full verb/passive playtest. It contains:
 
 - a reusable evolution framework with a single extensible serialized state envelope
 - controller-friendly evolution and stance pickers built on `Popup.ShowOptionList`
-- deeper rank 3, 6, and 9 branching with prerequisites, tier locking, and unusual hidden adaptations
+- rank 3, 6, and 9 branching with prerequisites, tier locking, and unusual hidden adaptations
+- a modest rank-1/rank-2 baseline passive/reaction loop for every shipped gameplay mutation
+- event-driven branch verbs that build and spend shell, crystal, brine, ash, and colony state
+- a conservative shared close-contact gate so non-adjacent damage cannot cash out melee/contact meters
+- a shared explicit `Damage`/`TakeDamage` dispatch path with cross-mutation recursion protection and DEV tracing
+- live mechanics and current-passive readouts in mutation level text
 - a shared runtime semantic-tag and synergy-query layer
-- surfaced synergy summaries directly in mutation level text
-- event-driven branch verbs that spend stored shell, crystal, brine, ash, and colony states on pressure or successful contact
-- a shared explicit damage-dispatch path with a cross-mutation recursion guard plus developer tracing for event continuation and observed HP loss
-- a developer regression mutation, `Evolution Seed [DEV]`
+- a developer regression mutation, `Evolution Seed [DEV]`, including live environment-predicate diagnostics
 - four Mutation Meddley-owned flagship mutations: `Living Crystal`, `Brineborn`, `Ash Metabolism`, and `Walking Colony`
 - a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
 - curated synergy support for `Carapace`, `Regeneration`, `Multiple Legs`, `Quills`, `Electrical Generation`, `Light Manipulation`, `Flaming Ray`, `Freezing Ray`, `Photosynthetic Skin`, `Phasing`, `Amphibious`, `Heightened Hearing`, and `Burrowing Claws`
 - twenty curated hidden adaptations across the owned mutations and `Carapace Evolution`
-- eighteen named triad adaptations including the original shell/crystal/brine family plus `Undertow Furnace`, `Salt Eclipse`, `Bone Kiln Parliament`, `Resonant Undertow`, `Smoke Reef`, `Chorus Husk`, `Whitewater Ossuary`, and `Blackglass Pursuit`
+- eighteen named triad adaptations
 - Linux/Zorin deployment, validation, log, and `Mods.csproj` helper scripts
 
-`Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. That keeps the first vanilla integration on supported mutation hooks and avoids shipping a guessed reimplementation of base-game shell logic. If vanilla `Carapace` is lost, the companion mutation becomes dormant but keeps its chosen path and stance for later reactivation.
+The `0.6.3` pass specifically closes the known static actionability gaps: pre-rank-3 dead zones, Brineborn movement refresh, Cool Reserve, pre-Scar-Feeders Bank Scars, solo Graft Parliament fallback behavior, passive-heavy Carapace/Brine/Ash/Colony specializations and capstones, and non-contact meter consumption. See `docs/STATIC_FREEZE_PLAN.md` for the issue-by-issue plan and `docs/TESTING.md` for the release gate.
+
+`Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. If vanilla `Carapace` is lost, the companion mutation becomes dormant but keeps its chosen path and stance for later reactivation.
 
 ## Zorin OS quick start
 
@@ -90,23 +94,24 @@ That copies the Qud-generated project file into the repository root for use with
 
 ## Testing in Caves of Qud
 
+The full v0.6.3 matrix is in `docs/TESTING.md`. The minimum local gate is:
+
 1. Run `bash tools/check.sh`.
 2. Run `bash tools/deploy.sh`.
 3. Start or restart Caves of Qud.
-4. Make sure mods and scripting mods are enabled.
-5. Enable **Mutation Meddley** in the in-game mod configuration if necessary.
-6. Start a new mutant character and take one or more of:
-   `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, `Ash Metabolism`, `Walking Colony`, or `Carapace Evolution`.
-7. If testing `Carapace Evolution`, also take vanilla `Carapace`; without it, the companion mutation should remain dormant.
-8. Increase the mutation rank normally.
-9. At ranks 3, 6, and 9, use each mutation's `Evolve ...` ability and choose a branch from the controller-friendly option list.
-10. For `Living Crystal`, `Brineborn`, and `Carapace Evolution`, use the `Retune ...` ability after choosing a path and verify the stance changes.
-11. For `Brineborn`, verify that saline reserve changes only when interacting with qualifying saline ground or liquid contact.
-12. Save and reload after making choices to verify persistence.
+4. Confirm a fresh successful scripting-mod compile.
+5. Start a new mutant and verify each paid mutation does something visible before rank 3.
+6. For each mutation, test all rank-3 identities, both stances, both rank-6 specializations, and rank-9 capstones.
+7. Verify a primed contact meter spends on adjacent melee contact but survives a non-adjacent ranged hit.
+8. With `Evolution Seed [DEV]`, inspect `lit/wet/saline/hot/smoky` diagnostics on real representative cells.
+9. Save/reload, then verify Carapace dormancy by removing and regaining vanilla `Carapace`.
+10. Run a multi-mutation movement stress test before drawing balance conclusions.
 
-Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.6.2` reads that older shape and rewrites it into the current envelope on the next state change.
+All five gameplay mutations expose `Retune ...` after a path exists. Normal gameplay interaction uses option lists rather than typed numbers.
 
-For controlled proc validation, `Evolution Seed [DEV]` exposes `Toggle Mutation Meddley Damage Trace [DEV]`. Leave it off for normal play. Turn it on only when verifying target/source resolution, one-proc-per-spend behavior, event-continuation semantics, observed HP loss, or bonus-damage failure paths during development.
+Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; v0.6.3 retains the same persistent envelope contract as v0.6.2 and introduces no new public serialized field.
+
+For controlled proc validation, `Evolution Seed [DEV]` exposes `Toggle Mutation Meddley Damage Trace [DEV]`. Leave it off for normal play. Turn it on only when verifying target/source resolution, close-contact classification, one-proc-per-spend behavior, event-continuation semantics, observed HP loss, or bonus-damage failure paths.
 
 To inspect the current Linux logs from the terminal:
 
@@ -125,18 +130,19 @@ If Qud reports a C# build error, use the exact error from these logs rather than
 
 ## Steam Workshop
 
-Do not create or commit `workshop.json` manually during normal development. Once the deployed mod works locally, use Qud's built-in **Modding Utilities > Steam Workshop Uploader**.
+Keep this static-freeze candidate off Workshop until the local compile and behavioral matrix pass.
 
-Create the Workshop ID from the deployed Linux copy, fill in the item metadata, and use **Upload Content...**. Qud will create `workshop.json` inside the deployed mod directory. The repository ignores that file so the local Workshop association is not accidentally committed.
+Once the deployed mod works locally, use Qud's built-in **Modding Utilities > Steam Workshop Uploader**. Qud will create `workshop.json` inside the deployed mod directory; the repository ignores that file and the deployment script preserves it.
 
 When testing a subscribed Workshop build, avoid loading the separate offline development copy at the same time.
 
 ## Design documents
 
+- `docs/STATIC_FREEZE_PLAN.md` - issue-by-issue v0.6.3 correction plan and acceptance contract
 - `docs/ARCHITECTURE.md` - framework boundaries and evolution model
 - `docs/BALANCE.md` - mutation/evolution balance rules
 - `docs/SYNERGY_MATRIX.md` - synergy ownership, discovery keys, and QA matrix
-- `docs/TESTING.md` - Zorin/Linux test and Workshop workflow
+- `docs/TESTING.md` - full Linux behavior/release matrix
 - `AGENTS.md` - constraints for Codex/AI changes
 
 ## Namespace and identifier policy
