@@ -9,6 +9,9 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_ColonyKey = "colony_charge";
         private const string MutationMeddley_MovedKey = "colony_moved";
         private const string MutationMeddley_StreakKey = "colony_stride_streak";
+        private const string MutationMeddley_StitchKey = "colony_stitch";
+        private const string MutationMeddley_ScoutKey = "colony_scout";
+        private const string MutationMeddley_ParliamentKey = "colony_parliament";
         private const string MutationMeddley_MoltUnlockedKey = "colony_hidden_molt";
         private const string MutationMeddley_MoltProgressKey = "colony_hidden_molt_progress";
         private const string MutationMeddley_WakeTrailUnlockedKey = "colony_hidden_waketrail";
@@ -91,15 +94,18 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("marrow_hive"))
             {
-                yield return "Marrow Hive turns stored pressure into sustain. Knit Flesh only spends pressure when healing can actually happen.";
+                yield return "Marrow Hive turns pressure into stitch reserve. Knit Flesh only spends when healing can actually happen; Bank Scars turns stillness into tougher recovery windows.";
+                yield return "Current stitch: " + MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("surveyor_swarm"))
             {
-                yield return "Surveyor Swarm wants repeated movement and hostile traversal to keep its map-pressure engine online.";
+                yield return "Surveyor Swarm turns movement into scout pressure. Range Ahead likes hostile ground; Harry Line spends pressure into chase control.";
+                yield return "Current scout pressure: " + MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("graft_parliament"))
             {
-                yield return "Graft Parliament gets stronger when your body-plan is crowded by other structural mutations and tactical strain.";
+                yield return "Graft Parliament stores delegated load while your body plan is crowded. Delegate Load favors composure; Override Frame favors opportunistic body theft.";
+                yield return "Current delegated load: " + MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0) + ".";
             }
             else
             {
@@ -501,27 +507,30 @@ namespace XRL.World.Parts.Mutation
             int pressure = MutationMeddley_GetColonyPressure();
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
             bool hostileTerrain = MutationMeddley_IsCurrentCellHostileTraversal();
+            int stitch = MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0);
+            int scout = MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0);
+            int parliament = MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0);
 
             if (MutationMeddley_HasEvolution("marrow_hive"))
             {
                 MutationMeddley_SetShift("Toughness", 1);
-                MutationMeddley_SetShift("AV", 1 + (pressure / 3));
-                MutationMeddley_SetShift("DV", pressure / 4);
+                MutationMeddley_SetShift("AV", 1 + (pressure / 3) + stitch);
+                MutationMeddley_SetShift("DV", (pressure / 4) + (stitch / 2));
 
                 if (MutationMeddley_HasEvolution("bone_nursery"))
                 {
-                    MutationMeddley_SetShift("AV", 1 + (pressure / 2));
+                    MutationMeddley_SetShift("AV", 1 + (pressure / 2) + stitch);
                     MutationMeddley_SetShift("ColdResistance", 5 + (pressure * 2));
                 }
                 else if (MutationMeddley_HasEvolution("scar_feeders"))
                 {
                     MutationMeddley_SetShift("HeatResistance", 5 + (pressure * 2));
-                    MutationMeddley_SetShift("DV", 1 + (pressure / 4));
+                    MutationMeddley_SetShift("DV", 1 + (pressure / 4) + (stitch / 2));
                 }
 
                 if (MutationMeddley_HasEvolution("ossuary_bloom"))
                 {
-                    MutationMeddley_SetShift("AV", 1);
+                    MutationMeddley_SetShift("AV", 1 + (stitch / 2));
                 }
 
                 if (MutationMeddley_HasEvolution("catacomb_metabolism"))
@@ -532,17 +541,17 @@ namespace XRL.World.Parts.Mutation
             else if (MutationMeddley_HasEvolution("surveyor_swarm"))
             {
                 MutationMeddley_SetShift("Agility", 1);
-                MutationMeddley_SetShift("Quickness", 1 + (pressure / 3));
-                MutationMeddley_SetShift("DV", moved ? 1 + (pressure / 4) : pressure / 5);
+                MutationMeddley_SetShift("Quickness", 1 + (pressure / 3) + scout);
+                MutationMeddley_SetShift("DV", (moved ? 1 + (pressure / 4) : pressure / 5) + (scout / 2));
 
                 if (MutationMeddley_HasEvolution("tendon_scouts"))
                 {
-                    MutationMeddley_SetShift("DV", moved ? 2 + (pressure / 4) : 1);
+                    MutationMeddley_SetShift("DV", (moved ? 2 + (pressure / 4) : 1) + scout);
                 }
                 else if (MutationMeddley_HasEvolution("latch_runners"))
                 {
-                    MutationMeddley_SetShift("Quickness", moved ? 2 + (pressure / 3) : 1);
-                    MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "harry_line" && pressure > 0 ? 1 : 0);
+                    MutationMeddley_SetShift("Quickness", (moved ? 2 + (pressure / 3) : 1) + scout);
+                    MutationMeddley_SetShift("DV", (MutationMeddley_GetCurrentModeId() == "harry_line" && pressure > 0 ? 1 : 0) + (scout / 2));
                 }
 
                 if (MutationMeddley_HasEvolution("march_cartography") && hostileTerrain)
@@ -558,7 +567,7 @@ namespace XRL.World.Parts.Mutation
             else if (MutationMeddley_HasEvolution("graft_parliament"))
             {
                 MutationMeddley_SetShift("Intelligence", 1);
-                MutationMeddley_SetShift("DV", 1 + (pressure / 4));
+                MutationMeddley_SetShift("DV", 1 + (pressure / 4) + parliament);
 
                 if (MutationMeddley_HasOtherMutationWithTag("BODY_PART_INTERACTION"))
                 {
@@ -567,13 +576,13 @@ namespace XRL.World.Parts.Mutation
 
                 if (MutationMeddley_HasEvolution("nerve_delegation"))
                 {
-                    MutationMeddley_SetShift("DV", 1 + (pressure / 3));
-                    MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "delegate_load" ? 1 : 0);
+                    MutationMeddley_SetShift("DV", 1 + (pressure / 3) + parliament);
+                    MutationMeddley_SetShift("Quickness", (MutationMeddley_GetCurrentModeId() == "delegate_load" ? 1 : 0) + (parliament / 2));
                 }
                 else if (MutationMeddley_HasEvolution("borrowed_hands"))
                 {
-                    MutationMeddley_SetShift("AV", 1 + (pressure / 4));
-                    MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "override_frame" ? 1 + (pressure / 5) : 0);
+                    MutationMeddley_SetShift("AV", 1 + (pressure / 4) + (parliament / 2));
+                    MutationMeddley_SetShift("Quickness", (MutationMeddley_GetCurrentModeId() == "override_frame" ? 1 + (pressure / 5) : 0) + parliament);
                 }
 
                 if (MutationMeddley_HasEvolution("distributed_verdict"))
@@ -792,6 +801,9 @@ namespace XRL.World.Parts.Mutation
             int pressure = MutationMeddley_GetColonyPressure();
             int maxPressure = MutationMeddley_GetMaxColonyPressure();
             int strideStreak = MutationMeddley_GetStateInt(MutationMeddley_StreakKey, 0);
+            int stitch = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) - 1);
+            int scout = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) - 1);
+            int parliament = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0) - 1);
 
             if (moved)
             {
@@ -813,6 +825,7 @@ namespace XRL.World.Parts.Mutation
             {
                 ParentObject.Heal(MutationMeddley_HasMutation("Regeneration") ? 2 : 1);
                 pressure -= 1;
+                stitch = Math.Min(4, stitch + 1 + (MutationMeddley_HasEvolution("bone_nursery") ? 1 : 0));
             }
 
             if (MutationMeddley_HasEvolution("scar_feeders")
@@ -820,29 +833,41 @@ namespace XRL.World.Parts.Mutation
                 && !moved)
             {
                 pressure = Math.Min(maxPressure, pressure + 1);
+                stitch = Math.Min(4, stitch + 1);
             }
 
-            if (MutationMeddley_HasEvolution("tendon_scouts")
+            if (MutationMeddley_HasEvolution("surveyor_swarm")
                 && MutationMeddley_GetCurrentModeId() == "range_ahead"
                 && moved
-                && hostileTerrain)
+                && (hostileTerrain || MutationMeddley_HasEvolution("tendon_scouts")))
             {
                 pressure = Math.Min(maxPressure, pressure + 1);
+                scout = Math.Min(4, scout + 1 + (MutationMeddley_HasEvolution("tendon_scouts") && hostileTerrain ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("latch_runners")
+            if (MutationMeddley_HasEvolution("surveyor_swarm")
                 && MutationMeddley_GetCurrentModeId() == "harry_line"
                 && moved
                 && pressure > 0)
             {
                 pressure -= 1;
+                scout = Math.Min(4, scout + 1 + (MutationMeddley_HasEvolution("latch_runners") ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("borrowed_hands")
+            if (MutationMeddley_HasEvolution("graft_parliament")
+                && MutationMeddley_GetCurrentModeId() == "delegate_load"
+                && !moved
+                && MutationMeddley_HasOtherMutationWithTag("BODY_PART_INTERACTION"))
+            {
+                parliament = Math.Min(4, parliament + 1 + (MutationMeddley_HasEvolution("nerve_delegation") ? 1 : 0));
+            }
+
+            if (MutationMeddley_HasEvolution("graft_parliament")
                 && MutationMeddley_GetCurrentModeId() == "override_frame"
                 && MutationMeddley_HasOtherMutationWithTag("STRUCTURAL"))
             {
                 pressure = Math.Min(maxPressure, pressure + 1);
+                parliament = Math.Min(4, parliament + 1 + (MutationMeddley_HasEvolution("borrowed_hands") ? 1 : 0));
             }
 
             MutationMeddley_TrackMoltParliamentDiscovery();
@@ -853,6 +878,9 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Max(0, Math.Min(pressure, maxPressure)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
             MutationMeddley_SetStateInt(MutationMeddley_StreakKey, Math.Min(strideStreak, 8));
+            MutationMeddley_SetStateInt(MutationMeddley_StitchKey, Math.Max(0, Math.Min(stitch, 4)));
+            MutationMeddley_SetStateInt(MutationMeddley_ScoutKey, Math.Max(0, Math.Min(scout, 4)));
+            MutationMeddley_SetStateInt(MutationMeddley_ParliamentKey, Math.Max(0, Math.Min(parliament, 4)));
             MutationMeddley_RefreshPassiveEffects();
         }
 

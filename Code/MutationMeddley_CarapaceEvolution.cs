@@ -8,6 +8,11 @@ namespace XRL.World.Parts.Mutation
     {
         private const string MutationMeddley_MovedKey = "carapace_moved";
         private const string MutationMeddley_StationaryKey = "carapace_stationary";
+        private const string MutationMeddley_BraceKey = "carapace_brace";
+        private const string MutationMeddley_ImpactKey = "carapace_impact";
+        private const string MutationMeddley_HeatAttuneKey = "carapace_attune_heat";
+        private const string MutationMeddley_MireAttuneKey = "carapace_attune_mire";
+        private const string MutationMeddley_RimeAttuneKey = "carapace_attune_rime";
         private const string MutationMeddley_PorcupineUnlockedKey = "carapace_hidden_porcupine";
         private const string MutationMeddley_PorcupineProgressKey = "carapace_hidden_porcupine_progress";
         private const string MutationMeddley_EstuaryUnlockedKey = "carapace_hidden_estuary";
@@ -126,38 +131,47 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("fortress"))
             {
-                yield return "Fortress rewards anchoring. End turns without moving to convert shell commitment into healing.";
+                yield return "Fortress builds brace when you end a turn without moving. Brace is your shell's stocked defensive pressure.";
+                yield return "Current brace: " + MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + ".";
                 if (MutationMeddley_HasEvolution("faceted_keep"))
                 {
-                    yield return "Faceted Keep adds more recovery while you are engaged in melee.";
+                    yield return "Faceted Keep turns stored brace toward contact punishment and stronger melee posture.";
                 }
                 if (MutationMeddley_HasEvolution("entrenched_bastion"))
                 {
-                    yield return "Entrenched Bastion pays out hardest when you hold still instead of kiting.";
+                    yield return "Entrenched Bastion retains and deepens brace when you commit to a planted line.";
                 }
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
-                yield return "Hunter Shell rewards pursuit. Move, stay in contact, and finish the turn engaged to cash in.";
+                yield return "Hunter Shell builds impact from movement and contact. Impact is the shell's pursuit payoff.";
+                yield return "Current impact: " + MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + ".";
                 if (MutationMeddley_HasEvolution("ravager_joints"))
                 {
-                    yield return "Ravager Joints spikes recovery and speed after movement-heavy pursuit turns.";
+                    yield return "Ravager Joints keeps impact climbing during repeated movement-heavy pursuit turns.";
                 }
                 if (MutationMeddley_HasEvolution("spur_lattice"))
                 {
-                    yield return "Spur Lattice wants committed melee contact rather than passive positioning.";
+                    yield return "Spur Lattice converts impact into heavier committed contact rather than evasive chase rhythm.";
                 }
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
             {
-                yield return "Adaptive Carapace keys off terrain and climate. Wet, hot, and saline cells matter.";
+                yield return "Adaptive Carapace stores separate attunements from climate and terrain instead of staying flat all the time.";
+                yield return "Current attunement: heat "
+                    + MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0)
+                    + ", mire "
+                    + MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0)
+                    + ", rime "
+                    + MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0)
+                    + ".";
                 if (MutationMeddley_HasEvolution("thermal_baffles"))
                 {
-                    yield return "Thermal Baffles heals in hot spaces while Ember Veil is active and resists heat or cold by stance.";
+                    yield return "Thermal Baffles routes stored heat or rime harder depending on veil stance.";
                 }
                 if (MutationMeddley_HasEvolution("mire_sheath"))
                 {
-                    yield return "Mire Sheath pays out in wet ground and becomes tougher if you lean into bog-shell branches.";
+                    yield return "Mire Sheath stockpiles wet and saline contact into a membrane shell instead of a dry wall.";
                 }
             }
             else
@@ -600,77 +614,90 @@ namespace XRL.World.Parts.Mutation
             bool wetGround = MutationMeddley_IsCurrentCellWet();
             bool lit = MutationMeddley_IsCurrentCellLit();
             bool saline = MutationMeddley_IsCurrentCellSaline();
+            int brace = MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0);
+            int impact = MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0);
+            int heat = MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0);
+            int mire = MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0);
+            int rime = MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0);
 
             if (MutationMeddley_HasEvolution("fortress"))
             {
                 MutationMeddley_SetShift("AV", 1);
                 MutationMeddley_SetShift("Toughness", 1);
+                MutationMeddley_SetShift("AV", brace);
+                MutationMeddley_SetShift("DV", brace / 2);
 
                 if (MutationMeddley_HasEvolution("faceted_keep"))
                 {
-                    MutationMeddley_SetShift("AV", engaged ? 4 : 2);
+                    MutationMeddley_SetShift("AV", engaged ? 2 + brace : 1 + (brace / 2));
+                    MutationMeddley_SetShift("Strength", engaged ? 1 + (brace / 2) : 0);
                     MutationMeddley_SetShift("DV", MutationMeddley_HasEvolution("living_fortress") && engaged ? 2 : 1);
                 }
                 else if (MutationMeddley_HasEvolution("entrenched_bastion"))
                 {
-                    MutationMeddley_SetShift("AV", stationary ? 5 : 2);
+                    MutationMeddley_SetShift("AV", stationary ? 2 + brace : 1 + (brace / 2));
+                    MutationMeddley_SetShift("Willpower", stationary ? 1 + (brace / 3) : 0);
                     if (MutationMeddley_HasEvolution("redoubt_engine") && stationary)
                     {
-                        MutationMeddley_SetShift("DV", 2);
+                        MutationMeddley_SetShift("DV", 1 + (brace / 2));
                     }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("AV", 2);
+                    MutationMeddley_SetShift("AV", 1 + brace);
                 }
 
-                if (MutationMeddley_HasMutation("Quills") && stationary)
+                if (MutationMeddley_HasMutation("Quills") && brace > 0)
                 {
                     MutationMeddley_SetShift("DV", 1);
                     MutationMeddley_SetShift("AV", 1);
                 }
 
-                if (MutationMeddley_HasMutation("Regeneration") && stationary)
+                if (MutationMeddley_HasMutation("Regeneration") && brace > 1)
                 {
                     MutationMeddley_SetShift("DV", 1);
                 }
 
                 if (MutationMeddley_HasMutation("Ash Metabolism"))
                 {
-                    MutationMeddley_SetShift("HeatResistance", 5);
+                    MutationMeddley_SetShift("HeatResistance", 5 + brace);
                 }
 
                 if (MutationMeddley_GetCurrentModeId() == "anchor_down")
                 {
-                    MutationMeddley_SetShift("AV", stationary ? 1 : 0);
+                    MutationMeddley_SetShift("AV", stationary ? 1 + brace : 0);
+                    MutationMeddley_SetShift("DV", stationary ? brace / 2 : 0);
                 }
                 else if (MutationMeddley_GetCurrentModeId() == "spiteful_wall")
                 {
-                    MutationMeddley_SetShift("DV", engaged ? 1 : 0);
+                    MutationMeddley_SetShift("Strength", engaged ? 1 + (brace / 2) : 0);
+                    MutationMeddley_SetShift("DV", engaged ? 1 + (brace / 2) : 0);
                 }
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
                 MutationMeddley_SetShift("DV", 1);
                 MutationMeddley_SetShift("Agility", 1);
+                MutationMeddley_SetShift("Strength", impact / 2);
 
                 if (MutationMeddley_HasEvolution("ravager_joints"))
                 {
-                    MutationMeddley_SetShift("Quickness", MutationMeddley_HasEvolution("pursuit_predator") ? 4 : 2);
-                    MutationMeddley_SetShift("DV", engaged ? 3 : 2);
+                    MutationMeddley_SetShift("Quickness", 1 + impact + (MutationMeddley_HasEvolution("pursuit_predator") ? 1 : 0));
+                    MutationMeddley_SetShift("DV", engaged ? 1 + impact : 1 + (impact / 2));
                 }
                 else if (MutationMeddley_HasEvolution("spur_lattice"))
                 {
-                    MutationMeddley_SetShift("AV", engaged ? (MutationMeddley_HasEvolution("hooked_pursuer") ? 3 : 2) : 1);
-                    MutationMeddley_SetShift("Quickness", 1);
+                    MutationMeddley_SetShift("AV", engaged ? 1 + impact : 1);
+                    MutationMeddley_SetShift("Strength", engaged ? 1 + impact : 0);
+                    MutationMeddley_SetShift("Quickness", 1 + (impact / 2));
                 }
                 else
                 {
-                    MutationMeddley_SetShift("Quickness", 1);
-                    MutationMeddley_SetShift("DV", 2);
+                    MutationMeddley_SetShift("Quickness", 1 + (impact / 2));
+                    MutationMeddley_SetShift("DV", 1 + impact);
                 }
 
-                if (MutationMeddley_HasMutation("Multiple Legs") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+                if (MutationMeddley_HasMutation("Multiple Legs") && impact > 0)
                 {
                     MutationMeddley_SetShift("Quickness", 2);
                     MutationMeddley_SetShift("DV", 1);
@@ -686,50 +713,46 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("Quickness", 1);
                 }
 
-                if (MutationMeddley_HasMutation("Ash Metabolism") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+                if (MutationMeddley_HasMutation("Ash Metabolism") && impact > 0)
                 {
                     MutationMeddley_SetShift("Quickness", 1);
                 }
 
                 if (MutationMeddley_GetCurrentModeId() == "skirmish_gait")
                 {
-                    MutationMeddley_SetShift("DV", MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0 ? 1 : 0);
+                    MutationMeddley_SetShift("DV", impact);
+                    MutationMeddley_SetShift("Quickness", 1 + (impact / 2));
                 }
                 else if (MutationMeddley_GetCurrentModeId() == "ramming_gait")
                 {
-                    MutationMeddley_SetShift("AV", engaged ? 1 : 0);
+                    MutationMeddley_SetShift("AV", engaged ? 1 + (impact / 2) : impact / 2);
+                    MutationMeddley_SetShift("Strength", 1 + impact);
                 }
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
             {
                 MutationMeddley_SetShift("Willpower", 1);
+                MutationMeddley_SetShift("HeatResistance", 2 * heat);
+                MutationMeddley_SetShift("ColdResistance", 2 * rime);
+                MutationMeddley_SetShift("DV", mire / 2);
 
                 if (MutationMeddley_HasEvolution("thermal_baffles"))
                 {
-                    MutationMeddley_SetShift(
-                        "HeatResistance",
-                        MutationMeddley_GetCurrentModeId() == "ember_veil"
-                            ? (MutationMeddley_HasEvolution("storm_carapace") ? 35 : 20)
-                            : 5
-                    );
-                    MutationMeddley_SetShift(
-                        "ColdResistance",
-                        MutationMeddley_GetCurrentModeId() == "rime_veil"
-                            ? (MutationMeddley_HasEvolution("storm_carapace") ? 35 : 20)
-                            : 5
-                    );
-                    MutationMeddley_SetShift("DV", 1 + (MutationMeddley_HasEvolution("storm_carapace") ? 1 : 0));
+                    MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "ember_veil" ? heat * 3 : 0);
+                    MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "rime_veil" ? rime * 3 : 0);
+                    MutationMeddley_SetShift("Strength", MutationMeddley_GetCurrentModeId() == "ember_veil" ? heat / 2 : 0);
+                    MutationMeddley_SetShift("DV", 1 + (MutationMeddley_HasEvolution("storm_carapace") ? 1 + (Math.Max(heat, rime) / 2) : 0));
                 }
                 else if (MutationMeddley_HasEvolution("mire_sheath"))
                 {
-                    MutationMeddley_SetShift("DV", wetGround ? 3 : 1);
-                    MutationMeddley_SetShift("AV", wetGround && MutationMeddley_HasEvolution("bog_shell") ? 2 : 0);
-                    MutationMeddley_SetShift("ColdResistance", wetGround ? 10 : 0);
+                    MutationMeddley_SetShift("DV", 1 + mire);
+                    MutationMeddley_SetShift("AV", wetGround && MutationMeddley_HasEvolution("bog_shell") ? 1 + mire : mire / 2);
+                    MutationMeddley_SetShift("ColdResistance", wetGround ? 5 + (mire * 2) : mire);
                 }
                 else
                 {
-                    MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "ember_veil" ? 15 : 5);
-                    MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "rime_veil" ? 15 : 5);
+                    MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "ember_veil" ? 5 + (heat * 2) : heat);
+                    MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "rime_veil" ? 5 + (rime * 2) : rime);
                 }
 
                 if (MutationMeddley_HasMutation("Amphibious") && wetGround)
@@ -820,9 +843,10 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_IsTriadActive("breakwater_predator")
                 && wetGround
-                && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+                && impact > 0)
             {
                 MutationMeddley_SetShift("Quickness", 2);
+                MutationMeddley_SetShift("Strength", 1);
             }
 
             if (MutationMeddley_IsTriadActive("prism_estuary") && lit && saline)
@@ -838,9 +862,10 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("HeatResistance", 5);
             }
 
-            if (MutationMeddley_IsTriadActive("ember_pursuit_engine") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            if (MutationMeddley_IsTriadActive("ember_pursuit_engine") && impact > 0)
             {
                 MutationMeddley_SetShift("Quickness", 2);
+                MutationMeddley_SetShift("Strength", 1);
             }
 
             if (MutationMeddley_IsTriadActive("mirage_exuvium") && lit && wetGround)
@@ -854,7 +879,7 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("DV", 1);
             }
 
-            if (MutationMeddley_IsTriadActive("drift_parliament") && wetGround && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            if (MutationMeddley_IsTriadActive("drift_parliament") && wetGround && impact > 0)
             {
                 MutationMeddley_SetShift("Quickness", 2);
             }
@@ -891,7 +916,7 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("ColdResistance", 10);
             }
 
-            if (MutationMeddley_HasEvolution("skitter_bulwark") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            if (MutationMeddley_HasEvolution("skitter_bulwark") && impact > 0)
             {
                 MutationMeddley_SetShift("Quickness", 2);
                 MutationMeddley_SetShift("DV", 1);
@@ -901,6 +926,7 @@ namespace XRL.World.Parts.Mutation
             {
                 MutationMeddley_SetShift("AV", 1);
                 MutationMeddley_SetShift("DV", 1);
+                MutationMeddley_SetShift("Strength", 1);
             }
         }
 
@@ -922,102 +948,134 @@ namespace XRL.World.Parts.Mutation
             bool wetGround = MutationMeddley_IsCurrentCellWet();
             bool saline = MutationMeddley_IsCurrentCellSaline();
             bool hot = MutationMeddley_IsCurrentCellHot();
+            bool lit = MutationMeddley_IsCurrentCellLit();
+            int brace = MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0);
+            int impact = MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0);
+            int heat = MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0);
+            int mire = MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0);
+            int rime = MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0);
 
             if (MutationMeddley_HasEvolution("fortress"))
             {
-                int healing = 0;
-
                 if (stationary)
                 {
-                    healing += 1;
+                    brace += MutationMeddley_GetCurrentModeId() == "anchor_down" ? 2 : 1;
                 }
-
-                if (MutationMeddley_HasEvolution("faceted_keep") && engaged)
+                else
                 {
-                    healing += 1;
+                    brace = Math.Max(0, brace - 1);
                 }
 
                 if (MutationMeddley_HasEvolution("entrenched_bastion") && stationary)
                 {
-                    healing += 1;
+                    brace += 1;
+                }
+
+                if (MutationMeddley_HasMutation("Quills") && stationary)
+                {
+                    brace += 1;
+                }
+
+                if (MutationMeddley_GetCurrentModeId() == "spiteful_wall" && engaged && brace > 0)
+                {
+                    brace = Math.Max(0, brace - 1);
                 }
 
                 if (MutationMeddley_HasEvolution("living_fortress") && stationary && engaged)
                 {
-                    healing += 1;
+                    MutationMeddley_TryHeal(1);
                 }
 
-                if (MutationMeddley_HasEvolution("redoubt_engine")
-                    && stationary
-                    && MutationMeddley_GetCurrentModeId() == "anchor_down")
+                if (MutationMeddley_HasEvolution("redoubt_engine") && stationary && brace >= 3)
                 {
-                    healing += 1;
+                    MutationMeddley_TryHeal(1);
                 }
 
-                MutationMeddley_TryHeal(healing);
+                MutationMeddley_SetStateInt(MutationMeddley_BraceKey, Math.Min(brace, MutationMeddley_HasEvolution("living_fortress") ? 5 : 4));
                 return;
             }
 
             if (MutationMeddley_HasEvolution("hunter_shell"))
             {
-                int healing = 0;
-
                 if (moved && engaged)
                 {
-                    healing += 1;
+                    impact += MutationMeddley_GetCurrentModeId() == "ramming_gait" ? 2 : 1;
+                }
+                else if (moved)
+                {
+                    impact += MutationMeddley_GetCurrentModeId() == "skirmish_gait" ? 1 : 0;
+                }
+                else
+                {
+                    impact = Math.Max(0, impact - 1);
                 }
 
                 if (MutationMeddley_HasEvolution("ravager_joints") && moved)
                 {
-                    healing += 1;
+                    impact += 1;
                 }
 
-                if (MutationMeddley_HasEvolution("spur_lattice") && engaged)
+                if (MutationMeddley_HasMutation("Multiple Legs") && moved)
                 {
-                    healing += 1;
+                    impact += 1;
                 }
 
                 if (MutationMeddley_HasEvolution("pursuit_predator") && moved && engaged)
                 {
-                    healing += 1;
+                    MutationMeddley_TryHeal(1);
                 }
 
-                if (MutationMeddley_HasEvolution("hooked_pursuer") && engaged)
+                if (MutationMeddley_HasEvolution("hooked_pursuer") && engaged && impact >= 3)
                 {
-                    healing += 1;
+                    MutationMeddley_TryHeal(1);
                 }
 
-                MutationMeddley_TryHeal(healing);
+                MutationMeddley_SetStateInt(MutationMeddley_ImpactKey, Math.Min(impact, MutationMeddley_HasEvolution("pursuit_predator") ? 6 : 4));
                 return;
             }
 
             if (MutationMeddley_HasEvolution("adaptive_carapace"))
             {
-                int healing = 0;
-
-                if (MutationMeddley_HasEvolution("mire_sheath") && wetGround)
+                if (hot || (lit && MutationMeddley_GetCurrentModeId() == "ember_veil"))
                 {
-                    healing += 1;
+                    heat += 1;
+                }
+                else
+                {
+                    heat = Math.Max(0, heat - 1);
                 }
 
-                if (MutationMeddley_HasEvolution("thermal_baffles")
-                    && MutationMeddley_GetCurrentModeId() == "ember_veil"
-                    && hot)
+                if (wetGround || saline)
                 {
-                    healing += 1;
+                    mire += 1;
+                }
+                else
+                {
+                    mire = Math.Max(0, mire - 1);
+                }
+
+                if (!lit || MutationMeddley_GetCurrentModeId() == "rime_veil")
+                {
+                    rime += 1;
+                }
+                else
+                {
+                    rime = Math.Max(0, rime - 1);
                 }
 
                 if (MutationMeddley_HasEvolution("bog_shell") && wetGround && stationary)
                 {
-                    healing += 1;
+                    MutationMeddley_TryHeal(1);
                 }
 
                 if (MutationMeddley_HasEvolution("estuary_husk") && saline)
                 {
-                    healing += 1;
+                    MutationMeddley_TryHeal(1);
                 }
 
-                MutationMeddley_TryHeal(healing);
+                MutationMeddley_SetStateInt(MutationMeddley_HeatAttuneKey, Math.Min(heat, MutationMeddley_HasEvolution("storm_carapace") ? 6 : 4));
+                MutationMeddley_SetStateInt(MutationMeddley_MireAttuneKey, Math.Min(mire, MutationMeddley_HasEvolution("bog_shell") ? 6 : 4));
+                MutationMeddley_SetStateInt(MutationMeddley_RimeAttuneKey, Math.Min(rime, MutationMeddley_HasEvolution("storm_carapace") ? 6 : 4));
             }
         }
 

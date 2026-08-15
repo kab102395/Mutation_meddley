@@ -10,6 +10,9 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_MovedKey = "ash_moved";
         private const string MutationMeddley_HotKey = "ash_hot";
         private const string MutationMeddley_SmokeKey = "ash_smoke";
+        private const string MutationMeddley_KilnKey = "ash_kiln";
+        private const string MutationMeddley_RushKey = "ash_rush";
+        private const string MutationMeddley_HazeKey = "ash_haze";
         private const string MutationMeddley_VolcanicUnlockedKey = "ash_hidden_volcanic";
         private const string MutationMeddley_VolcanicProgressKey = "ash_hidden_volcanic_progress";
         private const string MutationMeddley_WakeEaterUnlockedKey = "ash_hidden_wake";
@@ -94,15 +97,18 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("furnace_skin"))
             {
-                yield return "Furnace Skin banks heat into defense. Hot ground and lit pressure matter more than ordinary turns.";
+                yield return "Furnace Skin banks embers into kiln layers. Bank Heat stores plating; Flare Heat burns layers into brighter retaliation.";
+                yield return "Current kiln: " + MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("cinder_gut"))
             {
-                yield return "Cinder Gut converts movement and ember spending into pursuit momentum. Keep moving to get value.";
+                yield return "Cinder Gut spends embers into rush. Feast Ash pays for predator tempo; Stoke Ash keeps the engine hot.";
+                yield return "Current rush: " + MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("smoke_organ"))
             {
-                yield return "Smoke Organ wants smoky cells. Veil Smoke leans evasive; Draft Smoke rewards mobile route theft.";
+                yield return "Smoke Organ turns smoke into haze states. Veil Smoke stores evasive haze; Draft Smoke stores mobile draft pressure.";
+                yield return "Current haze: " + MutationMeddley_GetStateInt(MutationMeddley_HazeKey, 0) + ".";
             }
             else
             {
@@ -511,26 +517,30 @@ namespace XRL.World.Parts.Mutation
             bool smoky = MutationMeddley_IsCurrentCellSmoky();
             bool lit = MutationMeddley_IsCurrentCellLit();
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+            int kiln = MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0);
+            int rush = MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0);
+            int haze = MutationMeddley_GetStateInt(MutationMeddley_HazeKey, 0);
 
             if (MutationMeddley_HasEvolution("furnace_skin"))
             {
                 MutationMeddley_SetShift("Toughness", 1);
                 MutationMeddley_SetShift("HeatResistance", 10 + (embers * 3));
-                MutationMeddley_SetShift("AV", 1 + (embers / 3));
+                MutationMeddley_SetShift("AV", 1 + (embers / 3) + kiln);
 
                 if (MutationMeddley_HasEvolution("kiln_plating"))
                 {
-                    MutationMeddley_SetShift("AV", hot ? 2 + (embers / 2) : 1 + (embers / 4));
+                    MutationMeddley_SetShift("AV", (hot ? 2 + (embers / 2) : 1 + (embers / 4)) + kiln);
+                    MutationMeddley_SetShift("Strength", kiln / 2);
                     MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "flare_heat" ? 1 : 0);
                 }
                 else if (MutationMeddley_HasEvolution("radiant_soot"))
                 {
-                    MutationMeddley_SetShift("DV", lit ? 2 + (embers / 3) : 1);
+                    MutationMeddley_SetShift("DV", (lit ? 2 + (embers / 3) : 1) + (kiln / 2));
                     MutationMeddley_SetShift("HeatResistance", lit ? 10 : 0);
                 }
                 else
                 {
-                    MutationMeddley_SetShift("DV", embers / 4);
+                    MutationMeddley_SetShift("DV", (embers / 4) + (kiln / 2));
                 }
 
                 if (MutationMeddley_HasEvolution("glasshouse_carapace") && hot)
@@ -546,17 +556,21 @@ namespace XRL.World.Parts.Mutation
             else if (MutationMeddley_HasEvolution("cinder_gut"))
             {
                 MutationMeddley_SetShift("Agility", 1);
-                MutationMeddley_SetShift("Quickness", 1 + (embers / 3));
+                MutationMeddley_SetShift("Quickness", 1 + (embers / 3) + rush);
 
                 if (MutationMeddley_HasEvolution("coal_maw"))
                 {
-                    MutationMeddley_SetShift("Quickness", (moved ? 2 : 1) + (embers / 2));
-                    MutationMeddley_SetShift("DV", hot ? 1 + (embers / 4) : embers / 5);
+                    MutationMeddley_SetShift("Quickness", (moved ? 2 : 1) + (embers / 2) + rush);
+                    MutationMeddley_SetShift("DV", (hot ? 1 + (embers / 4) : embers / 5) + (rush / 2));
                 }
                 else if (MutationMeddley_HasEvolution("pyre_circulation"))
                 {
-                    MutationMeddley_SetShift("Quickness", 1 + (embers / 2));
+                    MutationMeddley_SetShift("Quickness", 1 + (embers / 2) + rush);
                     MutationMeddley_SetShift("HeatResistance", 5 + (embers * 2));
+                }
+                else
+                {
+                    MutationMeddley_SetShift("DV", rush / 2);
                 }
 
                 if (MutationMeddley_HasEvolution("wakefeast") && moved)
@@ -572,21 +586,21 @@ namespace XRL.World.Parts.Mutation
             else if (MutationMeddley_HasEvolution("smoke_organ"))
             {
                 MutationMeddley_SetShift("Ego", 1);
-                MutationMeddley_SetShift("DV", smoky ? 2 + (embers / 3) : 1);
+                MutationMeddley_SetShift("DV", (smoky ? 2 + (embers / 3) : 1) + haze);
 
                 if (MutationMeddley_HasEvolution("ash_veil"))
                 {
-                    MutationMeddley_SetShift("DV", smoky ? 3 + (embers / 3) : 1);
-                    MutationMeddley_SetShift("Quickness", smoky && MutationMeddley_GetCurrentModeId() == "veil_smoke" ? 1 : 0);
+                    MutationMeddley_SetShift("DV", (smoky ? 3 + (embers / 3) : 1) + haze);
+                    MutationMeddley_SetShift("Quickness", (smoky && MutationMeddley_GetCurrentModeId() == "veil_smoke" ? 1 : 0) + (haze / 2));
                 }
                 else if (MutationMeddley_HasEvolution("chimney_lungs"))
                 {
-                    MutationMeddley_SetShift("Quickness", moved ? 2 + (embers / 3) : embers / 4);
-                    MutationMeddley_SetShift("DV", smoky ? 1 : 0);
+                    MutationMeddley_SetShift("Quickness", (moved ? 2 + (embers / 3) : embers / 4) + haze);
+                    MutationMeddley_SetShift("DV", (smoky ? 1 : 0) + (haze / 2));
                 }
                 else
                 {
-                    MutationMeddley_SetShift("Quickness", smoky ? 1 : 0);
+                    MutationMeddley_SetShift("Quickness", (smoky ? 1 : 0) + (haze / 2));
                 }
 
                 if (MutationMeddley_HasEvolution("crematory_mirage") && smoky)
@@ -855,6 +869,9 @@ namespace XRL.World.Parts.Mutation
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
             int embers = MutationMeddley_GetEmbers();
             int maxEmbers = MutationMeddley_GetMaxEmbers();
+            int kiln = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0) - 1);
+            int rush = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0) - 1);
+            int haze = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_HazeKey, 0) - 1);
 
             if (hot)
             {
@@ -869,50 +886,56 @@ namespace XRL.World.Parts.Mutation
                 embers = Math.Max(0, embers - 1);
             }
 
-            if (MutationMeddley_HasEvolution("kiln_plating")
+            if (MutationMeddley_HasEvolution("furnace_skin")
                 && MutationMeddley_GetCurrentModeId() == "bank_heat"
-                && !hot)
+                && (hot || !moved))
             {
                 embers = Math.Min(maxEmbers, embers + 1);
+                kiln = Math.Min(4, kiln + 1 + (MutationMeddley_HasEvolution("kiln_plating") ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("radiant_soot")
+            if (MutationMeddley_HasEvolution("furnace_skin")
                 && MutationMeddley_GetCurrentModeId() == "flare_heat"
                 && MutationMeddley_IsCurrentCellLit()
                 && embers > 0)
             {
                 embers -= 1;
+                kiln = Math.Min(4, kiln + 1 + (MutationMeddley_HasEvolution("radiant_soot") ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("coal_maw")
+            if (MutationMeddley_HasEvolution("cinder_gut")
                 && MutationMeddley_GetCurrentModeId() == "feast_ash"
                 && moved
                 && embers > 0)
             {
                 embers -= 1;
+                rush = Math.Min(4, rush + 1 + (MutationMeddley_HasEvolution("coal_maw") ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("pyre_circulation")
+            if (MutationMeddley_HasEvolution("cinder_gut")
                 && MutationMeddley_GetCurrentModeId() == "stoke_ash"
                 && hot)
             {
                 embers = Math.Min(maxEmbers, embers + 1);
+                rush = Math.Min(4, rush + 1 + (MutationMeddley_HasEvolution("pyre_circulation") ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("ash_veil")
+            if (MutationMeddley_HasEvolution("smoke_organ")
                 && MutationMeddley_GetCurrentModeId() == "veil_smoke"
                 && smoky
                 && embers > 0)
             {
                 embers -= 1;
+                haze = Math.Min(4, haze + 1 + (MutationMeddley_HasEvolution("ash_veil") ? 1 : 0));
             }
 
-            if (MutationMeddley_HasEvolution("chimney_lungs")
+            if (MutationMeddley_HasEvolution("smoke_organ")
                 && MutationMeddley_GetCurrentModeId() == "draft_smoke"
                 && moved
                 && smoky)
             {
                 embers = Math.Min(maxEmbers, embers + 1);
+                haze = Math.Min(4, haze + 1 + (MutationMeddley_HasEvolution("chimney_lungs") ? 1 : 0));
             }
 
             MutationMeddley_TrackVolcanicMemoryDiscovery(hot);
@@ -924,6 +947,9 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
             MutationMeddley_SetStateInt(MutationMeddley_HotKey, hot ? 1 : 0);
             MutationMeddley_SetStateInt(MutationMeddley_SmokeKey, smoky ? 1 : 0);
+            MutationMeddley_SetStateInt(MutationMeddley_KilnKey, Math.Max(0, Math.Min(kiln, 4)));
+            MutationMeddley_SetStateInt(MutationMeddley_RushKey, Math.Max(0, Math.Min(rush, 4)));
+            MutationMeddley_SetStateInt(MutationMeddley_HazeKey, Math.Max(0, Math.Min(haze, 4)));
             MutationMeddley_RefreshPassiveEffects();
         }
 
