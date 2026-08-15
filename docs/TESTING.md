@@ -56,23 +56,40 @@ bash tools/import-mods-csproj.sh
 
 The generated `Mods.csproj` is intentionally ignored by Git. Do not ship generated `bin/` or `obj/` output as Workshop mod content.
 
-## Framework proof-of-concept test
-
-Use `Evolution Seed [DEV]`.
+## Framework and content test
 
 Verify:
 
 1. the mod appears in the Mod Manager
 2. C# compiles without errors
-3. the mutation appears during mutant character creation
-4. the `Evolve Evolution Seed [DEV]` activated ability exists
-5. no branch is available below rank 3
-6. rank 3 presents exactly Bulwark, Predator, and Symbiote
-7. choosing one rank-3 branch prevents choosing another tier-1 branch
-8. rank 6 only shows specializations belonging to the selected rank-3 branch
-9. rank 9 only shows capstones belonging to the selected rank-6 branch
-10. save/reload preserves the selected path
-11. removing the mutation removes its activated ability
+3. `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, and `Carapace Evolution` appear during mutant character creation
+4. each mutation exposes its `Evolve ...` activated ability
+5. `Living Crystal`, `Brineborn`, and `Carapace Evolution` also expose their `Retune ...` activated abilities
+6. no branch is available below rank 3
+7. rank 3 only presents the three identity branches for the mutation being tested
+8. choosing one rank-3 branch prevents choosing another tier-1 branch
+9. rank 6 only shows specializations belonging to the selected rank-3 branch
+10. rank 9 only shows capstones belonging to the selected rank-6 branch
+11. the option-list picker works from keyboard and controller-friendly inputs without numeric text entry
+12. changing stance with `Retune ...` visibly changes the mutation's stat profile and level text
+13. `Brineborn` only builds saline reserve from qualifying saline world-state interaction
+14. `Living Crystal` shows different light, cadence, or contact-sensitive behavior by path
+15. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
+16. removing the mutation removes its activated abilities
+17. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
+
+## Carapace adapter test
+
+`Carapace Evolution` is a companion mutation, not a direct replacement for vanilla `Carapace`.
+
+Verify:
+
+1. taking `Carapace Evolution` alone leaves it dormant and clearly reports the dependency
+2. taking both `Carapace` and `Carapace Evolution` produces the intended shell-focused build
+3. changing `Carapace Evolution` stances updates the shell-focused stat tradeoff
+4. vanilla `Carapace` still provides its ordinary shell behavior alongside the companion evolution layer
+5. save/reload preserves the companion path and stance while vanilla `Carapace` remains present
+6. losing vanilla `Carapace` makes `Carapace Evolution` dormant without deleting its saved path or stance, and regaining `Carapace` reactivates that same progression
 
 ## Save compatibility checks
 

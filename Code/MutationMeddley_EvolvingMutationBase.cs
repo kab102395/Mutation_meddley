@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using XRL.UI;
 
@@ -11,6 +12,7 @@ namespace XRL.World.Parts.Mutation
         public string Id;
         public string Name;
         public string Description;
+        public string DetailText;
         public int RequiredLevel;
         public int Tier;
         public string PrerequisiteId;
@@ -21,11 +23,13 @@ namespace XRL.World.Parts.Mutation
             string description,
             int requiredLevel,
             int tier,
-            string prerequisiteId = "")
+            string prerequisiteId = "",
+            string detailText = "")
         {
             Id = id;
             Name = name;
             Description = description;
+            DetailText = detailText ?? "";
             RequiredLevel = requiredLevel;
             Tier = tier;
             PrerequisiteId = prerequisiteId ?? "";
@@ -35,6 +39,9 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_EvolvingMutationBase : BaseMutation
     {
+        private const string MutationMeddley_StateVersionKey = "statev";
+        private const string MutationMeddley_CurrentStateVersion = "1";
+
         // Keep these public serialized fields stable. Future framework state should
         // preferably be encoded inside EvolutionState unless an explicit save
         // migration is introduced.
@@ -70,6 +77,7 @@ namespace XRL.World.Parts.Mutation
         public override bool Mutate(GameObject GO, int Level)
         {
             MutationMeddley_AddEvolutionAbility();
+            MutationMeddley_OnEvolutionStateChanged();
             return base.Mutate(GO, Level);
         }
 
@@ -79,8 +87,29 @@ namespace XRL.World.Parts.Mutation
             return base.Unmutate(GO);
         }
 
+        public override bool ChangeLevel(int NewLevel)
+        {
+            bool result = base.ChangeLevel(NewLevel);
+            MutationMeddley_OnEvolutionStateChanged();
+            return result;
+        }
+
         protected virtual void MutationMeddley_OnEvolutionChosen(MutationMeddley_EvolutionChoice choice)
         {
+        }
+
+        protected virtual void MutationMeddley_OnEvolutionStateChanged()
+        {
+        }
+
+        protected virtual bool MutationMeddley_IsFunctionallyActive()
+        {
+            return true;
+        }
+
+        protected virtual string MutationMeddley_GetInactiveReason()
+        {
+            return MutationMeddley_EvolutionDisplayName + " is currently inactive.";
         }
 
         protected bool MutationMeddley_HasEvolution(string id)
@@ -128,6 +157,55 @@ namespace XRL.World.Parts.Mutation
             return result.ToString();
         }
 
+        protected string MutationMeddley_GetStateValue(string key)
+        {
+            Dictionary<string, string> metadata = MutationMeddley_GetStateMetadata();
+            string value;
+            if (metadata.TryGetValue(key, out value))
+            {
+                return value;
+            }
+
+            return "";
+        }
+
+        protected int MutationMeddley_GetStateInt(string key, int defaultValue = 0)
+        {
+            int value;
+            if (int.TryParse(MutationMeddley_GetStateValue(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            {
+                return value;
+            }
+
+            return defaultValue;
+        }
+
+        protected void MutationMeddley_SetStateValue(string key, string value)
+        {
+            Dictionary<string, string> metadata = MutationMeddley_GetStateMetadata();
+            if (string.IsNullOrEmpty(value))
+            {
+                metadata.Remove(key);
+            }
+            else
+            {
+                metadata[key] = value;
+            }
+
+            MutationMeddley_SetStateEnvelope(
+                MutationMeddley_GetSelectedEvolutionIds(),
+                metadata
+            );
+        }
+
+        protected void MutationMeddley_SetStateInt(string key, int value)
+        {
+            MutationMeddley_SetStateValue(
+                key,
+                value.ToString(CultureInfo.InvariantCulture)
+            );
+        }
+
         private void MutationMeddley_AddEvolutionAbility()
         {
             if (MutationMeddley_EvolveAbilityID != Guid.Empty)
@@ -143,15 +221,16 @@ namespace XRL.World.Parts.Mutation
             );
         }
 
-        private List<string> MutationMeddley_GetSelectedEvolutionIds()
+        protected List<string> MutationMeddley_GetSelectedEvolutionIds()
         {
+            string encodedIds = MutationMeddley_GetEvolutionSegment();
             List<string> selected = new List<string>();
-            if (string.IsNullOrEmpty(MutationMeddley_EvolutionState))
+            if (string.IsNullOrEmpty(encodedIds))
             {
                 return selected;
             }
 
-            string[] ids = MutationMeddley_EvolutionState.Split(
+            string[] ids = encodedIds.Split(
                 new char[] { ';' },
                 StringSplitOptions.RemoveEmptyEntries
             );
@@ -164,7 +243,12 @@ namespace XRL.World.Parts.Mutation
             return selected;
         }
 
-        private bool MutationMeddley_HasSelectionAtTier(int tier)
+        protected void MutationMeddley_SetSelectedEvolutionIds(List<string> selected)
+        {
+            MutationMeddley_SetStateEnvelope(selected, MutationMeddley_GetStateMetadata());
+        }
+
+        protected bool MutationMeddley_HasSelectionAtTier(int tier)
         {
             List<MutationMeddley_EvolutionChoice> choices = MutationMeddley_GetEvolutionChoices();
             for (int i = 0; i < choices.Count; i++)
@@ -178,7 +262,7 @@ namespace XRL.World.Parts.Mutation
             return false;
         }
 
-        private bool MutationMeddley_IsEvolutionAvailable(MutationMeddley_EvolutionChoice choice)
+        protected bool MutationMeddley_IsEvolutionAvailable(MutationMeddley_EvolutionChoice choice)
         {
             if (Level < choice.RequiredLevel)
             {
@@ -204,7 +288,7 @@ namespace XRL.World.Parts.Mutation
             return true;
         }
 
-        private List<MutationMeddley_EvolutionChoice> MutationMeddley_GetAvailableEvolutions()
+        protected List<MutationMeddley_EvolutionChoice> MutationMeddley_GetAvailableEvolutions()
         {
             List<MutationMeddley_EvolutionChoice> result = new List<MutationMeddley_EvolutionChoice>();
             List<MutationMeddley_EvolutionChoice> choices = MutationMeddley_GetEvolutionChoices();
@@ -222,6 +306,12 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_ShowEvolutionPicker()
         {
+            if (!MutationMeddley_IsFunctionallyActive())
+            {
+                Popup.Show(MutationMeddley_GetInactiveReason());
+                return;
+            }
+
             List<MutationMeddley_EvolutionChoice> available = MutationMeddley_GetAvailableEvolutions();
             if (available.Count == 0)
             {
@@ -234,43 +324,38 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
-            StringBuilder prompt = new StringBuilder();
-            prompt.Append("Choose an evolution for ");
-            prompt.Append(MutationMeddley_EvolutionDisplayName);
-            prompt.Append(":\n\n");
-
+            string[] options = new string[available.Count];
+            char[] hotkeys = new char[available.Count];
             for (int i = 0; i < available.Count; i++)
             {
-                prompt.Append(i + 1);
-                prompt.Append(") ");
-                prompt.Append(available[i].Name);
-                prompt.Append("\n   ");
-                prompt.Append(available[i].Description);
-                prompt.Append("\n\n");
+                StringBuilder option = new StringBuilder();
+                option.Append(available[i].Name);
+                option.Append("\n");
+                option.Append(available[i].Description);
+
+                if (!string.IsNullOrEmpty(available[i].DetailText))
+                {
+                    option.Append("\n");
+                    option.Append(available[i].DetailText);
+                }
+
+                options[i] = option.ToString();
+                hotkeys[i] = (char)('A' + i);
             }
 
-            prompt.Append("Enter a number, or press Escape to cancel.");
-
-            string response = Popup.AskString(
-                prompt.ToString(),
-                ReturnNullForEscape: true
+            int selection = Popup.ShowOptionList(
+                "Evolve: " + MutationMeddley_EvolutionDisplayName + " - rank " + Level,
+                Options: options,
+                Hotkeys: hotkeys,
+                AllowEscape: true
             );
 
-            if (string.IsNullOrEmpty(response))
+            if (selection < 0 || selection >= available.Count)
             {
                 return;
             }
 
-            int selection;
-            if (!int.TryParse(response, out selection)
-                || selection < 1
-                || selection > available.Count)
-            {
-                Popup.ShowFail("That is not a valid evolution choice.");
-                return;
-            }
-
-            MutationMeddley_EvolutionChoice chosen = available[selection - 1];
+            MutationMeddley_EvolutionChoice chosen = available[selection];
             MutationMeddley_SelectEvolution(chosen);
         }
 
@@ -284,14 +369,19 @@ namespace XRL.World.Parts.Mutation
 
             if (string.IsNullOrEmpty(MutationMeddley_EvolutionState))
             {
-                MutationMeddley_EvolutionState = choice.Id;
+                MutationMeddley_SetSelectedEvolutionIds(
+                    new List<string> { choice.Id }
+                );
             }
             else
             {
-                MutationMeddley_EvolutionState += ";" + choice.Id;
+                List<string> selected = MutationMeddley_GetSelectedEvolutionIds();
+                selected.Add(choice.Id);
+                MutationMeddley_SetSelectedEvolutionIds(selected);
             }
 
             MutationMeddley_OnEvolutionChosen(choice);
+            MutationMeddley_OnEvolutionStateChanged();
             Popup.Show(
                 MutationMeddley_EvolutionDisplayName
                 + " evolved: "
@@ -299,6 +389,100 @@ namespace XRL.World.Parts.Mutation
                 + "\n\n"
                 + choice.Description
             );
+        }
+
+        private string MutationMeddley_GetEvolutionSegment()
+        {
+            if (string.IsNullOrEmpty(MutationMeddley_EvolutionState))
+            {
+                return "";
+            }
+
+            int metadataIndex = MutationMeddley_EvolutionState.IndexOf('|');
+            if (metadataIndex < 0)
+            {
+                return MutationMeddley_EvolutionState;
+            }
+
+            return MutationMeddley_EvolutionState.Substring(0, metadataIndex);
+        }
+
+        private Dictionary<string, string> MutationMeddley_GetStateMetadata()
+        {
+            Dictionary<string, string> metadata = new Dictionary<string, string>();
+            if (string.IsNullOrEmpty(MutationMeddley_EvolutionState))
+            {
+                return metadata;
+            }
+
+            string[] segments = MutationMeddley_EvolutionState.Split('|');
+            for (int i = 1; i < segments.Length; i++)
+            {
+                if (string.IsNullOrEmpty(segments[i]))
+                {
+                    continue;
+                }
+
+                int separatorIndex = segments[i].IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    continue;
+                }
+
+                string key = segments[i].Substring(0, separatorIndex);
+                string value = segments[i].Substring(separatorIndex + 1);
+                metadata[key] = value;
+            }
+
+            return metadata;
+        }
+
+        private void MutationMeddley_SetStateEnvelope(List<string> selected, Dictionary<string, string> metadata)
+        {
+            if (metadata == null)
+            {
+                metadata = new Dictionary<string, string>();
+            }
+
+            if ((selected != null && selected.Count > 0) || metadata.Count > 0)
+            {
+                metadata[MutationMeddley_StateVersionKey] = MutationMeddley_CurrentStateVersion;
+            }
+
+            StringBuilder state = new StringBuilder();
+            if (selected != null && selected.Count > 0)
+            {
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    if (i > 0)
+                    {
+                        state.Append(';');
+                    }
+
+                    state.Append(selected[i]);
+                }
+            }
+
+            if (metadata != null && metadata.Count > 0)
+            {
+                List<string> keys = new List<string>(metadata.Keys);
+                keys.Sort(StringComparer.Ordinal);
+
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    if (string.IsNullOrEmpty(metadata[keys[i]]))
+                    {
+                        continue;
+                    }
+
+                    state.Append('|');
+                    state.Append(keys[i]);
+                    state.Append('=');
+                    state.Append(metadata[keys[i]]);
+                }
+            }
+
+            MutationMeddley_EvolutionState = state.ToString();
         }
     }
 }
