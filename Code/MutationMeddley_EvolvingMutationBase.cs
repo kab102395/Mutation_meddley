@@ -762,6 +762,15 @@ namespace XRL.World.Parts.Mutation
                 return result;
             }
 
+            if (MutationMeddley_CurrentDamageEventContext == MutationMeddley_DamageEventContext.OutgoingNonMelee)
+            {
+                MutationMeddley_TraceDamageProc(
+                    context,
+                    "targetResolved=true, amount=" + amount + ", contactQualified=false, dispatched=false"
+                );
+                return result;
+            }
+
             if (MutationMeddley_BonusDamageDispatchDepth > 0)
             {
                 result.RecursionSuppressed = true;
