@@ -485,6 +485,13 @@ namespace XRL.World.Parts.Mutation
 
             yield return "Offensive stored-state spends require adjacent, engaged melee contact. Ranged or other non-contact damage preserves the stored state.";
 
+            if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution"
+                && MutationMeddley_HasEvolution("fortress")
+                && MutationMeddley_GetCurrentModeId() == "spiteful_wall")
+            {
+                yield return "Spiteful Wall keeps stationary brace for actual incoming pressure instead of discarding it merely for remaining engaged.";
+            }
+
             if (MutationMeddley_EvolutionDisplayName == "Brineborn"
                 && MutationMeddley_HasEvolution("wellspring_flesh")
                 && MutationMeddley_GetCurrentModeId() == "cool_reserve")
@@ -699,6 +706,20 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_HandleStanceCompletionEndTurn()
         {
+            if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution"
+                && MutationMeddley_HasEvolution("fortress")
+                && MutationMeddley_GetCurrentModeId() == "spiteful_wall"
+                && MutationMeddley_GetStateInt("carapace_stationary", 0) > 0
+                && ParentObject != null
+                && ParentObject.IsEngagedInMelee())
+            {
+                int braceCap = MutationMeddley_HasEvolution("living_fortress") ? 5 : 4;
+                MutationMeddley_SetStateInt(
+                    "carapace_brace",
+                    Math.Min(braceCap, MutationMeddley_GetStateInt("carapace_brace", 0) + 1)
+                );
+            }
+
             if (MutationMeddley_EvolutionDisplayName == "Brineborn"
                 && MutationMeddley_HasEvolution("wellspring_flesh")
                 && MutationMeddley_GetCurrentModeId() == "cool_reserve")
@@ -795,7 +816,7 @@ namespace XRL.World.Parts.Mutation
 
                 if (MutationMeddley_HasEvolution("porcupine_redoubt")
                     && MutationMeddley_HasMutation("Quills")
-                    && !MutationMeddley_MovedSinceLastEndTurn
+                    && MutationMeddley_GetStateInt("carapace_stationary", 0) > 0
                     && ParentObject.IsEngagedInMelee()
                     && E.ID == "TookDamage")
                 {
@@ -869,7 +890,7 @@ namespace XRL.World.Parts.Mutation
 
                 if (MutationMeddley_HasEvolution("burrowed_nursery")
                     && MutationMeddley_HasMutation("Burrowing Claws")
-                    && !MutationMeddley_MovedSinceLastEndTurn)
+                    && MutationMeddley_GetStateInt("colony_stride_streak", 0) == 0)
                 {
                     MutationMeddley_SetStateInt("colony_stitch", Math.Min(4, MutationMeddley_GetStateInt("colony_stitch", 0) + 1));
                 }
