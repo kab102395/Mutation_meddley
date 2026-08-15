@@ -119,6 +119,7 @@ Verify:
 3. `Cathedral Organism`, `Breakwater Predator`, and `Prism Estuary` only appear for their intended triad builds
 4. `Fractured Choir`, `Salt Ghost`, and `Porcupine Redoubt` require their discovery conditions before they appear at rank 9
 5. save/reload preserves hidden unlock state and active triad/synergy reporting
+6. active tags and synergies are recomputed from the live build after reload rather than being restored as stale authoritative state
 
 ## Save compatibility checks
 

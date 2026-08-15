@@ -72,6 +72,12 @@ This keeps the save contract extensible without multiplying public serialized fi
 
 Do not change the type of this field. If the framework eventually needs richer save state, introduce an explicit migration strategy first.
 
+For synergy/discovery content, keep the boundary explicit:
+
+- semantic tags, active pair synergies, and current triad eligibility are derived runtime state
+- hidden discovery flags and hidden evolution selections are persistent history
+- treat `eligible`, `discovered`, and `selected` as different states rather than collapsing them into one boolean
+
 ## UI strategy
 
 Version 0.3.0 keeps `Popup.ShowOptionList` for both path selection and mutation-specific stance changes.
@@ -96,6 +102,7 @@ The first runtime semantic layer is intentionally small:
 - mutation-local gameplay still lives in mutation classes
 - the shared framework only provides semantic tags, mutation-presence queries, active-synergy enumeration, hidden-choice gating, and level-text reporting
 - exact pair logic is still allowed where a relationship is uniquely specific
+- one mutation class owns each gameplay effect even if multiple mutation pages report the same synergy
 
 ## Compatibility strategy
 

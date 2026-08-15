@@ -131,6 +131,7 @@ When testing a subscribed Workshop build, avoid loading the separate offline dev
 
 - `docs/ARCHITECTURE.md` - framework boundaries and evolution model
 - `docs/BALANCE.md` - mutation/evolution balance rules
+- `docs/SYNERGY_MATRIX.md` - synergy ownership, discovery keys, and QA matrix
 - `docs/TESTING.md` - Zorin/Linux test and Workshop workflow
 - `AGENTS.md` - constraints for Codex/AI changes
 
