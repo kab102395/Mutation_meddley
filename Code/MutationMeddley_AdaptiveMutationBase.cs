@@ -444,6 +444,21 @@ namespace XRL.World.Parts.Mutation
                 yield break;
             }
 
+            if (MutationMeddley_HasMutation("Evolution Seed [DEV]"))
+            {
+                yield return "DEV environment: lit="
+                    + MutationMeddley_IsCurrentCellLit()
+                    + ", wet="
+                    + MutationMeddley_IsCurrentCellWet()
+                    + ", saline="
+                    + MutationMeddley_IsCurrentCellSaline()
+                    + ", hot="
+                    + MutationMeddley_IsCurrentCellHot()
+                    + ", smoky="
+                    + MutationMeddley_IsCurrentCellSmoky()
+                    + ".";
+            }
+
             if (!MutationMeddley_HasAnyEvolution())
             {
                 switch (MutationMeddley_EvolutionDisplayName)
@@ -485,6 +500,24 @@ namespace XRL.World.Parts.Mutation
                 yield return "Bank Scars converts stationary colony pressure into stitch reserve even before Scar Feeders is selected.";
             }
 
+            if (MutationMeddley_EvolutionDisplayName == "Walking Colony"
+                && MutationMeddley_HasEvolution("graft_parliament"))
+            {
+                yield return "Graft Parliament has a self-contained fallback: Delegate Load can bank calm load and Override Frame can spend movement pressure even without a second structural/body-plan mutation.";
+            }
+
+            if (MutationMeddley_HasEvolution("thermal_baffles"))
+            {
+                yield return "Thermal Baffles now preserve the stance-matched heat or rime attunement when environmental pressure lands.";
+            }
+            if (MutationMeddley_HasEvolution("mire_sheath"))
+            {
+                yield return "Mire Sheath now builds mire from wet pressure and can spend mire into an extra close-contact membrane strike.";
+            }
+            if (MutationMeddley_HasEvolution("cool_sump"))
+            {
+                yield return "Cool Sump now recovers reserve when hostile wet, saline, or hot pressure reaches a Cool Reserve body.";
+            }
             if (MutationMeddley_HasEvolution("porcupine_redoubt"))
             {
                 yield return "Porcupine Redoubt now adds a direct quill-backed retaliation while you hold ground.";
@@ -499,7 +532,7 @@ namespace XRL.World.Parts.Mutation
             }
             if (MutationMeddley_HasEvolution("estuary_husk"))
             {
-                yield return "Estuary Husk preserves mire attunement when wet or saline pressure reaches the shell.";
+                yield return "Estuary Husk preserves extra mire attunement when wet or saline pressure reaches the shell.";
             }
             if (MutationMeddley_HasEvolution("storm_carapace"))
             {
@@ -544,6 +577,10 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_HasEvolution("ossuary_bloom"))
             {
                 yield return "Ossuary Bloom regrows stitch from colony pressure when fresh damage arrives.";
+            }
+            if (MutationMeddley_HasEvolution("burrowed_nursery"))
+            {
+                yield return "Burrowed Nursery regrows extra stitch from rooted Burrowing Claws pressure.";
             }
             if (MutationMeddley_HasEvolution("pack_pursuit"))
             {
@@ -696,6 +733,28 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_AddPlayerMessage("The colony banks pressure as scar tissue and stitch reserve.");
                 }
             }
+
+            if (MutationMeddley_EvolutionDisplayName == "Walking Colony"
+                && MutationMeddley_HasEvolution("graft_parliament"))
+            {
+                int pressure = MutationMeddley_GetStateInt("colony_charge", 0);
+                int parliament = MutationMeddley_GetStateInt("colony_parliament", 0);
+
+                if (MutationMeddley_GetCurrentModeId() == "delegate_load"
+                    && !MutationMeddley_MovedSinceLastEndTurn
+                    && !MutationMeddley_HasOtherMutationWithTag("BODY_PART_INTERACTION"))
+                {
+                    MutationMeddley_SetStateInt("colony_parliament", Math.Min(4, parliament + 2));
+                }
+                else if (MutationMeddley_GetCurrentModeId() == "override_frame"
+                    && MutationMeddley_MovedSinceLastEndTurn
+                    && !MutationMeddley_HasOtherMutationWithTag("STRUCTURAL")
+                    && pressure > 0)
+                {
+                    MutationMeddley_SetStateInt("colony_charge", pressure - 1);
+                    MutationMeddley_SetStateInt("colony_parliament", Math.Min(4, parliament + 2));
+                }
+            }
         }
 
         private void MutationMeddley_HandleCapstoneIncomingDamage(Event E)
@@ -707,10 +766,38 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution")
             {
+                if (MutationMeddley_HasEvolution("thermal_baffles") && E.ID == "TookEnvironmentalDamage")
+                {
+                    if (MutationMeddley_GetCurrentModeId() == "ember_veil" && MutationMeddley_IsCurrentCellHot())
+                    {
+                        MutationMeddley_SetStateInt(
+                            "carapace_attune_heat",
+                            Math.Min(6, MutationMeddley_GetStateInt("carapace_attune_heat", 0) + 1)
+                        );
+                    }
+                    else if (MutationMeddley_GetCurrentModeId() == "rime_veil" && !MutationMeddley_IsCurrentCellHot())
+                    {
+                        MutationMeddley_SetStateInt(
+                            "carapace_attune_rime",
+                            Math.Min(6, MutationMeddley_GetStateInt("carapace_attune_rime", 0) + 1)
+                        );
+                    }
+                }
+
+                if (MutationMeddley_HasEvolution("mire_sheath")
+                    && (MutationMeddley_IsCurrentCellWet() || MutationMeddley_IsCurrentCellSaline()))
+                {
+                    MutationMeddley_SetStateInt(
+                        "carapace_attune_mire",
+                        Math.Min(6, MutationMeddley_GetStateInt("carapace_attune_mire", 0) + 1)
+                    );
+                }
+
                 if (MutationMeddley_HasEvolution("porcupine_redoubt")
                     && MutationMeddley_HasMutation("Quills")
                     && !MutationMeddley_MovedSinceLastEndTurn
-                    && ParentObject.IsEngagedInMelee())
+                    && ParentObject.IsEngagedInMelee()
+                    && E.ID == "TookDamage")
                 {
                     GameObject source = MutationMeddley_GetIncomingDamageSource(E);
                     MutationMeddley_TryBonusDamage(source, 1, "porcupine redoubt", "carapace.porcupine_redoubt");
@@ -732,6 +819,19 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_EvolutionDisplayName == "Brineborn")
             {
+                if (MutationMeddley_HasEvolution("cool_sump")
+                    && MutationMeddley_GetCurrentModeId() == "cool_reserve"
+                    && (MutationMeddley_IsCurrentCellWet()
+                        || MutationMeddley_IsCurrentCellSaline()
+                        || MutationMeddley_IsCurrentCellHot()))
+                {
+                    int maxReserve = MutationMeddley_GetSharedBrineMaxReserve();
+                    MutationMeddley_SetStateInt(
+                        "brine_reserve",
+                        Math.Min(maxReserve, MutationMeddley_GetStateInt("brine_reserve", 0) + 1)
+                    );
+                }
+
                 if (MutationMeddley_HasEvolution("abyssal_brine")
                     && (MutationMeddley_IsCurrentCellWet() || MutationMeddley_IsCurrentCellSaline()))
                 {
@@ -767,8 +867,16 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetStateInt("colony_stitch", Math.Min(4, MutationMeddley_GetStateInt("colony_stitch", 0) + 1));
                 }
 
+                if (MutationMeddley_HasEvolution("burrowed_nursery")
+                    && MutationMeddley_HasMutation("Burrowing Claws")
+                    && !MutationMeddley_MovedSinceLastEndTurn)
+                {
+                    MutationMeddley_SetStateInt("colony_stitch", Math.Min(4, MutationMeddley_GetStateInt("colony_stitch", 0) + 1));
+                }
+
                 if (MutationMeddley_HasEvolution("distributed_verdict")
-                    && MutationMeddley_GetStateInt("colony_charge", 0) > 0)
+                    && MutationMeddley_GetStateInt("colony_charge", 0) > 0
+                    && E.ID == "TookDamage")
                 {
                     GameObject source = MutationMeddley_GetIncomingDamageSource(E);
                     MutationMeddley_TryBonusDamage(source, 1, "distributed verdict", "colony.distributed_verdict");
@@ -805,6 +913,13 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution")
             {
+                if (MutationMeddley_HasEvolution("mire_sheath")
+                    && (MutationMeddley_IsCurrentCellWet() || MutationMeddley_IsCurrentCellSaline())
+                    && MutationMeddley_ConsumeStateInt("carapace_attune_mire", 1) > 0)
+                {
+                    MutationMeddley_TryBonusDamage(defender, 1, "mire sheath", "carapace.mire_sheath");
+                }
+
                 if (MutationMeddley_HasEvolution("skitter_bulwark")
                     && MutationMeddley_MovedSinceLastEndTurn
                     && MutationMeddley_HasMutation("Multiple Legs"))
