@@ -569,6 +569,29 @@ namespace XRL.World.Parts.Mutation
             return false;
         }
 
+        protected bool MutationMeddley_HasUnspentTier(int tier)
+        {
+            return !MutationMeddley_HasSelectionAtTier(tier);
+        }
+
+        protected bool MutationMeddley_IsHiddenChoiceUnlocked(string key)
+        {
+            return MutationMeddley_GetStateInt(key, 0) > 0;
+        }
+
+        protected void MutationMeddley_UnlockHiddenChoice(string key)
+        {
+            MutationMeddley_SetStateInt(key, 1);
+        }
+
+        protected int MutationMeddley_AdvanceHiddenProgress(string key, int amount, int maxValue = int.MaxValue)
+        {
+            int progress = MutationMeddley_GetStateInt(key, 0);
+            progress = Math.Min(progress + amount, maxValue);
+            MutationMeddley_SetStateInt(key, progress);
+            return progress;
+        }
+
         protected bool MutationMeddley_IsEvolutionAvailable(MutationMeddley_EvolutionChoice choice)
         {
             if (Level < choice.RequiredLevel)

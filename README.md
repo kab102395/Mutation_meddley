@@ -12,7 +12,7 @@ The tooling assumes a normal Linux shell and supports both the standard Steam la
 
 ## Current status
 
-Version `0.3.0` is the first synergy and discovery milestone. It contains:
+Version `0.4.0` is the ecology expansion milestone. It contains:
 
 - a reusable evolution framework with a single extensible serialized state envelope
 - controller-friendly evolution and stance pickers built on `Popup.ShowOptionList`
@@ -20,10 +20,11 @@ Version `0.3.0` is the first synergy and discovery milestone. It contains:
 - a shared runtime semantic-tag and synergy-query layer
 - surfaced synergy summaries directly in mutation level text
 - a developer regression mutation, `Evolution Seed [DEV]`
-- two Mutation Meddley-owned flagship mutations: `Living Crystal` and `Brineborn`
+- four Mutation Meddley-owned flagship mutations: `Living Crystal`, `Brineborn`, `Ash Metabolism`, and `Walking Colony`
 - a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
 - curated synergy support for `Carapace`, `Regeneration`, `Multiple Legs`, `Quills`, `Electrical Generation`, `Light Manipulation`, `Flaming Ray`, `Freezing Ray`, `Photosynthetic Skin`, `Phasing`, `Amphibious`, `Heightened Hearing`, and `Burrowing Claws`
-- named triad adaptations including `Cathedral Organism`, `Breakwater Predator`, and `Prism Estuary`
+- eleven curated hidden adaptations across the owned mutations and `Carapace Evolution`
+- ten named triad adaptations including `Cathedral Organism`, `Breakwater Predator`, `Prism Estuary`, `Glass Kiln Bastion`, `Ember Pursuit Engine`, `Mirage Exuvium`, `Salt Kiln Reliquary`, `Steam Choir`, `Ossuary Rampart`, and `Drift Parliament`
 - Linux/Zorin deployment, validation, log, and `Mods.csproj` helper scripts
 
 `Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. That keeps the first vanilla integration on supported mutation hooks and avoids shipping a guessed reimplementation of base-game shell logic. If vanilla `Carapace` is lost, the companion mutation becomes dormant but keeps its chosen path and stance for later reactivation.
@@ -94,7 +95,7 @@ That copies the Qud-generated project file into the repository root for use with
 4. Make sure mods and scripting mods are enabled.
 5. Enable **Mutation Meddley** in the in-game mod configuration if necessary.
 6. Start a new mutant character and take one or more of:
-   `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, or `Carapace Evolution`.
+   `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, `Ash Metabolism`, `Walking Colony`, or `Carapace Evolution`.
 7. If testing `Carapace Evolution`, also take vanilla `Carapace`; without it, the companion mutation should remain dormant.
 8. Increase the mutation rank normally.
 9. At ranks 3, 6, and 9, use each mutation's `Evolve ...` ability and choose a branch from the controller-friendly option list.
@@ -102,7 +103,7 @@ That copies the Qud-generated project file into the repository root for use with
 11. For `Brineborn`, verify that saline reserve changes only when interacting with qualifying saline ground or liquid contact.
 12. Save and reload after making choices to verify persistence.
 
-Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.3.0` reads that older shape and rewrites it into the current envelope on the next state change.
+Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.4.0` reads that older shape and rewrites it into the current envelope on the next state change.
 
 To inspect the current Linux logs from the terminal:
 

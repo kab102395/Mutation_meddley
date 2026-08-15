@@ -11,6 +11,8 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_SalineKey = "brine_saline";
         private const string MutationMeddley_SaltGhostUnlockedKey = "brine_hidden_saltghost";
         private const string MutationMeddley_SaltGhostProgressKey = "brine_hidden_saltghost_progress";
+        private const string MutationMeddley_ReliquaryUnlockedKey = "brine_hidden_reliquary";
+        private const string MutationMeddley_ReliquaryProgressKey = "brine_hidden_reliquary_progress";
         private const int MutationMeddley_MaxReserve = 6;
 
         public override string MutationMeddley_EvolutionDisplayName
@@ -185,6 +187,16 @@ namespace XRL.World.Parts.Mutation
                     "Capstone rooted-shell line."
                 ),
                 new MutationMeddley_EvolutionChoice(
+                    "brine_reliquary",
+                    "Brine Reliquary",
+                    "Your reserve stops behaving like motion fuel and starts settling into anchored mineral memory.",
+                    9,
+                    3,
+                    "saltglass_bastion",
+                    "UNUSUAL ADAPTATION. Requires repeated saline fortification with crystal-compatible structure.",
+                    true
+                ),
+                new MutationMeddley_EvolutionChoice(
                     "reef_crown",
                     "Reef Crown",
                     "You wear reserve as moving saltglass edges rather than a single static bastion.",
@@ -294,12 +306,19 @@ namespace XRL.World.Parts.Mutation
                 new MutationMeddley_SynergyDefinition("multiple_legs", "Multiple Legs", "Shallow-liquid routing and reserve carry reward mobile saline builds."),
                 new MutationMeddley_SynergyDefinition("electrical_generation", "Electrical Generation", "Conductive brine amplifies motion and pressure at a defensive cost."),
                 new MutationMeddley_SynergyDefinition("burrowing_claws", "Burrowing Claws", "Harsh ground becomes easier to cross and hold with stored reserve."),
+                new MutationMeddley_SynergyDefinition("ash_pair", "Ash Metabolism", "Steam, heat, and reserve now share one environmental loop."),
+                new MutationMeddley_SynergyDefinition("walking_colony_pair", "Walking Colony", "Colonial routing changes how your reserve survives movement and recovery."),
                 new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Saltglass physiology mineralizes the lattice according to your crystal branch."),
                 new MutationMeddley_SynergyDefinition("carapace_pair", "Carapace Evolution", "Mineral deposition changes how your shell or body carries saline armor."),
                 new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Salt, shell, and crystal now fortify each other as one structure."),
                 new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Wet pursuit compounds cadence and reserve pressure together."),
                 new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Light and climate begin feeding the same saline metabolism."),
+                new MutationMeddley_SynergyDefinition("salt_kiln_reliquary", "Salt Kiln Reliquary", "Thermal mineralization hardens your saline defense into a kiln-kept bastion."),
+                new MutationMeddley_SynergyDefinition("steam_choir", "Steam Choir", "Wet pursuit, smoke, and resonance now compound one another."),
+                new MutationMeddley_SynergyDefinition("drift_parliament", "Drift Parliament", "Shallow-liquid routing now carries colonial chase pressure."),
                 new MutationMeddley_SynergyDefinition("salt_ghost_state", "Salt Ghost", "Brine and phase-state now overlap in a dangerous, temporary ecology.", isUnusual: true)
+                ,
+                new MutationMeddley_SynergyDefinition("brine_reliquary_state", "Brine Reliquary", "Reserve now settles into anchored saline structure instead of only circulating.", isUnusual: true)
             };
         }
 
@@ -320,6 +339,12 @@ namespace XRL.World.Parts.Mutation
                 case "burrowing_claws":
                     return MutationMeddley_HasMutation("Burrowing Claws")
                         && (MutationMeddley_HasEvolution("scouring_estuary") || MutationMeddley_HasEvolution("wellspring_flesh"));
+                case "ash_pair":
+                    return MutationMeddley_HasMutation("Ash Metabolism")
+                        && (MutationMeddley_HasEvolution("saltglass_bloom") || MutationMeddley_HasEvolution("scouring_estuary"));
+                case "walking_colony_pair":
+                    return MutationMeddley_HasMutation("Walking Colony")
+                        && (MutationMeddley_HasEvolution("wellspring_flesh") || MutationMeddley_HasEvolution("scouring_estuary"));
                 case "living_crystal_pair":
                     return MutationMeddley_HasMutation("Living Crystal") && MutationMeddley_HasAnyEvolution();
                 case "carapace_pair":
@@ -339,8 +364,23 @@ namespace XRL.World.Parts.Mutation
                         && MutationMeddley_HasEvolution("wellspring_flesh")
                         && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
                         && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace");
+                case "salt_kiln_reliquary":
+                    return MutationMeddley_HasEvolution("saltglass_bloom")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "furnace_skin");
+                case "steam_choir":
+                    return MutationMeddley_HasEvolution("scouring_estuary")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "smoke_organ");
+                case "drift_parliament":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("scouring_estuary")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm");
                 case "salt_ghost_state":
                     return MutationMeddley_HasEvolution("salt_ghost");
+                case "brine_reliquary_state":
+                    return MutationMeddley_HasEvolution("brine_reliquary");
                 default:
                     return false;
             }
@@ -356,6 +396,11 @@ namespace XRL.World.Parts.Mutation
             if (choice.Id == "salt_ghost")
             {
                 return MutationMeddley_GetStateInt(MutationMeddley_SaltGhostUnlockedKey, 0) > 0;
+            }
+
+            if (choice.Id == "brine_reliquary")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_ReliquaryUnlockedKey);
             }
 
             return false;
@@ -472,6 +517,19 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("AV", -1);
             }
 
+            if (MutationMeddley_HasMutation("Ash Metabolism"))
+            {
+                if (saline && lit)
+                {
+                    MutationMeddley_SetShift("HeatResistance", 5);
+                }
+
+                if (MutationMeddley_HasEvolution("scouring_estuary") && wet)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
             if (MutationMeddley_HasMutation("Burrowing Claws") && !saline)
             {
                 MutationMeddley_SetShift("DV", 1);
@@ -489,6 +547,21 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("HeatResistance", 5);
                 }
                 else if (MutationMeddley_HasEvolution("scouring_estuary") && wet)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Walking Colony"))
+            {
+                if (MutationMeddley_HasEvolution("wellspring_flesh")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive"))
+                {
+                    MutationMeddley_SetShift("AV", reserve > 0 ? 1 : 0);
+                }
+                else if (MutationMeddley_HasEvolution("scouring_estuary")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm")
+                    && wet)
                 {
                     MutationMeddley_SetShift("Quickness", 1);
                 }
@@ -532,10 +605,33 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("DV", 1);
             }
 
+            if (MutationMeddley_IsTriadActive("salt_kiln_reliquary") && saline)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("HeatResistance", 5);
+            }
+
+            if (MutationMeddley_IsTriadActive("steam_choir") && wet)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("drift_parliament") && wet && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
             if (MutationMeddley_HasEvolution("salt_ghost"))
             {
                 MutationMeddley_SetShift("Quickness", saline ? 3 : 0);
                 MutationMeddley_SetShift("DV", saline ? 2 : 0);
+            }
+
+            if (MutationMeddley_HasEvolution("brine_reliquary") && saline && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) == 0)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("DV", 1);
             }
         }
 
@@ -649,13 +745,13 @@ namespace XRL.World.Parts.Mutation
                 && saline
                 && MutationMeddley_HasEvolution("brackish_jet"))
             {
-                int progress = MutationMeddley_GetStateInt(MutationMeddley_SaltGhostProgressKey, 0) + 1;
-                MutationMeddley_SetStateInt(MutationMeddley_SaltGhostProgressKey, progress);
-                if (progress >= 6)
+                if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_SaltGhostProgressKey, 1, 6) >= 6)
                 {
-                    MutationMeddley_SetStateInt(MutationMeddley_SaltGhostUnlockedKey, 1);
+                    MutationMeddley_UnlockHiddenChoice(MutationMeddley_SaltGhostUnlockedKey);
                 }
             }
+
+            MutationMeddley_TrackBrineReliquaryDiscovery(saline, moved);
 
             MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Max(0, Math.Min(reserve, maxReserve)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
@@ -666,6 +762,24 @@ namespace XRL.World.Parts.Mutation
         private bool MutationMeddley_IsSalineEnvironment()
         {
             return MutationMeddley_IsCurrentCellSaline();
+        }
+
+        private void MutationMeddley_TrackBrineReliquaryDiscovery(bool saline, int moved)
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_ReliquaryUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("saltglass_bastion")
+                || !MutationMeddley_MutationHasSemanticTag("Living Crystal", "CRYSTALLINE")
+                || !saline
+                || moved != 0)
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_ReliquaryProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_ReliquaryUnlockedKey);
+            }
         }
 
         private bool MutationMeddley_IsTriadActive(string id)

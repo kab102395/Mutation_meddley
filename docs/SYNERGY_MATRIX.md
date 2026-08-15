@@ -1,6 +1,6 @@
 # Synergy Matrix
 
-This file records the intended `0.3.0` synergy/discovery surface so review and QA can track what is deliberate.
+This file records the intended `0.4.0` synergy/discovery surface so review and QA can track what is deliberate.
 
 ## State model
 
@@ -14,7 +14,7 @@ Only `discovered` and `selected` belong in persistent save state. Tags, active s
 
 - Hidden rank-9 adaptations must be discovered before the character spends tier 3 on that mutation.
 - If tier 3 is already spent, discovery progress stops for that hidden adaptation on that character.
-- There is no retroactive unlock-selection or respec flow in `0.3.0`.
+- There is no retroactive unlock-selection or respec flow in `0.4.0`.
 
 ## Ownership rules
 
@@ -29,14 +29,29 @@ Only `discovered` and `selected` belong in persistent save state. Tags, active s
 | `cathedral_organism` | `Carapace Evolution: Fortress` + `Living Crystal: Diamond Lattice` + `Brineborn: Saltglass Bloom` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | compile verified |
 | `breakwater_predator` | `Carapace Evolution: Hunter Shell` + `Living Crystal: Resonant Crystal` + `Brineborn: Scouring Estuary` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | compile verified |
 | `prism_estuary` | `Carapace Evolution: Adaptive Carapace` + `Living Crystal: Prismatic Matrix` + `Brineborn: Wellspring Flesh` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | compile verified |
+| `glass_kiln_bastion` | `Carapace Evolution: Fortress` + `Living Crystal: Diamond Lattice` + `Ash Metabolism: Furnace Skin` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | pending runtime verify |
+| `ember_pursuit_engine` | `Carapace Evolution: Hunter Shell` + `Living Crystal: Resonant Crystal` + `Ash Metabolism: Cinder Gut` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | pending runtime verify |
+| `mirage_exuvium` | `Carapace Evolution: Adaptive Carapace` + `Living Crystal: Prismatic Matrix` + `Ash Metabolism: Smoke Organ` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | pending runtime verify |
+| `salt_kiln_reliquary` | `Brineborn: Saltglass Bloom` + `Living Crystal: Diamond Lattice` + `Ash Metabolism: Furnace Skin` | all three display, mutation-local effects per owner | no | all three branches present | n/a | pending runtime verify |
+| `steam_choir` | `Brineborn: Scouring Estuary` + `Living Crystal: Resonant Crystal` + `Ash Metabolism: Smoke Organ` | all three display, mutation-local effects per owner | no | all three branches present | n/a | pending runtime verify |
+| `ossuary_rampart` | `Carapace Evolution: Fortress` + `Walking Colony: Marrow Hive` + `Living Crystal: Diamond Lattice` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | pending runtime verify |
+| `drift_parliament` | `Carapace Evolution: Hunter Shell` + `Walking Colony: Surveyor Swarm` + `Brineborn: Scouring Estuary` | all three display, mutation-local effects per owner | no | all three branches present; `Carapace Evolution` must also be functionally active via vanilla `Carapace` | n/a | pending runtime verify |
 
 ## Hidden adaptations
 
 | ID | Mutation | Relevant branch | Owner | Hidden | Trigger / eligibility | Discovery key | Test status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `fractured_choir` | `Living Crystal` | `Resonant Crystal -> Choral Spines` | `MutationMeddley_LivingCrystal` | yes | sustained high cadence while also carrying `Heightened Hearing`; appears at rank 9 after discovery | `lc_hidden_choir` | compile verified |
+| `heat_sink_choir` | `Living Crystal` | `Diamond Lattice -> Faceted Bulwark` | `MutationMeddley_LivingCrystal` | yes | repeated thermal-shock play while also carrying `Ash Metabolism` and `Flaming Ray`; appears at rank 9 after discovery | `lc_hidden_heatsink` | pending runtime verify |
 | `salt_ghost` | `Brineborn` | `Scouring Estuary -> Brackish Jet` | `MutationMeddley_Brineborn` | yes | prolonged saline exposure while also carrying `Phasing`; appears at rank 9 after discovery | `brine_hidden_saltghost` | compile verified |
+| `brine_reliquary` | `Brineborn` | `Saltglass Bloom -> Saltglass Bastion` | `MutationMeddley_Brineborn` | yes | repeated saline fortification while also carrying a crystalline profile; appears at rank 9 after discovery | `brine_hidden_reliquary` | pending runtime verify |
 | `porcupine_redoubt` | `Carapace Evolution` | `Fortress -> Faceted Keep` | `MutationMeddley_CarapaceEvolution` | yes | repeated rooted shell turns while also carrying `Quills`; appears at rank 9 after discovery | `carapace_hidden_porcupine` | compile verified |
+| `estuary_husk` | `Carapace Evolution` | `Adaptive Carapace -> Mire Sheath` | `MutationMeddley_CarapaceEvolution` | yes | prolonged amphibious or saline shell play with live vanilla `Carapace`; appears at rank 9 after discovery | `carapace_hidden_estuary` | pending runtime verify |
+| `volcanic_memory` | `Ash Metabolism` | `Furnace Skin -> Kiln Plating` | `MutationMeddley_AshMetabolism` | yes | repeated high-heat exposure while carrying another structural mutation profile; appears at rank 9 after discovery | `ash_hidden_volcanic` | pending runtime verify |
+| `wake_eater` | `Ash Metabolism` | `Cinder Gut -> Coal Maw` | `MutationMeddley_AshMetabolism` | yes | repeated hot-ground pursuit while using `Feast Ash`; appears at rank 9 after discovery | `ash_hidden_wake` | pending runtime verify |
+| `burrowed_nursery` | `Walking Colony` | `Marrow Hive -> Bone Nursery` | `MutationMeddley_WalkingColony` | yes | repeated recovery-routing while also carrying `Burrowing Claws`; appears at rank 9 after discovery | `colony_hidden_burrowed` | pending runtime verify |
+| `wake_trail` | `Walking Colony` | `Surveyor Swarm -> Latch Runners` | `MutationMeddley_WalkingColony` | yes | repeated high-cadence movement through hostile terrain; appears at rank 9 after discovery | `colony_hidden_waketrail` | pending runtime verify |
+| `molt_parliament` | `Walking Colony` | `Graft Parliament -> Borrowed Hands` | `MutationMeddley_WalkingColony` | yes | sustained structural strain while using `Override Frame`; appears at rank 9 after discovery | `colony_hidden_molt` | pending runtime verify |
 
 ## Visible pair synergies
 

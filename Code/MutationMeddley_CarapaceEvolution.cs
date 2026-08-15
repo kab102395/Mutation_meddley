@@ -10,6 +10,8 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_StationaryKey = "carapace_stationary";
         private const string MutationMeddley_PorcupineUnlockedKey = "carapace_hidden_porcupine";
         private const string MutationMeddley_PorcupineProgressKey = "carapace_hidden_porcupine_progress";
+        private const string MutationMeddley_EstuaryUnlockedKey = "carapace_hidden_estuary";
+        private const string MutationMeddley_EstuaryProgressKey = "carapace_hidden_estuary_progress";
 
         public override string MutationMeddley_EvolutionDisplayName
         {
@@ -48,6 +50,7 @@ namespace XRL.World.Parts.Mutation
                 );
 
                 MutationMeddley_TrackPorcupineDiscovery();
+                MutationMeddley_TrackEstuaryHuskDiscovery();
                 if (MutationMeddley_HasMutation("Regeneration")
                     && MutationMeddley_IsFunctionallyActive()
                     && MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0
@@ -244,6 +247,16 @@ namespace XRL.World.Parts.Mutation
                     3,
                     "mire_sheath",
                     "Capstone terrain-contact line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "estuary_husk",
+                    "Estuary Husk",
+                    "Your shell stops behaving like dry armor and starts breathing as a saline membrane.",
+                    9,
+                    3,
+                    "mire_sheath",
+                    "UNUSUAL ADAPTATION. Requires prolonged amphibious or saline shell play with live Carapace.",
+                    true
                 )
             };
         }
@@ -319,12 +332,21 @@ namespace XRL.World.Parts.Mutation
                 new MutationMeddley_SynergyDefinition("regeneration", "Regeneration", "Still shell stances recover more cleanly when the shell can repair itself."),
                 new MutationMeddley_SynergyDefinition("burrowing_claws", "Burrowing Claws", "Terrain and shell framing now cooperate instead of competing."),
                 new MutationMeddley_SynergyDefinition("amphibious", "Amphibious", "Wet ground and shell tuning interact more naturally."),
+                new MutationMeddley_SynergyDefinition("ash_pair", "Ash Metabolism", "A live shell gives your heat ecology somewhere structural to settle."),
+                new MutationMeddley_SynergyDefinition("walking_colony_pair", "Walking Colony", "A living colony changes how the shell handles burden, stillness, and pursuit."),
                 new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Crystalline shell integration changes how the shell carries force or light."),
                 new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Mineral deposition turns saline biology into shell architecture."),
                 new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Shell, crystal, and saline crust have become one fortification."),
                 new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Liquid movement now compounds shell pursuit, cadence, and reserve pressure."),
                 new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Weather tuning, light, and saline metabolism now share one shell logic."),
+                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Heat-banked crystal and shell fortification harden into one bastion."),
+                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Hunter shell timing now compounds with heat-fed cadence."),
+                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Adaptive shell tuning now shares one logic with light and smoke."),
+                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Shell, marrow ecology, and crystal structure become one anti-burst wall."),
+                new MutationMeddley_SynergyDefinition("drift_parliament", "Drift Parliament", "Hunter shell routing now carries colonial pressure across shallow-liquid lines."),
                 new MutationMeddley_SynergyDefinition("porcupine_redoubt_state", "Porcupine Redoubt", "Your rooted shell now treats quills as part of its fortification.", isUnusual: true)
+                ,
+                new MutationMeddley_SynergyDefinition("estuary_husk_state", "Estuary Husk", "Your shell now behaves like a saline membrane instead of dry armor.", isUnusual: true)
             };
         }
 
@@ -354,6 +376,16 @@ namespace XRL.World.Parts.Mutation
                     return MutationMeddley_HasMutation("Amphibious")
                         && MutationMeddley_IsFunctionallyActive()
                         && MutationMeddley_HasEvolution("adaptive_carapace");
+                case "ash_pair":
+                    return MutationMeddley_HasMutation("Ash Metabolism")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && (MutationMeddley_HasEvolution("fortress")
+                            || MutationMeddley_HasEvolution("hunter_shell")
+                            || MutationMeddley_HasEvolution("adaptive_carapace"));
+                case "walking_colony_pair":
+                    return MutationMeddley_HasMutation("Walking Colony")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasAnyEvolution();
                 case "living_crystal_pair":
                     return MutationMeddley_HasMutation("Living Crystal")
                         && MutationMeddley_IsFunctionallyActive()
@@ -377,8 +409,35 @@ namespace XRL.World.Parts.Mutation
                         && MutationMeddley_HasEvolution("adaptive_carapace")
                         && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh");
+                case "glass_kiln_bastion":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "furnace_skin");
+                case "ember_pursuit_engine":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("hunter_shell")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "cinder_gut");
+                case "mirage_exuvium":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("adaptive_carapace")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "smoke_organ");
+                case "ossuary_rampart":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice");
+                case "drift_parliament":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("hunter_shell")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary");
                 case "porcupine_redoubt_state":
                     return MutationMeddley_HasEvolution("porcupine_redoubt");
+                case "estuary_husk_state":
+                    return MutationMeddley_HasEvolution("estuary_husk");
                 default:
                     return false;
             }
@@ -394,6 +453,11 @@ namespace XRL.World.Parts.Mutation
             if (choice.Id == "porcupine_redoubt")
             {
                 return MutationMeddley_GetStateInt(MutationMeddley_PorcupineUnlockedKey, 0) > 0;
+            }
+
+            if (choice.Id == "estuary_husk")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_EstuaryUnlockedKey);
             }
 
             return false;
@@ -446,6 +510,11 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("DV", 1);
                 }
+
+                if (MutationMeddley_HasMutation("Ash Metabolism"))
+                {
+                    MutationMeddley_SetShift("HeatResistance", 5);
+                }
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
@@ -479,6 +548,11 @@ namespace XRL.World.Parts.Mutation
                 }
 
                 if (MutationMeddley_HasMutation("Burrowing Claws"))
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+
+                if (MutationMeddley_HasMutation("Ash Metabolism") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
                 {
                     MutationMeddley_SetShift("Quickness", 1);
                 }
@@ -521,6 +595,11 @@ namespace XRL.World.Parts.Mutation
                 if (MutationMeddley_HasMutation("Burrowing Claws"))
                 {
                     MutationMeddley_SetShift("DV", wetGround ? 1 : 0);
+                }
+
+                if (MutationMeddley_HasMutation("Ash Metabolism") && lit)
+                {
+                    MutationMeddley_SetShift("HeatResistance", 5);
                 }
             }
 
@@ -568,6 +647,26 @@ namespace XRL.World.Parts.Mutation
                 }
             }
 
+            if (MutationMeddley_HasMutation("Walking Colony"))
+            {
+                if (MutationMeddley_HasEvolution("fortress")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive")
+                    && stationary)
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("hunter_shell")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm"))
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("adaptive_carapace")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "graft_parliament"))
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+            }
+
             if (MutationMeddley_IsTriadActive("cathedral_organism") && stationary && saline)
             {
                 MutationMeddley_SetShift("AV", 2);
@@ -588,10 +687,43 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("DV", 1);
             }
 
+            if (MutationMeddley_IsTriadActive("glass_kiln_bastion") && stationary)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("HeatResistance", 5);
+            }
+
+            if (MutationMeddley_IsTriadActive("ember_pursuit_engine") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("mirage_exuvium") && lit && wetGround)
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("ossuary_rampart") && stationary)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("drift_parliament") && wetGround && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
             if (MutationMeddley_HasEvolution("porcupine_redoubt") && stationary)
             {
                 MutationMeddley_SetShift("AV", 2);
                 MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasEvolution("estuary_husk") && wetGround)
+            {
+                MutationMeddley_SetShift("DV", 2);
+                MutationMeddley_SetShift("ColdResistance", 10);
             }
         }
 
@@ -624,6 +756,23 @@ namespace XRL.World.Parts.Mutation
             if (progress >= 5)
             {
                 MutationMeddley_SetStateInt(MutationMeddley_PorcupineUnlockedKey, 1);
+            }
+        }
+
+        private void MutationMeddley_TrackEstuaryHuskDiscovery()
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_EstuaryUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("mire_sheath")
+                || !MutationMeddley_IsFunctionallyActive()
+                || (!MutationMeddley_HasMutation("Amphibious") && !MutationMeddley_IsCurrentCellSaline()))
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_EstuaryProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_EstuaryUnlockedKey);
             }
         }
 

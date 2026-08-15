@@ -5,5 +5,7 @@
     <mutation Name="Carapace Evolution" Cost="1" MaxSelected="1" Class="MutationMeddley_CarapaceEvolution" Exclusions="" BearerDescription="the evolving carapaced"></mutation>
     <mutation Name="Living Crystal" Cost="5" MaxSelected="1" Class="MutationMeddley_LivingCrystal" Exclusions="" BearerDescription="the living crystal"></mutation>
     <mutation Name="Brineborn" Cost="3" MaxSelected="1" Class="MutationMeddley_Brineborn" Exclusions="" BearerDescription="the brineborn"></mutation>
+    <mutation Name="Ash Metabolism" Cost="4" MaxSelected="1" Class="MutationMeddley_AshMetabolism" Exclusions="" BearerDescription="the ash-fed"></mutation>
+    <mutation Name="Walking Colony" Cost="4" MaxSelected="1" Class="MutationMeddley_WalkingColony" Exclusions="" BearerDescription="the colony-walked"></mutation>
   </category>
 </mutations>
