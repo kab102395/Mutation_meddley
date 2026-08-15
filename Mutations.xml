@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mutations>
   <category Name="Physical">
-    <mutation Name="Evolution Seed [DEV]" Cost="1" MaxSelected="1" Class="MutationMeddley_EvolutionSeed" Exclusions="" BearerDescription="the evolution-seeded" Code="m1"></mutation>
+    <mutation Name="Evolution Seed [DEV]" Cost="1" MaxSelected="1" Class="MutationMeddley_EvolutionSeed" Exclusions="" BearerDescription="the evolution-seeded"></mutation>
+    <mutation Name="Carapace Evolution" Cost="1" MaxSelected="1" Class="MutationMeddley_CarapaceEvolution" Exclusions="" BearerDescription="the evolving carapaced"></mutation>
+    <mutation Name="Living Crystal" Cost="5" MaxSelected="1" Class="MutationMeddley_LivingCrystal" Exclusions="" BearerDescription="the living crystal"></mutation>
+    <mutation Name="Brineborn" Cost="3" MaxSelected="1" Class="MutationMeddley_Brineborn" Exclusions="" BearerDescription="the brineborn"></mutation>
   </category>
 </mutations>

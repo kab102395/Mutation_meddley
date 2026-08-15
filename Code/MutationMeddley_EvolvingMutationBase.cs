@@ -11,6 +11,7 @@ namespace XRL.World.Parts.Mutation
         public string Id;
         public string Name;
         public string Description;
+        public string DetailText;
         public int RequiredLevel;
         public int Tier;
         public string PrerequisiteId;
@@ -21,11 +22,13 @@ namespace XRL.World.Parts.Mutation
             string description,
             int requiredLevel,
             int tier,
-            string prerequisiteId = "")
+            string prerequisiteId = "",
+            string detailText = "")
         {
             Id = id;
             Name = name;
             Description = description;
+            DetailText = detailText ?? "";
             RequiredLevel = requiredLevel;
             Tier = tier;
             PrerequisiteId = prerequisiteId ?? "";
@@ -70,6 +73,7 @@ namespace XRL.World.Parts.Mutation
         public override bool Mutate(GameObject GO, int Level)
         {
             MutationMeddley_AddEvolutionAbility();
+            MutationMeddley_OnEvolutionStateChanged();
             return base.Mutate(GO, Level);
         }
 
@@ -79,7 +83,18 @@ namespace XRL.World.Parts.Mutation
             return base.Unmutate(GO);
         }
 
+        public override bool ChangeLevel(int NewLevel)
+        {
+            bool result = base.ChangeLevel(NewLevel);
+            MutationMeddley_OnEvolutionStateChanged();
+            return result;
+        }
+
         protected virtual void MutationMeddley_OnEvolutionChosen(MutationMeddley_EvolutionChoice choice)
+        {
+        }
+
+        protected virtual void MutationMeddley_OnEvolutionStateChanged()
         {
         }
 
@@ -143,7 +158,7 @@ namespace XRL.World.Parts.Mutation
             );
         }
 
-        private List<string> MutationMeddley_GetSelectedEvolutionIds()
+        protected List<string> MutationMeddley_GetSelectedEvolutionIds()
         {
             List<string> selected = new List<string>();
             if (string.IsNullOrEmpty(MutationMeddley_EvolutionState))
@@ -164,7 +179,7 @@ namespace XRL.World.Parts.Mutation
             return selected;
         }
 
-        private bool MutationMeddley_HasSelectionAtTier(int tier)
+        protected bool MutationMeddley_HasSelectionAtTier(int tier)
         {
             List<MutationMeddley_EvolutionChoice> choices = MutationMeddley_GetEvolutionChoices();
             for (int i = 0; i < choices.Count; i++)
@@ -178,7 +193,7 @@ namespace XRL.World.Parts.Mutation
             return false;
         }
 
-        private bool MutationMeddley_IsEvolutionAvailable(MutationMeddley_EvolutionChoice choice)
+        protected bool MutationMeddley_IsEvolutionAvailable(MutationMeddley_EvolutionChoice choice)
         {
             if (Level < choice.RequiredLevel)
             {
@@ -204,7 +219,7 @@ namespace XRL.World.Parts.Mutation
             return true;
         }
 
-        private List<MutationMeddley_EvolutionChoice> MutationMeddley_GetAvailableEvolutions()
+        protected List<MutationMeddley_EvolutionChoice> MutationMeddley_GetAvailableEvolutions()
         {
             List<MutationMeddley_EvolutionChoice> result = new List<MutationMeddley_EvolutionChoice>();
             List<MutationMeddley_EvolutionChoice> choices = MutationMeddley_GetEvolutionChoices();
@@ -234,43 +249,38 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
-            StringBuilder prompt = new StringBuilder();
-            prompt.Append("Choose an evolution for ");
-            prompt.Append(MutationMeddley_EvolutionDisplayName);
-            prompt.Append(":\n\n");
-
+            string[] options = new string[available.Count];
+            char[] hotkeys = new char[available.Count];
             for (int i = 0; i < available.Count; i++)
             {
-                prompt.Append(i + 1);
-                prompt.Append(") ");
-                prompt.Append(available[i].Name);
-                prompt.Append("\n   ");
-                prompt.Append(available[i].Description);
-                prompt.Append("\n\n");
+                StringBuilder option = new StringBuilder();
+                option.Append(available[i].Name);
+                option.Append("\n");
+                option.Append(available[i].Description);
+
+                if (!string.IsNullOrEmpty(available[i].DetailText))
+                {
+                    option.Append("\n");
+                    option.Append(available[i].DetailText);
+                }
+
+                options[i] = option.ToString();
+                hotkeys[i] = (char)('A' + i);
             }
 
-            prompt.Append("Enter a number, or press Escape to cancel.");
-
-            string response = Popup.AskString(
-                prompt.ToString(),
-                ReturnNullForEscape: true
+            int selection = Popup.ShowOptionList(
+                "Evolve: " + MutationMeddley_EvolutionDisplayName + " - rank " + Level,
+                Options: options,
+                Hotkeys: hotkeys,
+                AllowEscape: true
             );
 
-            if (string.IsNullOrEmpty(response))
+            if (selection < 0 || selection >= available.Count)
             {
                 return;
             }
 
-            int selection;
-            if (!int.TryParse(response, out selection)
-                || selection < 1
-                || selection > available.Count)
-            {
-                Popup.ShowFail("That is not a valid evolution choice.");
-                return;
-            }
-
-            MutationMeddley_EvolutionChoice chosen = available[selection - 1];
+            MutationMeddley_EvolutionChoice chosen = available[selection];
             MutationMeddley_SelectEvolution(chosen);
         }
 
@@ -292,6 +302,7 @@ namespace XRL.World.Parts.Mutation
             }
 
             MutationMeddley_OnEvolutionChosen(choice);
+            MutationMeddley_OnEvolutionStateChanged();
             Popup.Show(
                 MutationMeddley_EvolutionDisplayName
                 + " evolved: "

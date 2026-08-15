@@ -18,7 +18,9 @@ Mutation Meddley uses normal Caves of Qud mod loading:
 - one-choice-per-tier enforcement
 - evolution availability checks
 - an activated ability for choosing an available evolution
+- a controller-friendly option-list picker
 - hooks that concrete mutation classes can override when a branch is chosen
+- hooks that concrete mutations can use to refresh branch-driven effects when evolution state or level changes
 
 Concrete mutations own gameplay behavior.
 
@@ -31,6 +33,7 @@ Each evolution choice has:
 - `Id` - stable internal key
 - `Name` - player-facing name
 - `Description` - player-facing mechanical/design description
+- `DetailText` - optional richer picker text
 - `RequiredLevel` - mutation rank required
 - `Tier` - mutually exclusive choice tier
 - `PrerequisiteId` - optional prior evolution required
@@ -64,11 +67,21 @@ Do not change the type of this field. If the framework eventually needs richer s
 
 ## UI strategy
 
-Version 0.1.0 uses a normal activated ability plus `Popup.AskString` for branch selection.
+Version 0.2.0 replaces numeric text entry with `Popup.ShowOptionList` for both path selection and mutation-specific stance changes.
 
-This is not intended to be the final UI. It is intentionally simple so the framework can be tested without patching Qud's mutation screen.
+This keeps the current UI keyboard, mouse, controller, and handheld friendly without committing yet to a custom full-screen mutation tree.
 
-A future mutation-tree UI should be treated as a separate layer over the same underlying evolution state and rules.
+A future mutation-tree UI should remain a separate presentation layer over the same evolution state and rules.
+
+## Content shape
+
+Version 0.2.0 has three layers of content:
+
+- `Evolution Seed [DEV]` remains the regression harness for framework behavior
+- `Living Crystal` and `Brineborn` are Mutation Meddley-owned flagship mutations
+- `Carapace Evolution` is the first narrow vanilla adapter
+
+`Carapace Evolution` intentionally does not replace the base-game `Carapace` class. It is a companion mutation designed to pair with vanilla `Carapace`, which preserves current shell behavior while validating the adapter pattern on supported systems.
 
 ## Compatibility strategy
 
@@ -87,14 +100,14 @@ Project-owned identifiers should use the `MutationMeddley_` prefix.
 
 Validate C# compilation, evolution selection, tier locking, prerequisites, and save/load behavior with `Evolution Seed [DEV]`.
 
-### Stage 2 - one real mutation
+### Stage 2 - flagship content pack
 
-Implement a real, self-contained mutation using the framework and give each branch actual gameplay behavior.
+Implement real, self-contained mutations using the framework and give each branch actual gameplay behavior.
 
-### Stage 3 - vanilla evolution adapter strategy
+### Stage 3 - deeper vanilla adapter strategy
 
-Determine the least invasive way to add evolution behavior to selected vanilla mutations. Do not assume this requires Harmony; inspect current classes/events first.
+Expand from the `Carapace Evolution` companion pattern only after current game assemblies and in-game behavior justify a more direct integration.
 
 ### Stage 4 - content expansion
 
-Add physical, mental, aberrant, and synergy-heavy mutation packs once the framework has survived real playtesting.
+Add physical, mental, aberrant, and synergy-heavy mutation packs once the framework and first adapter have survived real playtesting.

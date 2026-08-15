@@ -12,18 +12,17 @@ The tooling assumes a normal Linux shell and supports both the standard Steam la
 
 ## Current status
 
-Version `0.1.0` is a framework proof of concept. It contains:
+Version `0.2.0` is the first strong content milestone. It contains:
 
-- a Qud `manifest.json`
-- a reusable `MutationMeddley_EvolvingMutationBase`
-- tiered evolution choices with prerequisites
-- persistent selected-evolution state
-- an activated `Evolve ...` command
-- a developer-only proof-of-concept mutation, `Evolution Seed [DEV]`
-- rank 3, 6, and 9 branch milestones
+- a reusable evolution framework with stable serialized path state
+- controller-friendly evolution and stance pickers built on `Popup.ShowOptionList`
+- tiered rank 3, 6, and 9 branching with prerequisites and tier locking
+- a developer regression mutation, `Evolution Seed [DEV]`
+- two Mutation Meddley-owned flagship mutations: `Living Crystal` and `Brineborn`
+- a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
 - Linux/Zorin deployment, validation, log, and `Mods.csproj` helper scripts
 
-The developer mutation intentionally does not provide final gameplay effects yet. Its purpose is to validate loading, C# compilation, mutation leveling, branch selection, save/load persistence, and the framework API before vanilla mutations are modified.
+`Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. That keeps the first vanilla integration on supported mutation hooks and avoids shipping a guessed reimplementation of base-game shell logic.
 
 ## Zorin OS quick start
 
@@ -90,10 +89,13 @@ That copies the Qud-generated project file into the repository root for use with
 3. Start or restart Caves of Qud.
 4. Make sure mods and scripting mods are enabled.
 5. Enable **Mutation Meddley** in the in-game mod configuration if necessary.
-6. Start a new mutant character and take `Evolution Seed [DEV]`.
-7. Increase the mutation rank normally.
-8. At ranks 3, 6, and 9, use `Evolve Evolution Seed [DEV]` and choose a branch.
-9. Save and reload after making choices to verify persistence.
+6. Start a new mutant character and take one or more of:
+   `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, or `Carapace Evolution`.
+7. If testing `Carapace Evolution`, also take vanilla `Carapace` for the intended shell-focused pairing.
+8. Increase the mutation rank normally.
+9. At ranks 3, 6, and 9, use each mutation's `Evolve ...` ability and choose a branch from the controller-friendly option list.
+10. For `Living Crystal`, `Brineborn`, and `Carapace Evolution`, use the `Retune ...` ability after choosing a path and verify the stance changes.
+11. Save and reload after making choices to verify persistence.
 
 To inspect the current Linux logs from the terminal:
 
