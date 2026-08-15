@@ -30,6 +30,30 @@ These are design targets, not rigid formulas.
 - high impact must be paired with meaningful constraints, cooldowns, positioning requirements, resource costs, or opportunity cost
 - capstones may be dramatic, but should not erase counterplay
 
+## Continuous mutation-rank budget
+
+Mutation points spent between evolution milestones must never feel like dead investment.
+
+The current `0.7.0` cadence separates **quantitative maturation** from **qualitative evolution**:
+
+- ranks 2, 5, and 8 raise a branch-appropriate maturity passive
+- ranks 4, 7, and 10 raise shared Mutation Meddley healing/bonus-damage output and a branch-appropriate verb-support passive
+- ranks 3, 6, and 9 add the identity, specialization, and capstone rule changes
+
+The normal balance target is ranks 1-10. Physical rapid advancement may produce higher effective levels; the same formulas can continue above 10, but post-10 values are secondary balance targets.
+
+Continuous scaling must obey these rules:
+
+- old mechanics mature instead of being replaced by later mechanics
+- a rank increase must be visible in the mutation page or in the output of an already-owned verb
+- passive scaling supports a branch; it does not become the branch's only reason to exist
+- resource capacity should not automatically grow just because level grows unless capacity itself is the intended progression axis
+- synergy and triad bonuses are balanced separately and should not multiply the continuous curve into a mandatory combination
+- dormant mutations, especially Carapace Evolution without vanilla Carapace, receive no continuous rank bonus
+- if rank-10 scaling makes a setup-free branch outperform a setup-heavy sibling, reduce the curve or branch passive rather than removing continuous progression
+
+At the current formulas, maturity increases at 2/5/8 and verb output increases at 4/7/10. These are deliberately coarse enough to be noticeable without adding a new menu choice every level.
+
 ## Evolution budget
 
 An evolution choice should usually spend its power budget on one or more of:
@@ -50,19 +74,19 @@ Raw percentage increases are acceptable as support, but should rarely be the ent
 
 ### Rank 3 - identity
 
-The player chooses the primary direction of the mutation.
+The player chooses the primary direction of the mutation. The rank-1/2 baseline and its continuous maturation remain part of the character rather than being discarded.
 
 ### Rank 6 - specialization
 
-The player chooses how that identity functions tactically.
+The player chooses how that identity functions tactically. Rank-2/4/5 progression remains active beneath the specialization.
 
 ### Rank 9 - capstone path
 
-The player chooses a strong payoff that reinforces the existing path rather than replacing it.
+The player chooses a strong payoff that reinforces the existing path rather than replacing it. Earlier rank scaling remains active beneath the capstone or unusual adaptation.
 
 ### Rank 10 - mastery
 
-Prefer an automatic refinement of the chosen path over another mandatory menu choice unless the mutation's design specifically benefits from a fourth decision.
+Rank 10 is automatic quantitative mastery rather than another mandatory menu choice. The current shared curve adds the third normal verb-output/support increase here.
 
 ## Anti-solved-build rules
 
@@ -76,6 +100,7 @@ When comparing sibling branches, ask:
 - What does the player give up?
 - Does one branch improve both offense and defense while another only improves one?
 - Is a branch only interesting because its numbers are larger?
+- Does continuous level scaling preserve the branch's intended setup requirement, or let raw rank overwhelm it?
 
 If those questions do not produce meaningful distinctions, redesign the branch.
 
@@ -101,12 +126,15 @@ For each mutation path, record at minimum:
 
 - mutation cost
 - rank tested
+- maturity tier and verb-growth tier
 - relevant attributes
 - equipment assumptions
 - average cooldown/use frequency
 - damage or mitigation range when relevant
+- healing per resource spend when relevant
 - action/energy cost
 - common failure cases
 - strongest known synergy
 - strongest known counter
+- whether ranks 2/4/5/7/8/10 each feel worth a mutation point
 - whether the path feels useful before its capstone
