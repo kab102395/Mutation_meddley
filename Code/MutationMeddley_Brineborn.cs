@@ -59,12 +59,12 @@ namespace XRL.World.Parts.Mutation
             }
             else if (E.ID == "AttackerDealtDamage")
             {
-                MutationMeddley_HandleBrineStrike();
+                MutationMeddley_HandleBrineStrike(E);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "TookDamage" || E.ID == "TookEnvironmentalDamage")
             {
-                MutationMeddley_HandleBrinePressure();
+                MutationMeddley_HandleBrinePressure(E);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
@@ -111,17 +111,17 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("wellspring_flesh"))
             {
-                yield return "Wellspring Flesh uses Draw Brine to build mend, then spends mend when pressure arrives or wounds open.";
+                yield return "Wellspring Flesh uses Draw Brine to build mend, then spends mend into recovery routing when pressure arrives.";
                 yield return "Current mend: " + MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) + ". Cool Reserve banks the next mend into weatherproofing instead of raw sustain.";
             }
             else if (MutationMeddley_HasEvolution("saltglass_bloom"))
             {
-                yield return "Saltglass Bloom turns reserve into bastion and spends bastion when the shell is tested or a sharp line connects.";
+                yield return "Saltglass Bloom turns reserve into bastion and spends bastion into shell punishment or edge control.";
                 yield return "Current bastion: " + MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) + ". Shell Up likes stationary reserve; Knife Rind likes movement.";
             }
             else if (MutationMeddley_HasEvolution("scouring_estuary"))
             {
-                yield return "Scouring Estuary turns reserve into wake pressure after movement, then spends wake on successful pursuit contact.";
+                yield return "Scouring Estuary turns reserve into wake pressure after movement, then spends wake into pursuit contact.";
                 yield return "Current wake: " + MutationMeddley_GetStateInt(MutationMeddley_WakeKey, 0) + ".";
             }
             else
@@ -981,30 +981,7 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_RefreshPassiveEffects();
         }
 
-        private void MutationMeddley_HandleBrinePressure()
-        {
-            if (ParentObject == null)
-            {
-                return;
-            }
-
-            if (MutationMeddley_HasEvolution("wellspring_flesh") && MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) > 0)
-            {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_MendKey, 1);
-                MutationMeddley_TryHeal(1);
-                MutationMeddley_AddPlayerMessage("Stored brine closes over the fresh damage.");
-                return;
-            }
-
-            if (MutationMeddley_HasEvolution("saltglass_bloom") && MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) > 0)
-            {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_BastionKey, 1);
-                MutationMeddley_TryHeal(1);
-                MutationMeddley_AddPlayerMessage("Saltglass bastion flakes away instead of your flesh.");
-            }
-        }
-
-        private void MutationMeddley_HandleBrineStrike()
+        private void MutationMeddley_HandleBrinePressure(Event E)
         {
             if (ParentObject == null)
             {
@@ -1012,25 +989,100 @@ namespace XRL.World.Parts.Mutation
             }
 
             bool saline = MutationMeddley_IsSalineEnvironment();
+            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+
+            if (MutationMeddley_HasEvolution("wellspring_flesh") && MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) > 0)
+            {
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_MendKey, 1);
+                if (spent > 0)
+                {
+                    if (MutationMeddley_HasEvolution("tidal_marrows"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
+                    }
+                    if (MutationMeddley_HasEvolution("undertow_heart") && saline)
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_MendKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) + 1, 3));
+                    }
+                    MutationMeddley_TryHeal(1 + (MutationMeddley_HasEvolution("sacred_reservoir") ? 1 : 0));
+                    MutationMeddley_AddPlayerMessage("Stored brine closes over the fresh damage.");
+                }
+                return;
+            }
 
             if (MutationMeddley_HasEvolution("saltglass_bloom") && MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) > 0)
             {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_BastionKey, 1);
-                MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
-                MutationMeddley_AddPlayerMessage("Saltglass edges break loose on the hit and feed your reserve.");
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_BastionKey, 1);
+                if (spent > 0)
+                {
+                    int damage = spent
+                        + (MutationMeddley_HasEvolution("saltglass_bastion") ? 1 : 0)
+                        + (MutationMeddley_HasEvolution("brine_reliquary") && saline ? 1 : 0);
+                    bool struck = MutationMeddley_TryBonusDamage(source, damage, "saltglass bastion");
+                    if (!struck && MutationMeddley_GetCurrentModeId() == "shell_up")
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_BastionKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) + 1, 4));
+                    }
+                    MutationMeddley_TryHeal(struck ? 0 : 1);
+                    MutationMeddley_AddPlayerMessage(struck
+                        ? "Saltglass bastion breaks back across the exchange."
+                        : "Saltglass bastion flakes away instead of your flesh.");
+                }
+            }
+        }
+
+        private void MutationMeddley_HandleBrineStrike(Event E)
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool saline = MutationMeddley_IsSalineEnvironment();
+            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+
+            if (MutationMeddley_HasEvolution("saltglass_bloom") && MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) > 0)
+            {
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_BastionKey, 1);
+                if (spent > 0)
+                {
+                    int damage = spent + (MutationMeddley_HasEvolution("knife_reef") ? 1 : 0) + (MutationMeddley_HasEvolution("reef_crown") ? 1 : 0);
+                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "saltglass edge");
+                    MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
+                    if (MutationMeddley_GetCurrentModeId() == "shell_up" && MutationMeddley_HasEvolution("cathedral_of_salt"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_BastionKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) + 1, 4));
+                    }
+                    MutationMeddley_AddPlayerMessage(struck
+                        ? "Saltglass edges break loose on the hit."
+                        : "Saltglass edges break loose on the hit and feed your reserve.");
+                }
                 return;
             }
 
             if (MutationMeddley_HasEvolution("scouring_estuary") && MutationMeddley_GetStateInt(MutationMeddley_WakeKey, 0) > 0)
             {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_WakeKey, 1);
-                MutationMeddley_TryHeal(1);
-                if (saline && MutationMeddley_HasEvolution("brackish_jet"))
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_WakeKey, 1);
+                if (spent > 0)
                 {
-                    MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
-                }
+                    int damage = spent
+                        + (MutationMeddley_HasEvolution("brackish_jet") ? 1 : 0)
+                        + (MutationMeddley_HasEvolution("salt_ghost") && saline ? 1 : 0);
+                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "estuary wake");
+                    if (saline && MutationMeddley_HasEvolution("brackish_jet"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
+                    }
+                    else if (MutationMeddley_HasEvolution("desiccant_wake") || MutationMeddley_GetCurrentModeId() == "dry_tide")
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_WakeKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_WakeKey, 0) + 1, 4));
+                    }
+                    MutationMeddley_TryHeal(struck ? 0 : 1);
 
-                MutationMeddley_AddPlayerMessage("Your estuary wake crashes through the contact.");
+                    MutationMeddley_AddPlayerMessage(struck
+                        ? "Your estuary wake crashes through the contact."
+                        : "Your estuary wake carries the contact away with you.");
+                }
             }
         }
 

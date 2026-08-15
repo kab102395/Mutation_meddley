@@ -616,6 +616,99 @@ namespace XRL.World.Parts.Mutation
             XRL.Messages.MessageQueue.AddPlayerMessage(message);
         }
 
+        protected GameObject MutationMeddley_GetEventGameObject(Event E, params string[] names)
+        {
+            if (E == null || names == null)
+            {
+                return null;
+            }
+
+            Type eventType = E.GetType();
+            for (int i = 0; i < names.Length; i++)
+            {
+                object value = null;
+                var getGameObjectParameter = eventType.GetMethod("GetGameObjectParameter", new[] { typeof(string) });
+                if (getGameObjectParameter != null)
+                {
+                    value = getGameObjectParameter.Invoke(E, new object[] { names[i] });
+                }
+                else
+                {
+                    var getParameter = eventType.GetMethod("GetParameter", new[] { typeof(string) });
+                    if (getParameter != null)
+                    {
+                        value = getParameter.Invoke(E, new object[] { names[i] });
+                    }
+                }
+
+                if (value is GameObject gameObject)
+                {
+                    return gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        protected bool MutationMeddley_TryBonusDamage(GameObject target, int amount, string label)
+        {
+            if (target == null || amount <= 0)
+            {
+                return false;
+            }
+
+            var methods = target.GetType().GetMethods();
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].Name != "TakeDamage")
+                {
+                    continue;
+                }
+
+                var parameters = methods[i].GetParameters();
+                object[] args = new object[parameters.Length];
+                for (int j = 0; j < parameters.Length; j++)
+                {
+                    Type parameterType = parameters[j].ParameterType;
+                    if (parameterType == typeof(int))
+                    {
+                        args[j] = amount;
+                    }
+                    else if (parameterType == typeof(string))
+                    {
+                        args[j] = label;
+                    }
+                    else if (parameterType == typeof(GameObject))
+                    {
+                        args[j] = ParentObject;
+                    }
+                    else if (parameterType == typeof(bool))
+                    {
+                        args[j] = false;
+                    }
+                    else if (parameterType.IsValueType)
+                    {
+                        args[j] = Activator.CreateInstance(parameterType);
+                    }
+                    else
+                    {
+                        args[j] = null;
+                    }
+                }
+
+                try
+                {
+                    methods[i].Invoke(target, args);
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+
+            return false;
+        }
+
         protected int MutationMeddley_ConsumeStateInt(string key, int amount = 1)
         {
             if (amount <= 0)

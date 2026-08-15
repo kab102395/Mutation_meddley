@@ -56,17 +56,17 @@ namespace XRL.World.Parts.Mutation
             }
             else if (E.ID == "AttackerDealtDamage")
             {
-                MutationMeddley_HandleShellStrike();
+                MutationMeddley_HandleShellStrike(E);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "TookDamage")
             {
-                MutationMeddley_HandleShellPressure(false);
+                MutationMeddley_HandleShellPressure(E, false);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "TookEnvironmentalDamage")
             {
-                MutationMeddley_HandleShellPressure(true);
+                MutationMeddley_HandleShellPressure(E, true);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
@@ -149,7 +149,7 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("fortress"))
             {
-                yield return "Fortress builds brace when you hold ground, then spends brace when you take pressure.";
+                yield return "Fortress builds brace when you hold ground, then spends brace into shell punishment or line-holding when pressure lands.";
                 yield return "Current brace: " + MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + ".";
                 if (MutationMeddley_HasEvolution("faceted_keep"))
                 {
@@ -162,7 +162,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
-                yield return "Hunter Shell builds impact from movement, then spends impact after successful contact.";
+                yield return "Hunter Shell builds impact from movement, then spends impact into skirmish tempo or a heavier shell-slam after contact.";
                 yield return "Current impact: " + MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + ".";
                 if (MutationMeddley_HasEvolution("ravager_joints"))
                 {
@@ -175,7 +175,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
             {
-                yield return "Adaptive Carapace stores heat, mire, and rime from the environment, then spends them under pressure or when you connect.";
+                yield return "Adaptive Carapace stores heat, mire, and rime from the environment, then spends them into local shell responses under pressure or on contact.";
                 yield return "Current attunement: heat "
                     + MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0)
                     + ", mire "
@@ -1097,7 +1097,7 @@ namespace XRL.World.Parts.Mutation
             }
         }
 
-        private void MutationMeddley_HandleShellPressure(bool environmental)
+        private void MutationMeddley_HandleShellPressure(Event E, bool environmental)
         {
             if (!MutationMeddley_IsFunctionallyActive() || ParentObject == null)
             {
@@ -1113,6 +1113,7 @@ namespace XRL.World.Parts.Mutation
             int heat = MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0);
             int mire = MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0);
             int rime = MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0);
+            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
 
             if (MutationMeddley_HasEvolution("fortress") && brace > 0)
             {
@@ -1122,13 +1123,46 @@ namespace XRL.World.Parts.Mutation
                 );
                 if (spent > 0)
                 {
-                    MutationMeddley_TryHeal(1 + (MutationMeddley_HasEvolution("living_fortress") ? 1 : 0));
-                    if (MutationMeddley_GetCurrentModeId() == "spiteful_wall" && engaged)
+                    int heal = 1 + (MutationMeddley_HasEvolution("living_fortress") ? 1 : 0);
+                    bool spiteful = MutationMeddley_GetCurrentModeId() == "spiteful_wall";
+                    bool struckBack = false;
+                    if (spiteful && engaged)
                     {
-                        MutationMeddley_SetStateInt(MutationMeddley_ImpactKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + spent, 6));
+                        struckBack = MutationMeddley_TryBonusDamage(source, spent + (MutationMeddley_HasEvolution("faceted_keep") ? 1 : 0), "spiteful wall");
+                        if (!struckBack)
+                        {
+                            MutationMeddley_SetStateInt(
+                                MutationMeddley_BraceKey,
+                                Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + 1, 5)
+                            );
+                        }
                     }
 
-                    MutationMeddley_AddPlayerMessage("Your shell spends brace to absorb the pressure.");
+                    if (MutationMeddley_HasEvolution("entrenched_bastion") && stationary)
+                    {
+                        MutationMeddley_SetStateInt(
+                            MutationMeddley_BraceKey,
+                            Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + 1, 5)
+                        );
+                    }
+
+                    MutationMeddley_TryHeal(heal);
+                    if (spiteful && struckBack)
+                    {
+                        MutationMeddley_AddPlayerMessage("Your shell answers the blow with a spiteful crack.");
+                    }
+                    else if (spiteful)
+                    {
+                        MutationMeddley_AddPlayerMessage("Your shell keeps a spiteful brace ready for the next exchange.");
+                    }
+                    else if (MutationMeddley_HasEvolution("entrenched_bastion") && stationary)
+                    {
+                        MutationMeddley_AddPlayerMessage("Your shell spends brace and holds the line.");
+                    }
+                    else
+                    {
+                        MutationMeddley_AddPlayerMessage("Your shell spends brace to absorb the pressure.");
+                    }
                 }
 
                 return;
@@ -1157,7 +1191,7 @@ namespace XRL.World.Parts.Mutation
             }
         }
 
-        private void MutationMeddley_HandleShellStrike()
+        private void MutationMeddley_HandleShellStrike(Event E)
         {
             if (!MutationMeddley_IsFunctionallyActive() || ParentObject == null)
             {
@@ -1170,30 +1204,56 @@ namespace XRL.World.Parts.Mutation
             int heat = MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0);
             int mire = MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0);
             int rime = MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0);
+            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
 
             if (MutationMeddley_HasEvolution("hunter_shell") && impact > 0)
             {
-                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_ImpactKey, MutationMeddley_GetCurrentModeId() == "ramming_gait" ? 2 : 1);
+                bool ramming = MutationMeddley_GetCurrentModeId() == "ramming_gait";
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_ImpactKey, ramming ? 2 : 1);
                 if (spent > 0)
                 {
                     MutationMeddley_TryHeal(1);
-                    if (MutationMeddley_GetCurrentModeId() == "skirmish_gait")
+                    if (!ramming)
                     {
-                        MutationMeddley_SetStateInt(MutationMeddley_ImpactKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + (MutationMeddley_HasEvolution("ravager_joints") ? 1 : 0), 6));
+                        int refund = MutationMeddley_HasEvolution("ravager_joints") ? 1 : 0;
+                        if (MutationMeddley_HasEvolution("hooked_pursuer") && moved)
+                        {
+                            refund += 1;
+                        }
+
+                        if (refund > 0)
+                        {
+                            MutationMeddley_SetStateInt(
+                                MutationMeddley_ImpactKey,
+                                Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + refund, 6)
+                            );
+                        }
+
+                        MutationMeddley_AddPlayerMessage("Your shell slips through and spends stored impact.");
                     }
                     else
                     {
-                        MutationMeddley_SetStateInt(MutationMeddley_BraceKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + spent + (MutationMeddley_HasEvolution("spur_lattice") ? 1 : 0), 5));
-                    }
+                        int shellDamage = spent + 1;
+                        if (MutationMeddley_HasEvolution("spur_lattice"))
+                        {
+                            shellDamage += 1;
+                        }
+                        if (MutationMeddley_HasEvolution("hooked_pursuer") && moved)
+                        {
+                            shellDamage += 1;
+                        }
 
-                    if (MutationMeddley_HasEvolution("hooked_pursuer") && moved)
-                    {
-                        MutationMeddley_SetStateInt(MutationMeddley_ImpactKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + 1, 6));
+                        bool struck = MutationMeddley_TryBonusDamage(defender, shellDamage, "ramming shell");
+                        if (struck)
+                        {
+                            MutationMeddley_AddPlayerMessage("Your shell-slam cashes out stored impact into the prey.");
+                        }
+                        else
+                        {
+                            MutationMeddley_TryHeal(1);
+                            MutationMeddley_AddPlayerMessage("Your shell-slam cashes out stored impact and keeps you driving forward.");
+                        }
                     }
-
-                    MutationMeddley_AddPlayerMessage(MutationMeddley_GetCurrentModeId() == "ramming_gait"
-                        ? "Your shell-slam cashes out stored impact."
-                        : "Your shell slips through and spends stored impact.");
                 }
 
                 return;
@@ -1205,21 +1265,30 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_ConsumeStateInt(MutationMeddley_HeatAttuneKey, 1);
                     MutationMeddley_TryHeal(1);
-                    MutationMeddley_SetStateInt(MutationMeddley_ImpactKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0) + 1, 4));
+                    if (MutationMeddley_IsCurrentCellHot())
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_HeatAttuneKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0) + 1, 4));
+                    }
                     MutationMeddley_AddPlayerMessage("Your shell vents stored heat on contact.");
                 }
                 else if (MutationMeddley_GetCurrentModeId() == "rime_veil" && rime > 0)
                 {
                     MutationMeddley_ConsumeStateInt(MutationMeddley_RimeAttuneKey, 1);
                     MutationMeddley_TryHeal(1);
-                    MutationMeddley_SetStateInt(MutationMeddley_BraceKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + 1, 4));
+                    if (!moved)
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_RimeAttuneKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0) + 1, 4));
+                    }
                     MutationMeddley_AddPlayerMessage("Your shell sheds rime into a guarding crust.");
                 }
                 else if (wetGround && mire > 0)
                 {
                     MutationMeddley_ConsumeStateInt(MutationMeddley_MireAttuneKey, 1);
                     MutationMeddley_TryHeal(1);
-                    MutationMeddley_SetStateInt(MutationMeddley_BraceKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BraceKey, 0) + 1, 4));
+                    if (MutationMeddley_IsCurrentCellSaline())
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_MireAttuneKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0) + 1, 4));
+                    }
                     MutationMeddley_AddPlayerMessage("Your membrane shell drinks momentum from the mire.");
                 }
             }

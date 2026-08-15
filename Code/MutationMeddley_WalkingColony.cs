@@ -56,12 +56,12 @@ namespace XRL.World.Parts.Mutation
             }
             else if (E.ID == "AttackerDealtDamage")
             {
-                MutationMeddley_HandleColonyStrike();
+                MutationMeddley_HandleColonyStrike(E);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "TookDamage" || E.ID == "TookEnvironmentalDamage")
             {
-                MutationMeddley_HandleColonyPressure();
+                MutationMeddley_HandleColonyPressure(E);
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
@@ -107,7 +107,7 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("marrow_hive"))
             {
-                yield return "Marrow Hive turns pressure into stitch reserve, then spends stitch when new wounds arrive.";
+                yield return "Marrow Hive turns pressure into stitch reserve, then spends stitch into bodily persistence when new wounds arrive.";
                 yield return "Current stitch: " + MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("surveyor_swarm"))
@@ -897,31 +897,57 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_RefreshPassiveEffects();
         }
 
-        private void MutationMeddley_HandleColonyPressure()
+        private void MutationMeddley_HandleColonyPressure(Event E)
         {
             if (ParentObject == null)
             {
                 return;
             }
 
+            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+
             if (MutationMeddley_HasEvolution("marrow_hive") && MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) > 0)
             {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_StitchKey, 1);
-                MutationMeddley_TryHeal(1);
-                MutationMeddley_AddPlayerMessage("The colony knits the fresh damage shut.");
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_StitchKey, 1);
+                if (spent > 0)
+                {
+                    MutationMeddley_TryHeal(1 + (MutationMeddley_HasEvolution("catacomb_metabolism") ? 1 : 0));
+                    if (MutationMeddley_HasEvolution("bone_nursery") || MutationMeddley_HasEvolution("burrowed_nursery"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
+                    }
+                    if (MutationMeddley_HasEvolution("scar_feeders"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_StitchKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) + 1, 4));
+                    }
+                    MutationMeddley_AddPlayerMessage("The colony knits the fresh damage shut.");
+                }
                 return;
             }
 
             if (MutationMeddley_HasEvolution("graft_parliament") && MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0) > 0)
             {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_ParliamentKey, 1);
-                MutationMeddley_TryHeal(1);
-                MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
-                MutationMeddley_AddPlayerMessage("The colony redistributes the strain across the frame.");
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_ParliamentKey, 1);
+                if (spent > 0)
+                {
+                    int damage = spent
+                        + (MutationMeddley_HasEvolution("borrowed_hands") ? 1 : 0)
+                        + (MutationMeddley_HasEvolution("molt_parliament") ? 1 : 0);
+                    bool struck = MutationMeddley_TryBonusDamage(source, damage, "delegated strain");
+                    MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
+                    if (!struck && MutationMeddley_HasEvolution("nerve_delegation"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_ParliamentKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0) + 1, 4));
+                    }
+                    MutationMeddley_TryHeal(struck ? 0 : 1);
+                    MutationMeddley_AddPlayerMessage(struck
+                        ? "The colony throws the strain back across the frame."
+                        : "The colony redistributes the strain across the frame.");
+                }
             }
         }
 
-        private void MutationMeddley_HandleColonyStrike()
+        private void MutationMeddley_HandleColonyStrike(Event E)
         {
             if (ParentObject == null)
             {
@@ -929,13 +955,27 @@ namespace XRL.World.Parts.Mutation
             }
 
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
 
             if (MutationMeddley_HasEvolution("surveyor_swarm") && moved && MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) > 0)
             {
-                MutationMeddley_ConsumeStateInt(MutationMeddley_ScoutKey, 1);
-                MutationMeddley_TryHeal(1);
-                MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
-                MutationMeddley_AddPlayerMessage("Your surveyor colony cashes out the pursuit line.");
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_ScoutKey, 1);
+                if (spent > 0)
+                {
+                    int damage = spent
+                        + (MutationMeddley_HasEvolution("latch_runners") ? 1 : 0)
+                        + (MutationMeddley_HasEvolution("wake_trail") ? 1 : 0);
+                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "surveyor line");
+                    MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
+                    if (MutationMeddley_HasEvolution("tendon_scouts") || MutationMeddley_HasEvolution("march_cartography"))
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_ScoutKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) + 1, 4));
+                    }
+                    MutationMeddley_TryHeal(struck ? 0 : 1);
+                    MutationMeddley_AddPlayerMessage(struck
+                        ? "Your surveyor colony cashes out the pursuit line."
+                        : "Your surveyor colony redraws the pursuit line.");
+                }
             }
         }
 
