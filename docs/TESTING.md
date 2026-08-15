@@ -1,27 +1,60 @@
 # Testing and Release Workflow
 
-## Local development loop (Windows)
+## Primary local development loop: Zorin OS / Linux
 
 1. Make changes in the Git repository.
-2. From the repository root run:
+2. Run the repository preflight:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\deploy.ps1
+```bash
+bash tools/check.sh
 ```
 
-3. Start or restart Caves of Qud.
-4. Confirm **Mutation Meddley** is enabled in the Mod Manager.
-5. Test the relevant behavior.
-6. Inspect Qud's logs after C# changes.
+3. Deploy the runtime files to Qud's offline Mods directory:
 
-Default Windows logs:
+```bash
+bash tools/deploy.sh
+```
+
+4. Start or restart Caves of Qud.
+5. Confirm **Mutation Meddley** is enabled in the in-game mod configuration.
+6. Test the relevant behavior.
+7. Inspect Qud's logs after C# changes:
+
+```bash
+bash tools/logs.sh
+```
+
+Standard Linux paths:
 
 ```text
-%USERPROFILE%\AppData\LocalLow\Freehold Games\CavesOfQud\build_log.txt
-%USERPROFILE%\AppData\LocalLow\Freehold Games\CavesOfQud\Player.log
+~/.config/unity3d/Freehold Games/CavesOfQud/Mods/MutationMeddley
+~/.config/unity3d/Freehold Games/CavesOfQud/build_log.txt
+~/.config/unity3d/Freehold Games/CavesOfQud/Player.log
 ```
 
+The Bash tools also detect the common Flatpak Steam configuration root under `~/.var/app/com.valvesoftware.Steam/.config`. For an unusual install, set `QUD_CONFIG_DIR` explicitly.
+
 Do not diagnose a Qud API/compiler error by guessing. Copy the exact error and resolve the class, namespace, method, or signature that Qud reports.
+
+## Qud-generated C# project
+
+Qud is the authoritative runtime compiler for this mod. For IDE navigation and local C# diagnostics, generate the project file from the installed game so its assembly references match the installed Qud version.
+
+In Caves of Qud:
+
+1. enable **Enable Mods**
+2. enable **Allow scripting mods**
+3. restart Qud
+4. open **Modding Utilities**
+5. choose **Write Mods.csproj file**
+
+Then run:
+
+```bash
+bash tools/import-mods-csproj.sh
+```
+
+The generated `Mods.csproj` is intentionally ignored by Git. Do not ship generated `bin/` or `obj/` output as Workshop mod content.
 
 ## Framework proof-of-concept test
 
@@ -54,11 +87,11 @@ Before changing persistent framework fields:
 
 Do not release serialized field-layout changes without a migration plan.
 
-## Steam Workshop upload
+## Steam Workshop upload on Linux
 
 Use Qud's built-in uploader after the deployed local copy works.
 
-1. Deploy the mod to Qud's offline `Mods\MutationMeddley` folder.
+1. Deploy with `bash tools/deploy.sh`.
 2. Start Qud.
 3. Open **Modding Utilities** from the main-menu overlay.
 4. Open the **Steam Workshop Uploader**.
@@ -68,7 +101,7 @@ Use Qud's built-in uploader after the deployed local copy works.
 8. Use **Upload Content...**.
 9. Subscribe to the Workshop item and test the Workshop-installed copy separately.
 
-Qud creates `workshop.json` for the Workshop item. It is intentionally ignored by this repository.
+Qud creates `workshop.json` for the Workshop item. It is intentionally ignored by this repository and the deployment script preserves the deployed copy.
 
 When testing a subscribed Workshop build, avoid simultaneously loading a conflicting offline development copy of the same mod.
 
@@ -76,13 +109,14 @@ When testing a subscribed Workshop build, avoid simultaneously loading a conflic
 
 Before a public release:
 
-- clean C# compile in current Qud
+- `bash tools/check.sh` passes
+- clean C# compile in the current local Qud installation
 - no unexpected `Player.log` errors
 - new-game test
 - existing-save test where applicable
 - mutation gain/removal test
 - each evolution path selected at least once
-- Workshop-installed copy tested
+- Workshop-installed copy tested on Linux
 - manifest version updated
 - README status updated
 - balance notes updated for gameplay mutations
