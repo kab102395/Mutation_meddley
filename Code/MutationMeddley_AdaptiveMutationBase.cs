@@ -159,6 +159,11 @@ namespace XRL.World.Parts.Mutation
             return MutationMeddley_GetStateValue("mode");
         }
 
+        internal string MutationMeddley_PeekCurrentModeId()
+        {
+            return MutationMeddley_GetCurrentModeId();
+        }
+
         protected void MutationMeddley_SetCurrentModeId(string id)
         {
             MutationMeddley_SetStateValue("mode", id);

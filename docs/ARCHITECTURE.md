@@ -61,7 +61,7 @@ rank 3
 
 The framework stores mutation state in the stable serialized string field `MutationMeddley_EvolutionState`.
 
-Version 0.2.0 now uses that field as a small state envelope:
+Version 0.3.0 uses that field as a small state envelope:
 
 - selected evolution IDs remain the primary state
 - mutation-local metadata such as stance, cadence, or saline reserve are encoded into the same payload
@@ -74,7 +74,7 @@ Do not change the type of this field. If the framework eventually needs richer s
 
 ## UI strategy
 
-Version 0.2.0 replaces numeric text entry with `Popup.ShowOptionList` for both path selection and mutation-specific stance changes.
+Version 0.3.0 keeps `Popup.ShowOptionList` for both path selection and mutation-specific stance changes.
 
 This keeps the current UI keyboard, mouse, controller, and handheld friendly without committing yet to a custom full-screen mutation tree.
 
@@ -82,13 +82,20 @@ A future mutation-tree UI should remain a separate presentation layer over the s
 
 ## Content shape
 
-Version 0.2.0 has three layers of content:
+Version 0.3.0 has four connected layers of content:
 
 - `Evolution Seed [DEV]` remains the regression harness for framework behavior
 - `Living Crystal` and `Brineborn` are Mutation Meddley-owned flagship mutations
 - `Carapace Evolution` is the first narrow vanilla adapter
+- a tag-driven synergy/discovery layer that lets those mutations react to curated vanilla mutation families and to each other
 
 `Carapace Evolution` intentionally does not replace the base-game `Carapace` class. It is a companion mutation designed to pair with vanilla `Carapace`, and it remains dormant until vanilla `Carapace` is actually present. Dormancy suppresses shell augmentation and stance retuning without deleting the saved evolution path.
+
+The first runtime semantic layer is intentionally small:
+
+- mutation-local gameplay still lives in mutation classes
+- the shared framework only provides semantic tags, mutation-presence queries, active-synergy enumeration, hidden-choice gating, and level-text reporting
+- exact pair logic is still allowed where a relationship is uniquely specific
 
 ## Compatibility strategy
 

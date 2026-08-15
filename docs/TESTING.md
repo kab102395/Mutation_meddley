@@ -74,9 +74,27 @@ Verify:
 12. changing stance with `Retune ...` visibly changes the mutation's stat profile and level text
 13. `Brineborn` only builds saline reserve from qualifying saline world-state interaction
 14. `Living Crystal` shows different light, cadence, or contact-sensitive behavior by path
-15. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
-16. removing the mutation removes its activated abilities
-17. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
+15. active synergies appear directly in mutation level text and update after branch, stance, or mutation-loadout changes
+16. unusual hidden adaptations only appear after their discovery conditions have been satisfied
+17. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
+18. removing the mutation removes its activated abilities
+19. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
+
+Supported vanilla synergy pack for `0.3.0`:
+
+- `Carapace`
+- `Regeneration`
+- `Multiple Legs`
+- `Quills`
+- `Electrical Generation`
+- `Light Manipulation`
+- `Flaming Ray`
+- `Freezing Ray`
+- `Photosynthetic Skin`
+- `Phasing`
+- `Amphibious`
+- `Heightened Hearing`
+- `Burrowing Claws`
 
 ## Carapace adapter test
 
@@ -90,6 +108,17 @@ Verify:
 4. vanilla `Carapace` still provides its ordinary shell behavior alongside the companion evolution layer
 5. save/reload preserves the companion path and stance while vanilla `Carapace` remains present
 6. losing vanilla `Carapace` makes `Carapace Evolution` dormant without deleting its saved path or stance, and regaining `Carapace` reactivates that same progression
+7. shell-facing synergies with `Multiple Legs`, `Quills`, `Regeneration`, `Burrowing Claws`, and `Amphibious` disappear while dormant and return once vanilla `Carapace` returns
+
+## Synergy and hidden-adaptation test
+
+Verify:
+
+1. each supported vanilla mutation activates at least one visible synergy with one of the three flagship mutations
+2. branch-specific synergies actually change by branch or stance rather than only repeating the same numeric bonus
+3. `Cathedral Organism`, `Breakwater Predator`, and `Prism Estuary` only appear for their intended triad builds
+4. `Fractured Choir`, `Salt Ghost`, and `Porcupine Redoubt` require their discovery conditions before they appear at rank 9
+5. save/reload preserves hidden unlock state and active triad/synergy reporting
 
 ## Save compatibility checks
 
