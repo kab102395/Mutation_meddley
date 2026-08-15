@@ -306,6 +306,11 @@ namespace XRL.World.Parts.Mutation
 
             if (mutation != null)
             {
+                if (!mutation.MutationMeddley_PeekIsFunctionallyActive())
+                {
+                    return false;
+                }
+
                 return mutation.MutationMeddley_GetCurrentSemanticTags().Contains(tag);
             }
 
@@ -373,6 +378,11 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_EvolvingMutationBase evolving = mutation as MutationMeddley_EvolvingMutationBase;
                 if (evolving != null)
                 {
+                    if (!evolving.MutationMeddley_PeekIsFunctionallyActive())
+                    {
+                        continue;
+                    }
+
                     if (evolving.MutationMeddley_GetCurrentSemanticTags().Contains(tag))
                     {
                         return true;
@@ -418,6 +428,11 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_EvolvingMutationBase evolving = mutation as MutationMeddley_EvolvingMutationBase;
                 if (evolving != null)
                 {
+                    if (!evolving.MutationMeddley_PeekIsFunctionallyActive())
+                    {
+                        continue;
+                    }
+
                     if (evolving.MutationMeddley_GetCurrentSemanticTags().Contains(tag))
                     {
                         return true;

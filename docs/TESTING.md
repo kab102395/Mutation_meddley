@@ -82,7 +82,7 @@ Verify:
 20. removing the mutation removes its activated abilities
 21. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
-Supported vanilla synergy pack for `0.5.1`:
+Supported vanilla synergy pack for `0.5.2`:
 
 - `Carapace`
 - `Regeneration`

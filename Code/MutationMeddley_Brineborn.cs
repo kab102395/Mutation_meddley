@@ -9,6 +9,10 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_ReserveKey = "brine_reserve";
         private const string MutationMeddley_MovedKey = "brine_moved";
         private const string MutationMeddley_SalineKey = "brine_saline";
+        private const string MutationMeddley_ShellUpKey = "brine_shellup";
+        private const string MutationMeddley_KnifeRindKey = "brine_kniferind";
+        private const string MutationMeddley_DryTideKey = "brine_drytide";
+        private const string MutationMeddley_SurgeTideKey = "brine_surgetide";
         private const string MutationMeddley_SaltGhostUnlockedKey = "brine_hidden_saltghost";
         private const string MutationMeddley_SaltGhostProgressKey = "brine_hidden_saltghost_progress";
         private const string MutationMeddley_ReliquaryUnlockedKey = "brine_hidden_reliquary";
@@ -507,6 +511,15 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("DV", 1 + (reserve / 3));
                 }
+
+                if (MutationMeddley_GetCurrentModeId() == "draw_brine" && reserve > 0)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+                else if (MutationMeddley_GetCurrentModeId() == "cool_reserve" && reserve > 0)
+                {
+                    MutationMeddley_SetShift("ColdResistance", 5);
+                }
             }
             else if (MutationMeddley_HasEvolution("saltglass_bloom"))
             {
@@ -531,6 +544,17 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("AV", 1 + (reserve / 3));
                     MutationMeddley_SetShift("DV", reserve / 4);
                 }
+
+                if (MutationMeddley_GetCurrentModeId() == "shell_up")
+                {
+                    MutationMeddley_SetShift("AV", reserve > 0 ? 1 : 0);
+                    MutationMeddley_SetShift("DV", MutationMeddley_GetStateInt(MutationMeddley_ShellUpKey, 0) > 0 ? 1 : 0);
+                }
+                else if (MutationMeddley_GetCurrentModeId() == "knife_rind")
+                {
+                    MutationMeddley_SetShift("Quickness", reserve > 0 ? 1 : 0);
+                    MutationMeddley_SetShift("DV", MutationMeddley_GetStateInt(MutationMeddley_KnifeRindKey, 0) > 0 ? 1 : 0);
+                }
             }
             else if (MutationMeddley_HasEvolution("scouring_estuary"))
             {
@@ -554,6 +578,17 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("Quickness", reserve / 3);
                     MutationMeddley_SetShift("DV", reserve / 4);
+                }
+
+                if (MutationMeddley_GetCurrentModeId() == "dry_tide")
+                {
+                    MutationMeddley_SetShift("Quickness", !saline && reserve > 0 ? 1 : 0);
+                    MutationMeddley_SetShift("DV", MutationMeddley_GetStateInt(MutationMeddley_DryTideKey, 0) > 0 ? 1 : 0);
+                }
+                else if (MutationMeddley_GetCurrentModeId() == "surge_tide")
+                {
+                    MutationMeddley_SetShift("Quickness", saline && reserve > 0 ? 1 : 0);
+                    MutationMeddley_SetShift("DV", MutationMeddley_GetStateInt(MutationMeddley_SurgeTideKey, 0) > 0 ? 1 : 0);
                 }
             }
 
@@ -767,6 +802,10 @@ namespace XRL.World.Parts.Mutation
             int moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0);
             int maxReserve = MutationMeddley_GetMaxReserve();
             bool usedTidalMarrowsRecovery = false;
+            bool usedShellUp = false;
+            bool usedKnifeRind = false;
+            bool usedDryTide = false;
+            bool usedSurgeTide = false;
 
             if (saline)
             {
@@ -810,7 +849,8 @@ namespace XRL.World.Parts.Mutation
                 && moved == 0)
             {
                 reserve -= 1;
-                reserve = Math.Min(MutationMeddley_MaxReserve, reserve + (MutationMeddley_HasEvolution("cathedral_of_salt") ? 1 : 0));
+                reserve = Math.Min(maxReserve, reserve + (MutationMeddley_HasEvolution("cathedral_of_salt") ? 1 : 0));
+                usedShellUp = true;
             }
 
             if (MutationMeddley_HasEvolution("knife_reef")
@@ -819,6 +859,7 @@ namespace XRL.World.Parts.Mutation
                 && moved > 0)
             {
                 reserve -= 1;
+                usedKnifeRind = true;
             }
 
             if (MutationMeddley_HasEvolution("desiccant_wake")
@@ -828,6 +869,7 @@ namespace XRL.World.Parts.Mutation
                 && !saline)
             {
                 reserve -= 1;
+                usedDryTide = true;
             }
 
             if (MutationMeddley_HasEvolution("brackish_jet")
@@ -837,6 +879,7 @@ namespace XRL.World.Parts.Mutation
                 && saline)
             {
                 reserve -= 1;
+                usedSurgeTide = true;
             }
 
             if (MutationMeddley_HasMutation("Multiple Legs")
@@ -865,6 +908,10 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Max(0, Math.Min(reserve, maxReserve)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
             MutationMeddley_SetStateInt(MutationMeddley_SalineKey, saline ? 1 : 0);
+            MutationMeddley_SetStateInt(MutationMeddley_ShellUpKey, usedShellUp ? 1 : 0);
+            MutationMeddley_SetStateInt(MutationMeddley_KnifeRindKey, usedKnifeRind ? 1 : 0);
+            MutationMeddley_SetStateInt(MutationMeddley_DryTideKey, usedDryTide ? 1 : 0);
+            MutationMeddley_SetStateInt(MutationMeddley_SurgeTideKey, usedSurgeTide ? 1 : 0);
             MutationMeddley_RefreshPassiveEffects();
         }
 
@@ -880,6 +927,7 @@ namespace XRL.World.Parts.Mutation
                 || !MutationMeddley_HasEvolution("saltglass_bastion")
                 || !MutationMeddley_MutationHasSemanticTag("Living Crystal", "CRYSTALLINE")
                 || !saline
+                || MutationMeddley_GetCurrentModeId() != "shell_up"
                 || moved != 0)
             {
                 return;
@@ -915,6 +963,7 @@ namespace XRL.World.Parts.Mutation
                 || !MutationMeddley_HasUnspentTier(3)
                 || !MutationMeddley_HasEvolution("cool_sump")
                 || !MutationMeddley_HasMutation("Freezing Ray")
+                || MutationMeddley_GetCurrentModeId() != "cool_reserve"
                 || (!MutationMeddley_IsCurrentCellWet() && !saline))
             {
                 return;

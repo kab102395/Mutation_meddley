@@ -61,7 +61,7 @@ rank 3
 
 The framework stores mutation state in the stable serialized string field `MutationMeddley_EvolutionState`.
 
-Version 0.5.1 uses that field as a small state envelope:
+Version 0.5.2 uses that field as a small state envelope:
 
 - selected evolution IDs remain the primary state
 - mutation-local metadata such as stance, cadence, or saline reserve are encoded into the same payload
@@ -81,7 +81,7 @@ For synergy/discovery content, keep the boundary explicit:
 
 ## UI strategy
 
-Version 0.5.1 keeps `Popup.ShowOptionList` for both path selection and mutation-specific stance changes.
+Version 0.5.2 keeps `Popup.ShowOptionList` for both path selection and mutation-specific stance changes.
 
 This keeps the current UI keyboard, mouse, controller, and handheld friendly without committing yet to a custom full-screen mutation tree.
 
@@ -89,7 +89,7 @@ A future mutation-tree UI should remain a separate presentation layer over the s
 
 ## Content shape
 
-Version 0.5.1 has four connected layers of content:
+Version 0.5.2 has four connected layers of content:
 
 - `Evolution Seed [DEV]` remains the regression harness for framework behavior
 - `Living Crystal`, `Brineborn`, `Ash Metabolism`, and `Walking Colony` are Mutation Meddley-owned flagship mutations
@@ -104,7 +104,7 @@ The first runtime semantic layer is intentionally small:
 - the shared framework only provides semantic tags, mutation-presence queries, active-synergy enumeration, hidden-choice gating, and level-text reporting
 - exact pair logic is still allowed where a relationship is uniquely specific
 - one mutation class owns each gameplay effect even if multiple mutation pages report the same synergy
-- hidden discovery remains mutation-local and rank-gated; no retroactive rank-9 respec flow exists in `0.5.1`
+- hidden discovery remains mutation-local and rank-gated; no retroactive rank-9 respec flow exists in `0.5.2`
 
 ## Compatibility strategy
 

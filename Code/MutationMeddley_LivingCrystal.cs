@@ -91,6 +91,10 @@ namespace XRL.World.Parts.Mutation
 
         public override string GetLevelText(int Level)
         {
+            string cadenceText = MutationMeddley_HasEvolution("resonant_crystal")
+                ? "Cadence: " + MutationMeddley_GetEffectiveCadence() + "\n"
+                : string.Empty;
+
             return "Rank 3: choose a crystalline identity.\n"
                 + "Rank 6: specialize that identity.\n"
                 + "Rank 9: secure its capstone.\n\n"
@@ -98,9 +102,7 @@ namespace XRL.World.Parts.Mutation
                 + "\n"
                 + MutationMeddley_DescribeModeState()
                 + "\n"
-                + "Cadence: "
-                + MutationMeddley_GetEffectiveCadence()
-                + "\n"
+                + cadenceText
                 + MutationMeddley_GetSynergySummary();
         }
 
@@ -595,7 +597,11 @@ namespace XRL.World.Parts.Mutation
                 {
                     if (lit)
                     {
-                        MutationMeddley_SetShift("DV", MutationMeddley_HasEvolution("mirrorshard_halo") ? 4 : 3);
+                        MutationMeddley_SetShift(
+                            "DV",
+                            (MutationMeddley_HasEvolution("mirrorshard_halo") ? 4 : 3)
+                            + (MutationMeddley_GetCurrentModeId() == "dawn_glare" ? 1 : 0)
+                        );
                         MutationMeddley_SetShift("HeatResistance", MutationMeddley_HasEvolution("mirrorshard_halo") ? 35 : 20);
                     }
                     else
@@ -608,7 +614,11 @@ namespace XRL.World.Parts.Mutation
                 {
                     if (!lit)
                     {
-                        MutationMeddley_SetShift("DV", MutationMeddley_HasEvolution("eclipse_veil") ? 5 : 3);
+                        MutationMeddley_SetShift(
+                            "DV",
+                            (MutationMeddley_HasEvolution("eclipse_veil") ? 5 : 3)
+                            + (MutationMeddley_GetCurrentModeId() == "dusk_glare" ? 1 : 0)
+                        );
                         MutationMeddley_SetShift("ColdResistance", MutationMeddley_HasEvolution("eclipse_veil") ? 35 : 20);
                     }
                     else

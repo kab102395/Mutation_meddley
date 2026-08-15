@@ -1,6 +1,6 @@
 # Synergy Matrix
 
-This file records the intended `0.5.1` synergy/discovery surface so review and QA can track what is deliberate.
+This file records the intended `0.5.2` synergy/discovery surface so review and QA can track what is deliberate.
 
 ## State model
 
@@ -14,13 +14,13 @@ Only `discovered` and `selected` belong in persistent save state. Tags, active s
 
 - Hidden rank-9 adaptations must be discovered before the character spends tier 3 on that mutation.
 - If tier 3 is already spent, discovery progress stops for that hidden adaptation on that character.
-- There is no retroactive unlock-selection or respec flow in `0.5.1`.
+- There is no retroactive unlock-selection or respec flow in `0.5.2`.
 
 ## Ownership rules
 
 - A visible synergy may be shown by multiple mutation pages.
 - One mutation class owns the actual gameplay effect for each synergy.
-- Triads build on pair relationships deliberately; they are not intended to double-apply the same effect from multiple owners.
+- Triads build on pair relationships deliberately, and each participating mutation contributes its own mutation-local effect slice.
 
 ## Triads
 

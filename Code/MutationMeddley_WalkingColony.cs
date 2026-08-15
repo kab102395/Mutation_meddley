@@ -512,6 +512,7 @@ namespace XRL.World.Parts.Mutation
                 else if (MutationMeddley_HasEvolution("latch_runners"))
                 {
                     MutationMeddley_SetShift("Quickness", moved ? 2 + (pressure / 3) : 1);
+                    MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "harry_line" && pressure > 0 ? 1 : 0);
                 }
 
                 if (MutationMeddley_HasEvolution("march_cartography") && hostileTerrain)
@@ -815,8 +816,8 @@ namespace XRL.World.Parts.Mutation
 
             MutationMeddley_TrackMoltParliamentDiscovery();
             MutationMeddley_TrackWakeTrailDiscovery(hostileTerrain, strideStreak);
-            MutationMeddley_TrackBurrowedNurseryDiscovery(moved);
-            MutationMeddley_TrackChoirOfTendonsDiscovery(!moved);
+            MutationMeddley_TrackBurrowedNurseryDiscovery(moved, pressure);
+            MutationMeddley_TrackChoirOfTendonsDiscovery(!moved, pressure);
 
             MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Max(0, Math.Min(pressure, maxPressure)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
@@ -858,14 +859,14 @@ namespace XRL.World.Parts.Mutation
             }
         }
 
-        private void MutationMeddley_TrackBurrowedNurseryDiscovery(bool moved)
+        private void MutationMeddley_TrackBurrowedNurseryDiscovery(bool moved, int pressure)
         {
             if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_BurrowedUnlockedKey)
                 || !MutationMeddley_HasUnspentTier(3)
                 || !MutationMeddley_HasEvolution("bone_nursery")
                 || !MutationMeddley_HasMutation("Burrowing Claws")
                 || moved
-                || MutationMeddley_GetColonyPressure() < 2)
+                || pressure < 2)
             {
                 return;
             }
@@ -876,12 +877,13 @@ namespace XRL.World.Parts.Mutation
             }
         }
 
-        private void MutationMeddley_TrackChoirOfTendonsDiscovery(bool composedTurn)
+        private void MutationMeddley_TrackChoirOfTendonsDiscovery(bool composedTurn, int pressure)
         {
             if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_ChoirUnlockedKey)
                 || !MutationMeddley_HasUnspentTier(3)
                 || !MutationMeddley_HasEvolution("nerve_delegation")
                 || !composedTurn
+                || pressure < 2
                 || (!MutationMeddley_HasMutation("Heightened Hearing")
                     && !MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")))
             {

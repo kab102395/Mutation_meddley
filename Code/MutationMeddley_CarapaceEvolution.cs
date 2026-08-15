@@ -59,6 +59,7 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_TrackHookstormFrameDiscovery();
                 if (MutationMeddley_HasMutation("Regeneration")
                     && MutationMeddley_IsFunctionallyActive()
+                    && MutationMeddley_HasEvolution("fortress")
                     && MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0
                     && ParentObject != null)
                 {
@@ -580,6 +581,15 @@ namespace XRL.World.Parts.Mutation
                 {
                     MutationMeddley_SetShift("HeatResistance", 5);
                 }
+
+                if (MutationMeddley_GetCurrentModeId() == "anchor_down")
+                {
+                    MutationMeddley_SetShift("AV", stationary ? 1 : 0);
+                }
+                else if (MutationMeddley_GetCurrentModeId() == "spiteful_wall")
+                {
+                    MutationMeddley_SetShift("DV", engaged ? 1 : 0);
+                }
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
@@ -620,6 +630,15 @@ namespace XRL.World.Parts.Mutation
                 if (MutationMeddley_HasMutation("Ash Metabolism") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
                 {
                     MutationMeddley_SetShift("Quickness", 1);
+                }
+
+                if (MutationMeddley_GetCurrentModeId() == "skirmish_gait")
+                {
+                    MutationMeddley_SetShift("DV", MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0 ? 1 : 0);
+                }
+                else if (MutationMeddley_GetCurrentModeId() == "ramming_gait")
+                {
+                    MutationMeddley_SetShift("AV", engaged ? 1 : 0);
                 }
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
@@ -842,6 +861,7 @@ namespace XRL.World.Parts.Mutation
             }
 
             if (!MutationMeddley_HasMutation("Quills")
+                || !MutationMeddley_IsFunctionallyActive()
                 || !MutationMeddley_HasEvolution("faceted_keep")
                 || MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) == 0)
             {
@@ -877,6 +897,7 @@ namespace XRL.World.Parts.Mutation
         {
             if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_SkitterUnlockedKey)
                 || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_IsFunctionallyActive()
                 || !MutationMeddley_HasEvolution("ravager_joints")
                 || !MutationMeddley_HasMutation("Multiple Legs")
                 || MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) == 0)
@@ -894,6 +915,7 @@ namespace XRL.World.Parts.Mutation
         {
             if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_HookstormUnlockedKey)
                 || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_IsFunctionallyActive()
                 || !MutationMeddley_HasEvolution("spur_lattice")
                 || !MutationMeddley_HasMutation("Quills")
                 || ParentObject == null
