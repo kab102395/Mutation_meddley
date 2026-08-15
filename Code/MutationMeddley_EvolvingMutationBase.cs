@@ -595,6 +595,17 @@ namespace XRL.World.Parts.Mutation
                 || MutationMeddley_IsCurrentCellSmoky();
         }
 
+        protected bool MutationMeddley_TryHeal(int amount)
+        {
+            if (amount <= 0 || ParentObject == null || ParentObject.hitpoints >= ParentObject.baseHitpoints)
+            {
+                return false;
+            }
+
+            ParentObject.Heal(amount);
+            return true;
+        }
+
         protected string MutationMeddley_GetStateValue(string key)
         {
             Dictionary<string, string> metadata = MutationMeddley_GetStateMetadata();

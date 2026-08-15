@@ -68,6 +68,8 @@ namespace XRL.World.Parts.Mutation
             return "Rank 3: choose how your heat ecology expresses itself.\n"
                 + "Rank 6: specialize the furnace, maw, or organ.\n"
                 + "Rank 9: secure the ash capstone.\n\n"
+                + MutationMeddley_GetUsageSummary()
+                + "\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
                 + MutationMeddley_DescribeModeState()
@@ -79,7 +81,33 @@ namespace XRL.World.Parts.Mutation
                 + (MutationMeddley_IsCurrentCellHot() ? " (hot ground)" : " (temperate ground)")
                 + (MutationMeddley_IsCurrentCellSmoky() ? ", smoke present" : ", clear air")
                 + "\n"
+                + MutationMeddley_GetCurrentMechanicsSummary()
+                + "\n"
+                + MutationMeddley_GetPassiveBonusSummary()
+                + "\n"
                 + MutationMeddley_GetSynergySummary();
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetCurrentMechanicNotes()
+        {
+            yield return "Embers build from hot and smoky cells, then decay in calm environments.";
+
+            if (MutationMeddley_HasEvolution("furnace_skin"))
+            {
+                yield return "Furnace Skin banks heat into defense. Hot ground and lit pressure matter more than ordinary turns.";
+            }
+            else if (MutationMeddley_HasEvolution("cinder_gut"))
+            {
+                yield return "Cinder Gut converts movement and ember spending into pursuit momentum. Keep moving to get value.";
+            }
+            else if (MutationMeddley_HasEvolution("smoke_organ"))
+            {
+                yield return "Smoke Organ wants smoky cells. Veil Smoke leans evasive; Draft Smoke rewards mobile route theft.";
+            }
+            else
+            {
+                yield return "Choose a rank-3 ash identity first to unlock the real ember loop.";
+            }
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -486,6 +514,7 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("furnace_skin"))
             {
+                MutationMeddley_SetShift("Toughness", 1);
                 MutationMeddley_SetShift("HeatResistance", 10 + (embers * 3));
                 MutationMeddley_SetShift("AV", 1 + (embers / 3));
 
@@ -516,6 +545,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("cinder_gut"))
             {
+                MutationMeddley_SetShift("Agility", 1);
                 MutationMeddley_SetShift("Quickness", 1 + (embers / 3));
 
                 if (MutationMeddley_HasEvolution("coal_maw"))
@@ -541,6 +571,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("smoke_organ"))
             {
+                MutationMeddley_SetShift("Ego", 1);
                 MutationMeddley_SetShift("DV", smoky ? 2 + (embers / 3) : 1);
 
                 if (MutationMeddley_HasEvolution("ash_veil"))

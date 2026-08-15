@@ -76,6 +76,7 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_TrackHeatSinkChoirDiscovery();
                 MutationMeddley_TrackSolarWakeDiscovery();
                 MutationMeddley_TrackNullPrismDiscovery();
+                MutationMeddley_ProcessCrystalTurn();
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
                 MutationMeddley_RefreshPassiveEffects();
             }
@@ -98,12 +99,54 @@ namespace XRL.World.Parts.Mutation
             return "Rank 3: choose a crystalline identity.\n"
                 + "Rank 6: specialize that identity.\n"
                 + "Rank 9: secure its capstone.\n\n"
+                + MutationMeddley_GetUsageSummary()
+                + "\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
                 + MutationMeddley_DescribeModeState()
                 + "\n"
                 + cadenceText
+                + MutationMeddley_GetCurrentMechanicsSummary()
+                + "\n"
+                + MutationMeddley_GetPassiveBonusSummary()
+                + "\n"
                 + MutationMeddley_GetSynergySummary();
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetCurrentMechanicNotes()
+        {
+            if (MutationMeddley_HasEvolution("diamond_lattice"))
+            {
+                yield return "Diamond Lattice rewards bracing and close pressure. End turns engaged or stationary to convert crystal stress into recovery.";
+                if (MutationMeddley_HasEvolution("heat_sink_choir"))
+                {
+                    yield return "Heat Sink Choir only pays out in genuinely hot cells, not from passive loadout ownership.";
+                }
+            }
+            else if (MutationMeddley_HasEvolution("prismatic_matrix"))
+            {
+                yield return "Prismatic Matrix changes with lighting. Dawn paths want lit cells; dusk paths want dim cells.";
+                if (MutationMeddley_HasEvolution("solar_wake"))
+                {
+                    yield return "Solar Wake turns lit movement into a stronger refractive payoff.";
+                }
+                if (MutationMeddley_HasEvolution("null_prism"))
+                {
+                    yield return "Null Prism rewards staying in dim cells and leaning into phase-style evasive play.";
+                }
+            }
+            else if (MutationMeddley_HasEvolution("resonant_crystal"))
+            {
+                yield return "Resonant Crystal builds cadence from movement. Higher cadence feeds both defense and end-turn recovery.";
+                if (MutationMeddley_HasEvolution("tuning_fork_frame"))
+                {
+                    yield return "Tuning Fork Frame prefers stillness after buildup; Choral Spines prefers continued movement.";
+                }
+            }
+            else
+            {
+                yield return "Choose a crystalline identity first to unlock the active crystal loop.";
+            }
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -537,6 +580,7 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_HasEvolution("diamond_lattice"))
             {
                 MutationMeddley_SetShift("AV", 1);
+                MutationMeddley_SetShift("Toughness", 1);
                 if (MutationMeddley_HasEvolution("faceted_bulwark"))
                 {
                     if (engaged)
@@ -593,6 +637,8 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("prismatic_matrix"))
             {
+                MutationMeddley_SetShift("Ego", 1);
+
                 if (MutationMeddley_HasEvolution("sunlens_array"))
                 {
                     if (lit)
@@ -673,6 +719,8 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("resonant_crystal"))
             {
+                MutationMeddley_SetShift("Agility", 1);
+
                 if (MutationMeddley_HasEvolution("choral_spines"))
                 {
                     MutationMeddley_SetShift("Quickness", cadence + (MutationMeddley_HasEvolution("song_of_fracture") ? 2 : 0));
@@ -910,6 +958,133 @@ namespace XRL.World.Parts.Mutation
             }
 
             return Math.Min(cadence, 8);
+        }
+
+        private void MutationMeddley_ProcessCrystalTurn()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool engaged = ParentObject.IsEngagedInMelee();
+            bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
+            bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+            bool lit = MutationMeddley_IsCurrentCellLit();
+            bool hot = MutationMeddley_IsCurrentCellHot();
+            int cadence = MutationMeddley_GetEffectiveCadence();
+
+            if (MutationMeddley_HasEvolution("diamond_lattice"))
+            {
+                int healing = 0;
+
+                if (MutationMeddley_HasEvolution("faceted_bulwark") && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("dense_core") && stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("impact_cathedral") && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("anchor_maze") && stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("heat_sink_choir") && hot)
+                {
+                    healing += 1;
+                }
+
+                MutationMeddley_TryHeal(healing);
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("prismatic_matrix"))
+            {
+                int healing = 0;
+
+                if (MutationMeddley_HasEvolution("sunlens_array")
+                    && lit
+                    && MutationMeddley_GetCurrentModeId() == "dawn_glare")
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("shade_reflector")
+                    && !lit
+                    && MutationMeddley_GetCurrentModeId() == "dusk_glare")
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("mirrorshard_halo") && lit)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("eclipse_veil") && !lit)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("solar_wake") && lit && moved)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("null_prism") && !lit && stationary)
+                {
+                    healing += 1;
+                }
+
+                MutationMeddley_TryHeal(healing);
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("resonant_crystal"))
+            {
+                int healing = 0;
+
+                if (cadence >= 3)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("choral_spines") && moved)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("tuning_fork_frame") && stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("song_of_fracture") && cadence >= 4)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("stilltone_engine") && cadence >= 4 && stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("fractured_choir") && cadence >= 5)
+                {
+                    healing += 1;
+                }
+
+                MutationMeddley_TryHeal(healing);
+            }
         }
 
         private void MutationMeddley_TrackFracturedChoirDiscovery()

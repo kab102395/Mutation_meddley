@@ -67,6 +67,8 @@ namespace XRL.World.Parts.Mutation
             return "Rank 3: choose how the colony organizes your body.\n"
                 + "Rank 6: specialize the hive, swarm, or parliament.\n"
                 + "Rank 9: secure the colonial capstone.\n\n"
+                + MutationMeddley_GetUsageSummary()
+                + "\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
                 + MutationMeddley_DescribeModeState()
@@ -76,7 +78,33 @@ namespace XRL.World.Parts.Mutation
                 + "/"
                 + MutationMeddley_GetMaxColonyPressure()
                 + "\n"
+                + MutationMeddley_GetCurrentMechanicsSummary()
+                + "\n"
+                + MutationMeddley_GetPassiveBonusSummary()
+                + "\n"
                 + MutationMeddley_GetSynergySummary();
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetCurrentMechanicNotes()
+        {
+            yield return "Colony pressure builds from movement and drains when you stay inert.";
+
+            if (MutationMeddley_HasEvolution("marrow_hive"))
+            {
+                yield return "Marrow Hive turns stored pressure into sustain. Knit Flesh only spends pressure when healing can actually happen.";
+            }
+            else if (MutationMeddley_HasEvolution("surveyor_swarm"))
+            {
+                yield return "Surveyor Swarm wants repeated movement and hostile traversal to keep its map-pressure engine online.";
+            }
+            else if (MutationMeddley_HasEvolution("graft_parliament"))
+            {
+                yield return "Graft Parliament gets stronger when your body-plan is crowded by other structural mutations and tactical strain.";
+            }
+            else
+            {
+                yield return "Choose a rank-3 colony identity first to unlock pressure-spending behavior.";
+            }
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -476,6 +504,7 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("marrow_hive"))
             {
+                MutationMeddley_SetShift("Toughness", 1);
                 MutationMeddley_SetShift("AV", 1 + (pressure / 3));
                 MutationMeddley_SetShift("DV", pressure / 4);
 
@@ -502,6 +531,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("surveyor_swarm"))
             {
+                MutationMeddley_SetShift("Agility", 1);
                 MutationMeddley_SetShift("Quickness", 1 + (pressure / 3));
                 MutationMeddley_SetShift("DV", moved ? 1 + (pressure / 4) : pressure / 5);
 
@@ -527,6 +557,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("graft_parliament"))
             {
+                MutationMeddley_SetShift("Intelligence", 1);
                 MutationMeddley_SetShift("DV", 1 + (pressure / 4));
 
                 if (MutationMeddley_HasOtherMutationWithTag("BODY_PART_INTERACTION"))

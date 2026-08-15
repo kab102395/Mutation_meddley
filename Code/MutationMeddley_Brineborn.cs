@@ -70,6 +70,8 @@ namespace XRL.World.Parts.Mutation
             return "Rank 3: choose how your saline biology expresses itself.\n"
                 + "Rank 6: specialize the loop.\n"
                 + "Rank 9: claim the estuarial capstone.\n\n"
+                + MutationMeddley_GetUsageSummary()
+                + "\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
                 + MutationMeddley_DescribeModeState()
@@ -80,7 +82,33 @@ namespace XRL.World.Parts.Mutation
                 + MutationMeddley_GetMaxReserve()
                 + (MutationMeddley_IsSalineEnvironment() ? " (saline ground)" : " (dry ground)")
                 + "\n"
+                + MutationMeddley_GetCurrentMechanicsSummary()
+                + "\n"
+                + MutationMeddley_GetPassiveBonusSummary()
+                + "\n"
                 + MutationMeddley_GetSynergySummary();
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetCurrentMechanicNotes()
+        {
+            yield return "Saline reserve builds in qualifying saline cells and decays away from them.";
+
+            if (MutationMeddley_HasEvolution("wellspring_flesh"))
+            {
+                yield return "Wellspring Flesh uses Draw Brine to spend 1 reserve for healing only when you are actually hurt.";
+            }
+            else if (MutationMeddley_HasEvolution("saltglass_bloom"))
+            {
+                yield return "Saltglass Bloom turns reserve into shell-up defense or knife-rind pressure depending on stance and movement.";
+            }
+            else if (MutationMeddley_HasEvolution("scouring_estuary"))
+            {
+                yield return "Scouring Estuary spends reserve on movement pressure. Dry Tide and Surge Tide care about whether the ground is saline.";
+            }
+            else
+            {
+                yield return "Choose a rank-3 saline identity first to unlock reserve-spending mechanics.";
+            }
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -488,6 +516,7 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("wellspring_flesh"))
             {
+                MutationMeddley_SetShift("Toughness", 1);
                 MutationMeddley_SetShift("HeatResistance", 5 + (reserve * 2));
                 MutationMeddley_SetShift("ColdResistance", 5 + (reserve * 2));
 
@@ -523,6 +552,8 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("saltglass_bloom"))
             {
+                MutationMeddley_SetShift("Willpower", 1);
+
                 if (MutationMeddley_HasEvolution("saltglass_bastion"))
                 {
                     MutationMeddley_SetShift("AV", 1 + (reserve / 2));
@@ -558,6 +589,8 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("scouring_estuary"))
             {
+                MutationMeddley_SetShift("Agility", 1);
+
                 if (MutationMeddley_HasEvolution("desiccant_wake"))
                 {
                     MutationMeddley_SetShift("Quickness", reserve / 2);

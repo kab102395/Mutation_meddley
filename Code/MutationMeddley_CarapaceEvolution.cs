@@ -66,6 +66,7 @@ namespace XRL.World.Parts.Mutation
                     ParentObject.Heal(1);
                 }
 
+                MutationMeddley_ProcessShellTurn();
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
                 MutationMeddley_RefreshPassiveEffects();
             }
@@ -92,9 +93,15 @@ namespace XRL.World.Parts.Mutation
             }
 
             return intro
+                + MutationMeddley_GetUsageSummary()
+                + "\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
                 + MutationMeddley_DescribeModeState()
+                + "\n"
+                + MutationMeddley_GetCurrentMechanicsSummary()
+                + "\n"
+                + MutationMeddley_GetPassiveBonusSummary()
                 + "\n"
                 + MutationMeddley_GetSynergySummary();
         }
@@ -107,6 +114,56 @@ namespace XRL.World.Parts.Mutation
         protected override string MutationMeddley_GetInactiveReason()
         {
             return "Carapace Evolution is dormant.\n\nTake vanilla Carapace first, then evolve the shell through Mutation Meddley.";
+        }
+
+        protected override IEnumerable<string> MutationMeddley_GetCurrentMechanicNotes()
+        {
+            if (!MutationMeddley_IsFunctionallyActive())
+            {
+                yield return "Dormant until vanilla Carapace is present on the character.";
+                yield break;
+            }
+
+            if (MutationMeddley_HasEvolution("fortress"))
+            {
+                yield return "Fortress rewards anchoring. End turns without moving to convert shell commitment into healing.";
+                if (MutationMeddley_HasEvolution("faceted_keep"))
+                {
+                    yield return "Faceted Keep adds more recovery while you are engaged in melee.";
+                }
+                if (MutationMeddley_HasEvolution("entrenched_bastion"))
+                {
+                    yield return "Entrenched Bastion pays out hardest when you hold still instead of kiting.";
+                }
+            }
+            else if (MutationMeddley_HasEvolution("hunter_shell"))
+            {
+                yield return "Hunter Shell rewards pursuit. Move, stay in contact, and finish the turn engaged to cash in.";
+                if (MutationMeddley_HasEvolution("ravager_joints"))
+                {
+                    yield return "Ravager Joints spikes recovery and speed after movement-heavy pursuit turns.";
+                }
+                if (MutationMeddley_HasEvolution("spur_lattice"))
+                {
+                    yield return "Spur Lattice wants committed melee contact rather than passive positioning.";
+                }
+            }
+            else if (MutationMeddley_HasEvolution("adaptive_carapace"))
+            {
+                yield return "Adaptive Carapace keys off terrain and climate. Wet, hot, and saline cells matter.";
+                if (MutationMeddley_HasEvolution("thermal_baffles"))
+                {
+                    yield return "Thermal Baffles heals in hot spaces while Ember Veil is active and resists heat or cold by stance.";
+                }
+                if (MutationMeddley_HasEvolution("mire_sheath"))
+                {
+                    yield return "Mire Sheath pays out in wet ground and becomes tougher if you lean into bog-shell branches.";
+                }
+            }
+            else
+            {
+                yield return "Choose a rank-3 shell identity first to unlock the real mechanics.";
+            }
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -547,6 +604,7 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_HasEvolution("fortress"))
             {
                 MutationMeddley_SetShift("AV", 1);
+                MutationMeddley_SetShift("Toughness", 1);
 
                 if (MutationMeddley_HasEvolution("faceted_keep"))
                 {
@@ -594,6 +652,7 @@ namespace XRL.World.Parts.Mutation
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
                 MutationMeddley_SetShift("DV", 1);
+                MutationMeddley_SetShift("Agility", 1);
 
                 if (MutationMeddley_HasEvolution("ravager_joints"))
                 {
@@ -643,6 +702,8 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
             {
+                MutationMeddley_SetShift("Willpower", 1);
+
                 if (MutationMeddley_HasEvolution("thermal_baffles"))
                 {
                     MutationMeddley_SetShift(
@@ -846,6 +907,118 @@ namespace XRL.World.Parts.Mutation
         private bool MutationMeddley_HasVanillaCarapace()
         {
             return MutationMeddley_HasMutation("Carapace");
+        }
+
+        private void MutationMeddley_ProcessShellTurn()
+        {
+            if (!MutationMeddley_IsFunctionallyActive() || ParentObject == null)
+            {
+                return;
+            }
+
+            bool engaged = ParentObject.IsEngagedInMelee();
+            bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
+            bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+            bool wetGround = MutationMeddley_IsCurrentCellWet();
+            bool saline = MutationMeddley_IsCurrentCellSaline();
+            bool hot = MutationMeddley_IsCurrentCellHot();
+
+            if (MutationMeddley_HasEvolution("fortress"))
+            {
+                int healing = 0;
+
+                if (stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("faceted_keep") && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("entrenched_bastion") && stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("living_fortress") && stationary && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("redoubt_engine")
+                    && stationary
+                    && MutationMeddley_GetCurrentModeId() == "anchor_down")
+                {
+                    healing += 1;
+                }
+
+                MutationMeddley_TryHeal(healing);
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("hunter_shell"))
+            {
+                int healing = 0;
+
+                if (moved && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("ravager_joints") && moved)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("spur_lattice") && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("pursuit_predator") && moved && engaged)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("hooked_pursuer") && engaged)
+                {
+                    healing += 1;
+                }
+
+                MutationMeddley_TryHeal(healing);
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("adaptive_carapace"))
+            {
+                int healing = 0;
+
+                if (MutationMeddley_HasEvolution("mire_sheath") && wetGround)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("thermal_baffles")
+                    && MutationMeddley_GetCurrentModeId() == "ember_veil"
+                    && hot)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("bog_shell") && wetGround && stationary)
+                {
+                    healing += 1;
+                }
+
+                if (MutationMeddley_HasEvolution("estuary_husk") && saline)
+                {
+                    healing += 1;
+                }
+
+                MutationMeddley_TryHeal(healing);
+            }
         }
 
         private void MutationMeddley_TrackPorcupineDiscovery()

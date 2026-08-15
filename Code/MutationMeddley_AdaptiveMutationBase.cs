@@ -133,7 +133,13 @@ namespace XRL.World.Parts.Mutation
                 "MoveSpeed",
                 "HeatResistance",
                 "ColdResistance",
-                "Quickness"
+                "Quickness",
+                "Strength",
+                "Agility",
+                "Toughness",
+                "Willpower",
+                "Intelligence",
+                "Ego"
             };
 
             MutationMeddley_PendingStatShifts.Clear();
@@ -165,6 +171,116 @@ namespace XRL.World.Parts.Mutation
             }
 
             return "Current stance: " + MutationMeddley_GetCurrentModeName() + ".";
+        }
+
+        protected virtual IEnumerable<string> MutationMeddley_GetCurrentMechanicNotes()
+        {
+            return new string[0];
+        }
+
+        protected string MutationMeddley_GetUsageSummary()
+        {
+            return "Use Evolve "
+                + MutationMeddley_EvolutionDisplayName
+                + " at ranks 3, 6, and 9 to choose branches.\n"
+                + "Use "
+                + MutationMeddley_ModeAbilityName
+                + " to switch stance after you have a path.";
+        }
+
+        protected string MutationMeddley_GetCurrentMechanicsSummary()
+        {
+            StringBuilder result = new StringBuilder();
+            bool wroteAny = false;
+
+            foreach (string note in MutationMeddley_GetCurrentMechanicNotes())
+            {
+                if (string.IsNullOrEmpty(note))
+                {
+                    continue;
+                }
+
+                if (!wroteAny)
+                {
+                    result.Append("Current mechanics:");
+                    wroteAny = true;
+                }
+
+                result.Append("\n- ");
+                result.Append(note);
+            }
+
+            if (!wroteAny)
+            {
+                return "Current mechanics:\n- No branch-specific active effects yet.";
+            }
+
+            return result.ToString();
+        }
+
+        protected string MutationMeddley_GetPassiveBonusSummary()
+        {
+            if (MutationMeddley_PendingStatShifts.Count == 0)
+            {
+                return "Current bonuses:\n- No passive stat bonuses active.";
+            }
+
+            string[] statOrder = new string[]
+            {
+                "AV",
+                "DV",
+                "Quickness",
+                "MoveSpeed",
+                "Strength",
+                "Agility",
+                "Toughness",
+                "Willpower",
+                "Intelligence",
+                "Ego",
+                "HeatResistance",
+                "ColdResistance"
+            };
+
+            StringBuilder result = new StringBuilder("Current bonuses:");
+            bool wroteAny = false;
+
+            for (int i = 0; i < statOrder.Length; i++)
+            {
+                int amount;
+                if (!MutationMeddley_PendingStatShifts.TryGetValue(statOrder[i], out amount) || amount == 0)
+                {
+                    continue;
+                }
+
+                result.Append("\n- ");
+                result.Append(amount > 0 ? "+" : "");
+                result.Append(amount);
+                result.Append(" ");
+                result.Append(MutationMeddley_GetStatDisplayName(statOrder[i]));
+                wroteAny = true;
+            }
+
+            if (!wroteAny)
+            {
+                result.Append("\n- No passive stat bonuses active.");
+            }
+
+            return result.ToString();
+        }
+
+        private string MutationMeddley_GetStatDisplayName(string stat)
+        {
+            switch (stat)
+            {
+                case "HeatResistance":
+                    return "Heat Resist";
+                case "ColdResistance":
+                    return "Cold Resist";
+                case "MoveSpeed":
+                    return "Move Speed";
+                default:
+                    return stat;
+            }
         }
 
         protected string MutationMeddley_GetCurrentModeId()
