@@ -62,9 +62,9 @@ Verify:
 
 1. the mod appears in the Mod Manager
 2. C# compiles without errors
-3. `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, and `Carapace Evolution` appear during mutant character creation
+3. `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, `Ash Metabolism`, `Walking Colony`, and `Carapace Evolution` appear during mutant character creation
 4. each mutation exposes its `Evolve ...` activated ability
-5. `Living Crystal`, `Brineborn`, and `Carapace Evolution` also expose their `Retune ...` activated abilities
+5. `Living Crystal`, `Brineborn`, `Ash Metabolism`, `Walking Colony`, and `Carapace Evolution` also expose their `Retune ...` activated abilities
 6. no branch is available below rank 3
 7. rank 3 only presents the three identity branches for the mutation being tested
 8. choosing one rank-3 branch prevents choosing another tier-1 branch
@@ -74,13 +74,15 @@ Verify:
 12. changing stance with `Retune ...` visibly changes the mutation's stat profile and level text
 13. `Brineborn` only builds saline reserve from qualifying saline world-state interaction
 14. `Living Crystal` shows different light, cadence, or contact-sensitive behavior by path
-15. active synergies appear directly in mutation level text and update after branch, stance, or mutation-loadout changes
-16. unusual hidden adaptations only appear after their discovery conditions have been satisfied
-17. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
-18. removing the mutation removes its activated abilities
-19. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
+15. `Ash Metabolism` behaves differently in hot, smoky, and ordinary spaces and spends embers differently by path
+16. `Walking Colony` changes behavior with movement cadence, recovery windows, and body-plan-compatible builds
+17. active synergies appear directly in mutation level text and update after branch, stance, or mutation-loadout changes
+18. unusual hidden adaptations only appear after their discovery conditions have been satisfied
+19. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
+20. removing the mutation removes its activated abilities
+21. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
-Supported vanilla synergy pack for `0.3.0`:
+Supported vanilla synergy pack for `0.4.0`:
 
 - `Carapace`
 - `Regeneration`
@@ -114,10 +116,10 @@ Verify:
 
 Verify:
 
-1. each supported vanilla mutation activates at least one visible synergy with one of the three flagship mutations
+1. each supported vanilla mutation activates at least one visible synergy with one of the flagship mutations
 2. branch-specific synergies actually change by branch or stance rather than only repeating the same numeric bonus
-3. `Cathedral Organism`, `Breakwater Predator`, and `Prism Estuary` only appear for their intended triad builds
-4. `Fractured Choir`, `Salt Ghost`, and `Porcupine Redoubt` require their discovery conditions before they appear at rank 9
+3. `Cathedral Organism`, `Breakwater Predator`, `Prism Estuary`, `Glass Kiln Bastion`, `Ember Pursuit Engine`, `Mirage Exuvium`, `Salt Kiln Reliquary`, `Steam Choir`, `Ossuary Rampart`, and `Drift Parliament` only appear for their intended triad builds
+4. `Fractured Choir`, `Heat Sink Choir`, `Salt Ghost`, `Brine Reliquary`, `Porcupine Redoubt`, `Estuary Husk`, `Volcanic Memory`, `Wake Eater`, `Burrowed Nursery`, `Wake Trail`, and `Molt Parliament` require their discovery conditions before they appear at rank 9
 5. save/reload preserves hidden unlock state and active triad/synergy reporting
 6. active tags and synergies are recomputed from the live build after reload rather than being restored as stale authoritative state
 7. after a rank-9 slot is already spent on that character, the corresponding hidden adaptation no longer discovers late and does not appear retroactively
