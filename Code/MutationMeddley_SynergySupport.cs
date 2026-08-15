@@ -10,19 +10,22 @@ namespace XRL.World.Parts.Mutation
         public string Summary;
         public string DetailText;
         public bool IsUnusual;
+        public bool IsTriad;
 
         public MutationMeddley_SynergyDefinition(
             string id,
             string title,
             string summary,
             string detailText = "",
-            bool isUnusual = false)
+            bool isUnusual = false,
+            bool isTriad = false)
         {
             Id = id;
             Title = title;
             Summary = summary;
             DetailText = detailText ?? "";
             IsUnusual = isUnusual;
+            IsTriad = isTriad;
         }
     }
 

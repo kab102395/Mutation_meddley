@@ -82,7 +82,7 @@ Verify:
 20. removing the mutation removes its activated abilities
 21. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
-Supported vanilla synergy pack for `0.4.0`:
+Supported vanilla synergy pack for `0.5.0`:
 
 - `Carapace`
 - `Regeneration`
@@ -118,8 +118,8 @@ Verify:
 
 1. each supported vanilla mutation activates at least one visible synergy with one of the flagship mutations
 2. branch-specific synergies actually change by branch or stance rather than only repeating the same numeric bonus
-3. `Cathedral Organism`, `Breakwater Predator`, `Prism Estuary`, `Glass Kiln Bastion`, `Ember Pursuit Engine`, `Mirage Exuvium`, `Salt Kiln Reliquary`, `Steam Choir`, `Ossuary Rampart`, and `Drift Parliament` only appear for their intended triad builds
-4. `Fractured Choir`, `Heat Sink Choir`, `Salt Ghost`, `Brine Reliquary`, `Porcupine Redoubt`, `Estuary Husk`, `Volcanic Memory`, `Wake Eater`, `Burrowed Nursery`, `Wake Trail`, and `Molt Parliament` require their discovery conditions before they appear at rank 9
+3. `Cathedral Organism`, `Breakwater Predator`, `Prism Estuary`, `Glass Kiln Bastion`, `Ember Pursuit Engine`, `Mirage Exuvium`, `Salt Kiln Reliquary`, `Steam Choir`, `Ossuary Rampart`, `Drift Parliament`, `Undertow Furnace`, `Salt Eclipse`, `Bone Kiln Parliament`, `Resonant Undertow`, `Smoke Reef`, `Chorus Husk`, `Whitewater Ossuary`, and `Blackglass Pursuit` only appear for their intended triad builds
+4. `Fractured Choir`, `Heat Sink Choir`, `Solar Wake`, `Null Prism`, `Salt Ghost`, `Brine Reliquary`, `Undertow Heart`, `Abyssal Brine`, `Porcupine Redoubt`, `Estuary Husk`, `Skitter Bulwark`, `Hookstorm Frame`, `Volcanic Memory`, `Wake Eater`, `Cenotaph Haze`, `Cinder Jet`, `Burrowed Nursery`, `Wake Trail`, `Molt Parliament`, and `Choir of Tendons` require their discovery conditions before they appear at rank 9
 5. save/reload preserves hidden unlock state and active triad/synergy reporting
 6. active tags and synergies are recomputed from the live build after reload rather than being restored as stale authoritative state
 7. after a rank-9 slot is already spent on that character, the corresponding hidden adaptation no longer discovers late and does not appear retroactively

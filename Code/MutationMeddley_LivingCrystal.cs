@@ -13,6 +13,10 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_FracturedChoirProgressKey = "lc_hidden_choir_progress";
         private const string MutationMeddley_HeatSinkUnlockedKey = "lc_hidden_heatsink";
         private const string MutationMeddley_HeatSinkProgressKey = "lc_hidden_heatsink_progress";
+        private const string MutationMeddley_SolarWakeUnlockedKey = "lc_hidden_solar";
+        private const string MutationMeddley_SolarWakeProgressKey = "lc_hidden_solar_progress";
+        private const string MutationMeddley_NullPrismUnlockedKey = "lc_hidden_null";
+        private const string MutationMeddley_NullPrismProgressKey = "lc_hidden_null_progress";
 
         public override string MutationMeddley_EvolutionDisplayName
         {
@@ -70,6 +74,8 @@ namespace XRL.World.Parts.Mutation
 
                 MutationMeddley_TrackFracturedChoirDiscovery();
                 MutationMeddley_TrackHeatSinkChoirDiscovery();
+                MutationMeddley_TrackSolarWakeDiscovery();
+                MutationMeddley_TrackNullPrismDiscovery();
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
                 MutationMeddley_RefreshPassiveEffects();
             }
@@ -218,6 +224,16 @@ namespace XRL.World.Parts.Mutation
                     "Capstone bright-space line."
                 ),
                 new MutationMeddley_EvolutionChoice(
+                    "solar_wake",
+                    "Solar Wake",
+                    "Bright refraction stops being shelter alone and starts dragging enemies through your glare lines.",
+                    9,
+                    3,
+                    "sunlens_array",
+                    "UNUSUAL ADAPTATION. Requires repeated lit-space refraction while carrying Light Manipulation.",
+                    true
+                ),
+                new MutationMeddley_EvolutionChoice(
                     "eclipse_veil",
                     "Eclipse Veil",
                     "Dimness gathers around your shell as layered concealment and refraction.",
@@ -225,6 +241,16 @@ namespace XRL.World.Parts.Mutation
                     3,
                     "shade_reflector",
                     "Capstone dark-space line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "null_prism",
+                    "Null Prism",
+                    "Darkness and phase-state stop behaving like cover and start behaving like brittle absence.",
+                    9,
+                    3,
+                    "shade_reflector",
+                    "UNUSUAL ADAPTATION. Requires prolonged dim-space play while carrying Phasing.",
+                    true
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "song_of_fracture",
@@ -331,18 +357,24 @@ namespace XRL.World.Parts.Mutation
                 new MutationMeddley_SynergyDefinition("walking_colony_pair", "Walking Colony", "A colony-aware body changes how your lattice carries strain and tempo."),
                 new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Saltglass physiology mineralizes the lattice differently by branch."),
                 new MutationMeddley_SynergyDefinition("carapace_pair", "Carapace Evolution", "Crystalline shell integration changes how your body carries armor and rhythm."),
-                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Your shell, crystal, and saltglass defenses behave like one organ system."),
-                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Wet movement compounds cadence, pursuit, and saline violence."),
-                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Light, weather, and saline metabolism fold into one refractive ecology."),
-                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Heat-banked shell and crystal structure now punish impact together."),
-                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Cadence and heat-fed pursuit reinforce one another."),
-                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Light, smoke, and weathered shell become one evasive ecology."),
-                new MutationMeddley_SynergyDefinition("salt_kiln_reliquary", "Salt Kiln Reliquary", "Thermal mineralization hardens your salt-crystal defense."),
-                new MutationMeddley_SynergyDefinition("steam_choir", "Steam Choir", "Resonance now rides steam, smoke, and wet pursuit pressure."),
-                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Crystal density, shell fortification, and marrow ecology reinforce one wall."),
-                new MutationMeddley_SynergyDefinition("fractured_choir_state", "Fractured Choir", "Your lattice now answers motion with dangerous harmonic fracture.", isUnusual: true)
-                ,
-                new MutationMeddley_SynergyDefinition("heat_sink_choir_state", "Heat Sink Choir", "Thermal shock now feeds a harsher impact rhythm through your lattice.", isUnusual: true)
+                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Your shell, crystal, and saltglass defenses behave like one organ system.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Wet movement compounds cadence, pursuit, and saline violence.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Light, weather, and saline metabolism fold into one refractive ecology.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Heat-banked shell and crystal structure now punish impact together.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Cadence and heat-fed pursuit reinforce one another.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Light, smoke, and weathered shell become one evasive ecology.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("salt_kiln_reliquary", "Salt Kiln Reliquary", "Thermal mineralization hardens your salt-crystal defense.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("steam_choir", "Steam Choir", "Resonance now rides steam, smoke, and wet pursuit pressure.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Crystal density, shell fortification, and marrow ecology reinforce one wall.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("salt_eclipse", "Salt Eclipse", "Saline refraction and weathered shell tuning become one dim-space defense.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("resonant_undertow", "Resonant Undertow", "Cadence and reserve now feed motion and recovery together.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("smoke_reef", "Smoke Reef", "Smoke, mineral edges, and prismatic refraction mislead the whole battlefield.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("chorus_husk", "Chorus Husk", "Rhythm, membrane-shell logic, and distributed strain become one unstable body.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("blackglass_pursuit", "Blackglass Pursuit", "Pursuit, impact, and route memory start hunting as one frame.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("fractured_choir_state", "Fractured Choir", "Your lattice now answers motion with dangerous harmonic fracture.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("heat_sink_choir_state", "Heat Sink Choir", "Thermal shock now feeds a harsher impact rhythm through your lattice.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("solar_wake_state", "Solar Wake", "Bright refraction now drags enemies through your glare geometry.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("null_prism_state", "Null Prism", "Darkness and phase-state now create a brittle evasive absence around you.", isUnusual: true)
             };
         }
 
@@ -425,10 +457,36 @@ namespace XRL.World.Parts.Mutation
                         && MutationMeddley_HasEvolution("diamond_lattice")
                         && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress")
                         && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive");
+                case "salt_eclipse":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("prismatic_matrix")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace");
+                case "resonant_undertow":
+                    return MutationMeddley_HasEvolution("resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm");
+                case "smoke_reef":
+                    return MutationMeddley_HasEvolution("prismatic_matrix")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "smoke_organ")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom");
+                case "chorus_husk":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "graft_parliament")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace");
+                case "blackglass_pursuit":
+                    return MutationMeddley_HasEvolution("diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "cinder_gut")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm");
                 case "fractured_choir_state":
                     return MutationMeddley_HasEvolution("fractured_choir");
                 case "heat_sink_choir_state":
                     return MutationMeddley_HasEvolution("heat_sink_choir");
+                case "solar_wake_state":
+                    return MutationMeddley_HasEvolution("solar_wake");
+                case "null_prism_state":
+                    return MutationMeddley_HasEvolution("null_prism");
                 default:
                     return false;
             }
@@ -449,6 +507,16 @@ namespace XRL.World.Parts.Mutation
             if (choice.Id == "heat_sink_choir")
             {
                 return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_HeatSinkUnlockedKey);
+            }
+
+            if (choice.Id == "solar_wake")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_SolarWakeUnlockedKey);
+            }
+
+            if (choice.Id == "null_prism")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_NullPrismUnlockedKey);
             }
 
             return false;
@@ -752,10 +820,47 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("DV", 1);
             }
 
+            if (MutationMeddley_IsTriadActive("salt_eclipse") && !lit && saline)
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("resonant_undertow") && MutationMeddley_IsCurrentCellWet())
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("smoke_reef") && MutationMeddley_IsCurrentCellSmoky())
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("chorus_husk"))
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("blackglass_pursuit") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
             if (MutationMeddley_HasEvolution("heat_sink_choir"))
             {
                 MutationMeddley_SetShift("HeatResistance", 10);
                 MutationMeddley_SetShift("AV", engaged ? 1 : 0);
+            }
+
+            if (MutationMeddley_HasEvolution("solar_wake") && lit)
+            {
+                MutationMeddley_SetShift("DV", 2);
+                MutationMeddley_SetShift("Quickness", 1);
+            }
+
+            if (MutationMeddley_HasEvolution("null_prism") && !lit)
+            {
+                MutationMeddley_SetShift("DV", 2);
+                MutationMeddley_SetShift("Quickness", 1);
             }
         }
 
@@ -839,6 +944,40 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_HeatSinkProgressKey, 1, 5) >= 5)
             {
                 MutationMeddley_UnlockHiddenChoice(MutationMeddley_HeatSinkUnlockedKey);
+            }
+        }
+
+        private void MutationMeddley_TrackSolarWakeDiscovery()
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_SolarWakeUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("sunlens_array")
+                || !MutationMeddley_HasMutation("Light Manipulation")
+                || !MutationMeddley_IsCurrentCellLit())
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_SolarWakeProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_SolarWakeUnlockedKey);
+            }
+        }
+
+        private void MutationMeddley_TrackNullPrismDiscovery()
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_NullPrismUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("shade_reflector")
+                || !MutationMeddley_HasMutation("Phasing")
+                || MutationMeddley_IsCurrentCellLit())
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_NullPrismProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_NullPrismUnlockedKey);
             }
         }
 

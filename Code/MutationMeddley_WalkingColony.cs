@@ -15,6 +15,8 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_WakeTrailProgressKey = "colony_hidden_waketrail_progress";
         private const string MutationMeddley_BurrowedUnlockedKey = "colony_hidden_burrowed";
         private const string MutationMeddley_BurrowedProgressKey = "colony_hidden_burrowed_progress";
+        private const string MutationMeddley_ChoirUnlockedKey = "colony_hidden_choir";
+        private const string MutationMeddley_ChoirProgressKey = "colony_hidden_choir_progress";
         private const int MutationMeddley_MaxColony = 6;
 
         public override string MutationMeddley_EvolutionDisplayName
@@ -225,6 +227,16 @@ namespace XRL.World.Parts.Mutation
                     "Capstone composure line."
                 ),
                 new MutationMeddley_EvolutionChoice(
+                    "choir_of_tendons",
+                    "Choir of Tendons",
+                    "Composed strain teaches the colony to coordinate the whole body like a rhythmic instrument.",
+                    9,
+                    3,
+                    "nerve_delegation",
+                    "UNUSUAL ADAPTATION. Requires repeated composed turns while carrying resonance-friendly anatomy.",
+                    true
+                ),
+                new MutationMeddley_EvolutionChoice(
                     "colony_interface",
                     "Colony Interface",
                     "The colony fully adopts your burdened frame as shared machinery.",
@@ -318,14 +330,26 @@ namespace XRL.World.Parts.Mutation
                 new MutationMeddley_SynergyDefinition("multiple_legs", "Multiple Legs", "Extra locomotion gives the colony more routing data and chase leverage."),
                 new MutationMeddley_SynergyDefinition("quills", "Quills", "Reactive anatomy gives the colony more dangerous surface labor."),
                 new MutationMeddley_SynergyDefinition("burrowing_claws", "Burrowing Claws", "Subterranean routes become a direct colonial resource."),
+                new MutationMeddley_SynergyDefinition("amphibious", "Amphibious", "Wet routing changes how the colony spends movement and recovery pressure."),
+                new MutationMeddley_SynergyDefinition("heightened_hearing", "Heightened Hearing", "The colony reads vibration and timing more cleanly."),
+                new MutationMeddley_SynergyDefinition("phasing", "Phasing", "Distributed burden becomes stranger when parts of the body slip out of sync."),
+                new MutationMeddley_SynergyDefinition("carapace", "Carapace", "A live shell changes how the colony negotiates burden even before shell evolution."),
+                new MutationMeddley_SynergyDefinition("ash_pair", "Ash Metabolism", "Heat and colonial pressure start recycling each other."),
                 new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Crystalline structure gives the colony a harsher but cleaner frame to inhabit."),
                 new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Saline routes and colonial movement start reinforcing each other."),
                 new MutationMeddley_SynergyDefinition("carapace_pair", "Carapace Evolution", "A live shell gives the colony better structure to negotiate against."),
-                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Shell, crystal, and marrow ecology thicken into one anti-burst wall."),
-                new MutationMeddley_SynergyDefinition("drift_parliament", "Drift Parliament", "Movement history, shallow-liquid routing, and colonial pressure become one chase logic."),
+                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Shell, crystal, and marrow ecology thicken into one anti-burst wall.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("drift_parliament", "Drift Parliament", "Movement history, shallow-liquid routing, and colonial pressure become one chase logic.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("undertow_furnace", "Undertow Furnace", "Reserve, recovery, and heat debt become one survival engine.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("bone_kiln_parliament", "Bone Kiln Parliament", "Colonial burden, heat, and shell structure become one heavy frame.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("resonant_undertow", "Resonant Undertow", "Cadence, reserve, and movement history begin feeding one another.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("chorus_husk", "Chorus Husk", "Distributed strain, rhythm, and membrane-shell logic become one unstable body.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("whitewater_ossuary", "Whitewater Ossuary", "Harsh traversal and deep sustain form a slow, relentless wall.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("blackglass_pursuit", "Blackglass Pursuit", "Route memory, pursuit, and impact now hunt as one frame.", isTriad: true),
                 new MutationMeddley_SynergyDefinition("burrowed_nursery_state", "Burrowed Nursery", "The colony now treats burrowing recovery routes as home territory.", isUnusual: true),
                 new MutationMeddley_SynergyDefinition("wake_trail_state", "Wake Trail", "Your movement history now carries a colonial hunting trace.", isUnusual: true),
-                new MutationMeddley_SynergyDefinition("molt_parliament_state", "Molt Parliament", "The colony has started treating worn structure as part of itself.", isUnusual: true)
+                new MutationMeddley_SynergyDefinition("molt_parliament_state", "Molt Parliament", "The colony has started treating worn structure as part of itself.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("choir_of_tendons_state", "Choir of Tendons", "The colony now coordinates strain like a rhythmic body-choir.", isUnusual: true)
             };
         }
 
@@ -343,6 +367,19 @@ namespace XRL.World.Parts.Mutation
                 case "burrowing_claws":
                     return MutationMeddley_HasMutation("Burrowing Claws")
                         && (MutationMeddley_HasEvolution("surveyor_swarm") || MutationMeddley_HasEvolution("marrow_hive"));
+                case "amphibious":
+                    return MutationMeddley_HasMutation("Amphibious")
+                        && (MutationMeddley_HasEvolution("surveyor_swarm") || MutationMeddley_HasEvolution("marrow_hive"));
+                case "heightened_hearing":
+                    return MutationMeddley_HasMutation("Heightened Hearing")
+                        && (MutationMeddley_HasEvolution("graft_parliament") || MutationMeddley_HasEvolution("surveyor_swarm"));
+                case "phasing":
+                    return MutationMeddley_HasMutation("Phasing") && MutationMeddley_HasEvolution("graft_parliament");
+                case "carapace":
+                    return MutationMeddley_HasMutation("Carapace")
+                        && (MutationMeddley_HasEvolution("marrow_hive") || MutationMeddley_HasEvolution("graft_parliament"));
+                case "ash_pair":
+                    return MutationMeddley_HasMutation("Ash Metabolism") && MutationMeddley_HasAnyEvolution();
                 case "living_crystal_pair":
                     return MutationMeddley_HasMutation("Living Crystal") && MutationMeddley_HasAnyEvolution();
                 case "brineborn_pair":
@@ -359,12 +396,41 @@ namespace XRL.World.Parts.Mutation
                         && MutationMeddley_HasEvolution("surveyor_swarm")
                         && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary");
+                case "undertow_furnace":
+                    return MutationMeddley_HasEvolution("marrow_hive")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "cinder_gut");
+                case "bone_kiln_parliament":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("graft_parliament")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "furnace_skin")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress");
+                case "resonant_undertow":
+                    return MutationMeddley_HasEvolution("surveyor_swarm")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh");
+                case "chorus_husk":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("graft_parliament")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace");
+                case "whitewater_ossuary":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("marrow_hive")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress");
+                case "blackglass_pursuit":
+                    return MutationMeddley_HasEvolution("surveyor_swarm")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "cinder_gut")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice");
                 case "burrowed_nursery_state":
                     return MutationMeddley_HasEvolution("burrowed_nursery");
                 case "wake_trail_state":
                     return MutationMeddley_HasEvolution("wake_trail");
                 case "molt_parliament_state":
                     return MutationMeddley_HasEvolution("molt_parliament");
+                case "choir_of_tendons_state":
+                    return MutationMeddley_HasEvolution("choir_of_tendons");
                 default:
                     return false;
             }
@@ -392,6 +458,11 @@ namespace XRL.World.Parts.Mutation
                 return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_BurrowedUnlockedKey);
             }
 
+            if (choice.Id == "choir_of_tendons")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_ChoirUnlockedKey);
+            }
+
             return false;
         }
 
@@ -401,9 +472,7 @@ namespace XRL.World.Parts.Mutation
 
             int pressure = MutationMeddley_GetColonyPressure();
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
-            bool hostileTerrain = MutationMeddley_IsCurrentCellWet()
-                || MutationMeddley_IsCurrentCellSaline()
-                || MutationMeddley_IsCurrentCellLit();
+            bool hostileTerrain = MutationMeddley_IsCurrentCellHostileTraversal();
 
             if (MutationMeddley_HasEvolution("marrow_hive"))
             {
@@ -507,6 +576,46 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("DV", 1);
             }
 
+            if (MutationMeddley_HasMutation("Amphibious") && MutationMeddley_IsCurrentCellWet())
+            {
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasMutation("Heightened Hearing"))
+            {
+                if (MutationMeddley_HasEvolution("surveyor_swarm"))
+                {
+                    MutationMeddley_SetShift("Quickness", moved ? 1 : 0);
+                }
+                else if (MutationMeddley_HasEvolution("graft_parliament"))
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Phasing") && MutationMeddley_HasEvolution("graft_parliament"))
+            {
+                MutationMeddley_SetShift("DV", 1);
+                MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "override_frame" ? 1 : 0);
+            }
+
+            if (MutationMeddley_HasMutation("Carapace") && MutationMeddley_HasEvolution("marrow_hive"))
+            {
+                MutationMeddley_SetShift("AV", 1);
+            }
+
+            if (MutationMeddley_HasMutation("Ash Metabolism"))
+            {
+                if (MutationMeddley_HasEvolution("surveyor_swarm") && moved)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("graft_parliament") && MutationMeddley_IsCurrentCellHot())
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+            }
+
             if (MutationMeddley_HasMutation("Living Crystal"))
             {
                 if (MutationMeddley_HasEvolution("marrow_hive")
@@ -568,6 +677,38 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("Quickness", 2);
             }
 
+            if (MutationMeddley_IsTriadActive("undertow_furnace") && MutationMeddley_IsCurrentCellWet())
+            {
+                MutationMeddley_SetShift("AV", 1);
+                MutationMeddley_SetShift("HeatResistance", 5);
+            }
+
+            if (MutationMeddley_IsTriadActive("bone_kiln_parliament") && MutationMeddley_IsCurrentCellHot())
+            {
+                MutationMeddley_SetShift("AV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("resonant_undertow") && moved)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("chorus_husk"))
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("whitewater_ossuary") && MutationMeddley_IsCurrentCellWet())
+            {
+                MutationMeddley_SetShift("AV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("blackglass_pursuit") && moved)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+            }
+
             if (MutationMeddley_HasEvolution("burrowed_nursery"))
             {
                 MutationMeddley_SetShift("AV", 1);
@@ -582,6 +723,12 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_HasEvolution("molt_parliament") && MutationMeddley_HasOtherMutationWithTag("STRUCTURAL"))
             {
                 MutationMeddley_SetShift("AV", 2);
+            }
+
+            if (MutationMeddley_HasEvolution("choir_of_tendons"))
+            {
+                MutationMeddley_SetShift("DV", 1);
+                MutationMeddley_SetShift("Quickness", moved ? 1 : 0);
             }
         }
 
@@ -609,9 +756,7 @@ namespace XRL.World.Parts.Mutation
         private void MutationMeddley_ProcessColonyTurn()
         {
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
-            bool hostileTerrain = MutationMeddley_IsCurrentCellWet()
-                || MutationMeddley_IsCurrentCellSaline()
-                || MutationMeddley_IsCurrentCellLit();
+            bool hostileTerrain = MutationMeddley_IsCurrentCellHostileTraversal();
             int pressure = MutationMeddley_GetColonyPressure();
             int maxPressure = MutationMeddley_GetMaxColonyPressure();
             int strideStreak = MutationMeddley_GetStateInt(MutationMeddley_StreakKey, 0);
@@ -670,6 +815,7 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_TrackMoltParliamentDiscovery();
             MutationMeddley_TrackWakeTrailDiscovery(hostileTerrain, strideStreak);
             MutationMeddley_TrackBurrowedNurseryDiscovery(moved);
+            MutationMeddley_TrackChoirOfTendonsDiscovery(!moved);
 
             MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Max(0, Math.Min(pressure, maxPressure)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
@@ -726,6 +872,24 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_BurrowedProgressKey, 1, 5) >= 5)
             {
                 MutationMeddley_UnlockHiddenChoice(MutationMeddley_BurrowedUnlockedKey);
+            }
+        }
+
+        private void MutationMeddley_TrackChoirOfTendonsDiscovery(bool composedTurn)
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_ChoirUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("nerve_delegation")
+                || !composedTurn
+                || (!MutationMeddley_HasMutation("Heightened Hearing")
+                    && !MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")))
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_ChoirProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_ChoirUnlockedKey);
             }
         }
 

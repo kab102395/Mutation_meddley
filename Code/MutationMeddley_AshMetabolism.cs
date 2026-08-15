@@ -14,6 +14,10 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_VolcanicProgressKey = "ash_hidden_volcanic_progress";
         private const string MutationMeddley_WakeEaterUnlockedKey = "ash_hidden_wake";
         private const string MutationMeddley_WakeEaterProgressKey = "ash_hidden_wake_progress";
+        private const string MutationMeddley_CenotaphUnlockedKey = "ash_hidden_cenotaph";
+        private const string MutationMeddley_CenotaphProgressKey = "ash_hidden_cenotaph_progress";
+        private const string MutationMeddley_CinderJetUnlockedKey = "ash_hidden_cinderjet";
+        private const string MutationMeddley_CinderJetProgressKey = "ash_hidden_cinderjet_progress";
         private const int MutationMeddley_MaxEmbers = 6;
 
         public override string MutationMeddley_EvolutionDisplayName
@@ -72,8 +76,8 @@ namespace XRL.World.Parts.Mutation
                 + MutationMeddley_GetEmbers()
                 + "/"
                 + MutationMeddley_GetMaxEmbers()
-                + (MutationMeddley_IsHotEnvironment() ? " (hot ground)" : " (temperate ground)")
-                + (MutationMeddley_IsSmokyEnvironment() ? ", smoke present" : ", clear air")
+                + (MutationMeddley_IsCurrentCellHot() ? " (hot ground)" : " (temperate ground)")
+                + (MutationMeddley_IsCurrentCellSmoky() ? ", smoke present" : ", clear air")
                 + "\n"
                 + MutationMeddley_GetSynergySummary();
         }
@@ -226,6 +230,16 @@ namespace XRL.World.Parts.Mutation
                     "Capstone concealment line."
                 ),
                 new MutationMeddley_EvolutionChoice(
+                    "cenotaph_haze",
+                    "Cenotaph Haze",
+                    "Smoke stops being cover alone and begins behaving like a temporary false ecology around you.",
+                    9,
+                    3,
+                    "ash_veil",
+                    "UNUSUAL ADAPTATION. Requires prolonged smoky concealment while carrying Phasing.",
+                    true
+                ),
+                new MutationMeddley_EvolutionChoice(
                     "blackdraft_engine",
                     "Blackdraft Engine",
                     "Your lungs become a draft machine that turns atmospheric turmoil into motion.",
@@ -233,6 +247,16 @@ namespace XRL.World.Parts.Mutation
                     3,
                     "chimney_lungs",
                     "Capstone motion-pressure line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "cinder_jet",
+                    "Cinder Jet",
+                    "Your draft lines start stealing momentum from smoke and hostile terrain rather than merely riding them.",
+                    9,
+                    3,
+                    "chimney_lungs",
+                    "UNUSUAL ADAPTATION. Requires sustained smoky movement streaks while carrying Multiple Legs or a mobile profile.",
+                    true
                 )
             };
         }
@@ -307,18 +331,29 @@ namespace XRL.World.Parts.Mutation
             {
                 new MutationMeddley_SynergyDefinition("flaming_ray", "Flaming Ray", "Combustive output feeds your ember loop more cleanly."),
                 new MutationMeddley_SynergyDefinition("freezing_ray", "Freezing Ray", "Thermal violence sharpens how you spend stored heat."),
+                new MutationMeddley_SynergyDefinition("light_manipulation", "Light Manipulation", "Light shaping changes whether ash behaves like glare, lure, or screening."),
+                new MutationMeddley_SynergyDefinition("electrical_generation", "Electrical Generation", "Conductive soot turns your heat loops riskier and faster."),
                 new MutationMeddley_SynergyDefinition("photosynthetic_skin", "Photosynthetic Skin", "Lit ash and living tissue reinforce each other."),
                 new MutationMeddley_SynergyDefinition("phasing", "Phasing", "Smoke and phase-state combine into harder-to-read positioning."),
+                new MutationMeddley_SynergyDefinition("multiple_legs", "Multiple Legs", "Extra locomotion lets you carry embers and smoke pressure farther."),
+                new MutationMeddley_SynergyDefinition("amphibious", "Amphibious", "Steam and wet routing change how aggressively your ash loops can operate."),
+                new MutationMeddley_SynergyDefinition("walking_colony_pair", "Walking Colony", "A living colony changes how your heat, burden, and momentum recycle."),
                 new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Crystalline bodies reinterpret heat as stress, glare, or cadence."),
                 new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Steam, salt, and stored heat start sharing one ecology."),
                 new MutationMeddley_SynergyDefinition("carapace_pair", "Carapace Evolution", "A live shell gives your heat banks somewhere structural to go."),
-                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Shell, crystal, and kiln heat harden into one punishing redoubt."),
-                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Heat-fed pursuit compounds cadence and shell aggression."),
-                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Light, shell weathering, and smoke begin behaving as one moving mirage."),
-                new MutationMeddley_SynergyDefinition("salt_kiln_reliquary", "Salt Kiln Reliquary", "Thermal mineralization turns saline defense into a kiln-kept bastion."),
-                new MutationMeddley_SynergyDefinition("steam_choir", "Steam Choir", "Wet pursuit, smoke, and resonance produce an unstable pressure chorus."),
+                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Shell, crystal, and kiln heat harden into one punishing redoubt.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Heat-fed pursuit compounds cadence and shell aggression.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Light, shell weathering, and smoke begin behaving as one moving mirage.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("salt_kiln_reliquary", "Salt Kiln Reliquary", "Thermal mineralization turns saline defense into a kiln-kept bastion.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("steam_choir", "Steam Choir", "Wet pursuit, smoke, and resonance produce an unstable pressure chorus.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("undertow_furnace", "Undertow Furnace", "Recovery, reserve, and heat debt start feeding one survival engine.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("bone_kiln_parliament", "Bone Kiln Parliament", "Structure, heat, and colonial burden fuse into one heavy living fortress.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("smoke_reef", "Smoke Reef", "Smoke, saltglass, and prismatic refraction mislead the battlefield together.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("blackglass_pursuit", "Blackglass Pursuit", "Impact, pursuit, and route memory become one predatory heat frame.", isTriad: true),
                 new MutationMeddley_SynergyDefinition("volcanic_memory_state", "Volcanic Memory", "Stored heat now answers structural stress like a remembered eruption.", isUnusual: true),
-                new MutationMeddley_SynergyDefinition("wake_eater_state", "Wake Eater", "Your body begins feeding on the wake of heat and motion itself.", isUnusual: true)
+                new MutationMeddley_SynergyDefinition("wake_eater_state", "Wake Eater", "Your body begins feeding on the wake of heat and motion itself.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("cenotaph_haze_state", "Cenotaph Haze", "Smoke now behaves like a temporary false-presence ecology around you.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("cinder_jet_state", "Cinder Jet", "Atmosphere has become a stolen-momentum engine rather than mere cover.", isUnusual: true)
             };
         }
 
@@ -331,11 +366,25 @@ namespace XRL.World.Parts.Mutation
                 case "freezing_ray":
                     return MutationMeddley_HasMutation("Freezing Ray")
                         && (MutationMeddley_HasEvolution("furnace_skin") || MutationMeddley_HasEvolution("cinder_gut"));
+                case "light_manipulation":
+                    return MutationMeddley_HasMutation("Light Manipulation")
+                        && (MutationMeddley_HasEvolution("furnace_skin") || MutationMeddley_HasEvolution("smoke_organ"));
+                case "electrical_generation":
+                    return MutationMeddley_HasMutation("Electrical Generation")
+                        && (MutationMeddley_HasEvolution("cinder_gut") || MutationMeddley_HasEvolution("smoke_organ"));
                 case "photosynthetic_skin":
                     return MutationMeddley_HasMutation("Photosynthetic Skin")
                         && (MutationMeddley_HasEvolution("furnace_skin") || MutationMeddley_HasEvolution("smoke_organ"));
                 case "phasing":
                     return MutationMeddley_HasMutation("Phasing") && MutationMeddley_HasEvolution("smoke_organ");
+                case "multiple_legs":
+                    return MutationMeddley_HasMutation("Multiple Legs")
+                        && (MutationMeddley_HasEvolution("cinder_gut") || MutationMeddley_HasEvolution("chimney_lungs"));
+                case "amphibious":
+                    return MutationMeddley_HasMutation("Amphibious")
+                        && (MutationMeddley_HasEvolution("smoke_organ") || MutationMeddley_HasEvolution("cinder_gut"));
+                case "walking_colony_pair":
+                    return MutationMeddley_HasMutation("Walking Colony") && MutationMeddley_HasAnyEvolution();
                 case "living_crystal_pair":
                     return MutationMeddley_HasMutation("Living Crystal") && MutationMeddley_HasAnyEvolution();
                 case "brineborn_pair":
@@ -365,10 +414,31 @@ namespace XRL.World.Parts.Mutation
                     return MutationMeddley_HasEvolution("smoke_organ")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary")
                         && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal");
+                case "undertow_furnace":
+                    return MutationMeddley_HasEvolution("cinder_gut")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive");
+                case "bone_kiln_parliament":
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("furnace_skin")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "graft_parliament")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress");
+                case "smoke_reef":
+                    return MutationMeddley_HasEvolution("smoke_organ")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix");
+                case "blackglass_pursuit":
+                    return MutationMeddley_HasEvolution("cinder_gut")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm");
                 case "volcanic_memory_state":
                     return MutationMeddley_HasEvolution("volcanic_memory");
                 case "wake_eater_state":
                     return MutationMeddley_HasEvolution("wake_eater");
+                case "cenotaph_haze_state":
+                    return MutationMeddley_HasEvolution("cenotaph_haze");
+                case "cinder_jet_state":
+                    return MutationMeddley_HasEvolution("cinder_jet");
                 default:
                     return false;
             }
@@ -391,6 +461,16 @@ namespace XRL.World.Parts.Mutation
                 return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_WakeEaterUnlockedKey);
             }
 
+            if (choice.Id == "cenotaph_haze")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_CenotaphUnlockedKey);
+            }
+
+            if (choice.Id == "cinder_jet")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_CinderJetUnlockedKey);
+            }
+
             return false;
         }
 
@@ -399,8 +479,8 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_ClearCommonStatShifts();
 
             int embers = MutationMeddley_GetEmbers();
-            bool hot = MutationMeddley_IsHotEnvironment();
-            bool smoky = MutationMeddley_IsSmokyEnvironment();
+            bool hot = MutationMeddley_IsCurrentCellHot();
+            bool smoky = MutationMeddley_IsCurrentCellSmoky();
             bool lit = MutationMeddley_IsCurrentCellLit();
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
 
@@ -498,6 +578,30 @@ namespace XRL.World.Parts.Mutation
                 }
             }
 
+            if (MutationMeddley_HasMutation("Light Manipulation"))
+            {
+                if (MutationMeddley_HasEvolution("radiant_soot") && lit)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("smoke_organ") && smoky)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Electrical Generation"))
+            {
+                if (MutationMeddley_HasEvolution("cinder_gut"))
+                {
+                    MutationMeddley_SetShift("Quickness", hot ? 2 : 1);
+                }
+                else if (MutationMeddley_HasEvolution("smoke_organ") && smoky)
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+            }
+
             if (MutationMeddley_HasMutation("Freezing Ray") && MutationMeddley_HasEvolution("furnace_skin"))
             {
                 MutationMeddley_SetShift("ColdResistance", 10);
@@ -512,6 +616,30 @@ namespace XRL.World.Parts.Mutation
             {
                 MutationMeddley_SetShift("DV", 1);
                 if (smoky)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Multiple Legs"))
+            {
+                if (MutationMeddley_HasEvolution("cinder_gut") && moved)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("chimney_lungs") && smoky)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Amphibious") && MutationMeddley_IsCurrentCellWet())
+            {
+                if (MutationMeddley_HasEvolution("smoke_organ"))
+                {
+                    MutationMeddley_SetShift("DV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("cinder_gut"))
                 {
                     MutationMeddley_SetShift("Quickness", 1);
                 }
@@ -551,6 +679,27 @@ namespace XRL.World.Parts.Mutation
                 else if (MutationMeddley_HasEvolution("cinder_gut") && MutationMeddley_IsCurrentCellWet())
                 {
                     MutationMeddley_SetShift("Quickness", 1);
+                }
+            }
+
+            if (MutationMeddley_HasMutation("Walking Colony"))
+            {
+                if (MutationMeddley_HasEvolution("furnace_skin")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive"))
+                {
+                    MutationMeddley_SetShift("AV", 1);
+                }
+                else if (MutationMeddley_HasEvolution("cinder_gut")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm")
+                    && moved)
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else if (MutationMeddley_HasEvolution("smoke_organ")
+                    && MutationMeddley_MutationHasEvolution("Walking Colony", "graft_parliament")
+                    && smoky)
+                {
+                    MutationMeddley_SetShift("DV", 1);
                 }
             }
 
@@ -602,6 +751,29 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("DV", 1);
             }
 
+            if (MutationMeddley_IsTriadActive("undertow_furnace") && MutationMeddley_IsCurrentCellWet())
+            {
+                MutationMeddley_SetShift("HeatResistance", 5);
+                MutationMeddley_SetShift("AV", 1);
+            }
+
+            if (MutationMeddley_IsTriadActive("bone_kiln_parliament") && hot)
+            {
+                MutationMeddley_SetShift("AV", 2);
+                MutationMeddley_SetShift("HeatResistance", 5);
+            }
+
+            if (MutationMeddley_IsTriadActive("smoke_reef") && smoky && MutationMeddley_IsCurrentCellSaline())
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("blackglass_pursuit") && moved)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+                MutationMeddley_SetShift("AV", 1);
+            }
+
             if (MutationMeddley_HasEvolution("volcanic_memory"))
             {
                 MutationMeddley_SetShift("AV", hot ? 2 : 1);
@@ -611,6 +783,16 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_HasEvolution("wake_eater"))
             {
                 MutationMeddley_SetShift("Quickness", moved ? 2 : 1);
+            }
+
+            if (MutationMeddley_HasEvolution("cenotaph_haze") && smoky)
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_HasEvolution("cinder_jet") && moved && smoky)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
             }
         }
 
@@ -637,8 +819,8 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_ProcessAshTurn()
         {
-            bool hot = MutationMeddley_IsHotEnvironment();
-            bool smoky = MutationMeddley_IsSmokyEnvironment();
+            bool hot = MutationMeddley_IsCurrentCellHot();
+            bool smoky = MutationMeddley_IsCurrentCellSmoky();
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
             int embers = MutationMeddley_GetEmbers();
             int maxEmbers = MutationMeddley_GetMaxEmbers();
@@ -704,6 +886,8 @@ namespace XRL.World.Parts.Mutation
 
             MutationMeddley_TrackVolcanicMemoryDiscovery(hot);
             MutationMeddley_TrackWakeEaterDiscovery(hot, moved);
+            MutationMeddley_TrackCenotaphHazeDiscovery(smoky);
+            MutationMeddley_TrackCinderJetDiscovery(smoky, moved);
 
             MutationMeddley_SetStateInt(MutationMeddley_EmbersKey, Math.Max(0, Math.Min(embers, maxEmbers)));
             MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
@@ -747,48 +931,40 @@ namespace XRL.World.Parts.Mutation
             }
         }
 
-        private bool MutationMeddley_IsHotEnvironment()
+        private void MutationMeddley_TrackCenotaphHazeDiscovery(bool smoky)
         {
-            if (ParentObject == null || ParentObject.CurrentCell == null)
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_CenotaphUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("ash_veil")
+                || !MutationMeddley_HasMutation("Phasing")
+                || MutationMeddley_GetCurrentModeId() != "veil_smoke"
+                || !smoky)
             {
-                return false;
+                return;
             }
 
-            string description = ParentObject.CurrentCell.ToString();
-            if (string.IsNullOrEmpty(description))
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_CenotaphProgressKey, 1, 5) >= 5)
             {
-                return false;
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_CenotaphUnlockedKey);
             }
-
-            string lowered = description.ToLowerInvariant();
-            return lowered.Contains("fire")
-                || lowered.Contains("burn")
-                || lowered.Contains("ash")
-                || lowered.Contains("cinder")
-                || lowered.Contains("lava")
-                || lowered.Contains("magma")
-                || lowered.Contains("furnace");
         }
 
-        private bool MutationMeddley_IsSmokyEnvironment()
+        private void MutationMeddley_TrackCinderJetDiscovery(bool smoky, bool moved)
         {
-            if (ParentObject == null || ParentObject.CurrentCell == null)
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_CinderJetUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("chimney_lungs")
+                || !smoky
+                || !moved
+                || (!MutationMeddley_HasMutation("Multiple Legs") && !MutationMeddley_HasSemanticTag("MOBILE")))
             {
-                return false;
+                return;
             }
 
-            string description = ParentObject.CurrentCell.ToString();
-            if (string.IsNullOrEmpty(description))
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_CinderJetProgressKey, 1, 5) >= 5)
             {
-                return false;
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_CinderJetUnlockedKey);
             }
-
-            string lowered = description.ToLowerInvariant();
-            return lowered.Contains("smoke")
-                || lowered.Contains("ash")
-                || lowered.Contains("gas")
-                || lowered.Contains("steam")
-                || lowered.Contains("soot");
         }
 
         private bool MutationMeddley_IsTriadActive(string id)

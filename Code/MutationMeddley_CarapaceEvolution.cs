@@ -12,6 +12,10 @@ namespace XRL.World.Parts.Mutation
         private const string MutationMeddley_PorcupineProgressKey = "carapace_hidden_porcupine_progress";
         private const string MutationMeddley_EstuaryUnlockedKey = "carapace_hidden_estuary";
         private const string MutationMeddley_EstuaryProgressKey = "carapace_hidden_estuary_progress";
+        private const string MutationMeddley_SkitterUnlockedKey = "carapace_hidden_skitter";
+        private const string MutationMeddley_SkitterProgressKey = "carapace_hidden_skitter_progress";
+        private const string MutationMeddley_HookstormUnlockedKey = "carapace_hidden_hookstorm";
+        private const string MutationMeddley_HookstormProgressKey = "carapace_hidden_hookstorm_progress";
 
         public override string MutationMeddley_EvolutionDisplayName
         {
@@ -51,6 +55,8 @@ namespace XRL.World.Parts.Mutation
 
                 MutationMeddley_TrackPorcupineDiscovery();
                 MutationMeddley_TrackEstuaryHuskDiscovery();
+                MutationMeddley_TrackSkitterBulwarkDiscovery();
+                MutationMeddley_TrackHookstormFrameDiscovery();
                 if (MutationMeddley_HasMutation("Regeneration")
                     && MutationMeddley_IsFunctionallyActive()
                     && MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0
@@ -222,6 +228,16 @@ namespace XRL.World.Parts.Mutation
                     "Capstone pursuit line."
                 ),
                 new MutationMeddley_EvolutionChoice(
+                    "skitter_bulwark",
+                    "Skitter Bulwark",
+                    "Articulated pursuit stops being pure speed and becomes a chase-wall that closes angles around prey.",
+                    9,
+                    3,
+                    "ravager_joints",
+                    "UNUSUAL ADAPTATION. Requires repeated pursuit turns while carrying Multiple Legs.",
+                    true
+                ),
+                new MutationMeddley_EvolutionChoice(
                     "hooked_pursuer",
                     "Hooked Pursuer",
                     "Your shell leans harder into committed, close-range violence.",
@@ -229,6 +245,16 @@ namespace XRL.World.Parts.Mutation
                     3,
                     "spur_lattice",
                     "Capstone contact-hunter line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "hookstorm_frame",
+                    "Hookstorm Frame",
+                    "Committed shell contact becomes a hazard field instead of a simple impact frame.",
+                    9,
+                    3,
+                    "spur_lattice",
+                    "UNUSUAL ADAPTATION. Requires repeated committed contact turns while carrying Quills.",
+                    true
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "storm_carapace",
@@ -336,17 +362,22 @@ namespace XRL.World.Parts.Mutation
                 new MutationMeddley_SynergyDefinition("walking_colony_pair", "Walking Colony", "A living colony changes how the shell handles burden, stillness, and pursuit."),
                 new MutationMeddley_SynergyDefinition("living_crystal_pair", "Living Crystal", "Crystalline shell integration changes how the shell carries force or light."),
                 new MutationMeddley_SynergyDefinition("brineborn_pair", "Brineborn", "Mineral deposition turns saline biology into shell architecture."),
-                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Shell, crystal, and saline crust have become one fortification."),
-                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Liquid movement now compounds shell pursuit, cadence, and reserve pressure."),
-                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Weather tuning, light, and saline metabolism now share one shell logic."),
-                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Heat-banked crystal and shell fortification harden into one bastion."),
-                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Hunter shell timing now compounds with heat-fed cadence."),
-                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Adaptive shell tuning now shares one logic with light and smoke."),
-                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Shell, marrow ecology, and crystal structure become one anti-burst wall."),
-                new MutationMeddley_SynergyDefinition("drift_parliament", "Drift Parliament", "Hunter shell routing now carries colonial pressure across shallow-liquid lines."),
-                new MutationMeddley_SynergyDefinition("porcupine_redoubt_state", "Porcupine Redoubt", "Your rooted shell now treats quills as part of its fortification.", isUnusual: true)
-                ,
-                new MutationMeddley_SynergyDefinition("estuary_husk_state", "Estuary Husk", "Your shell now behaves like a saline membrane instead of dry armor.", isUnusual: true)
+                new MutationMeddley_SynergyDefinition("cathedral_organism", "Cathedral Organism", "Shell, crystal, and saline crust have become one fortification.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("breakwater_predator", "Breakwater Predator", "Liquid movement now compounds shell pursuit, cadence, and reserve pressure.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("prism_estuary", "Prism Estuary", "Weather tuning, light, and saline metabolism now share one shell logic.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("glass_kiln_bastion", "Glass Kiln Bastion", "Heat-banked crystal and shell fortification harden into one bastion.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("ember_pursuit_engine", "Ember Pursuit Engine", "Hunter shell timing now compounds with heat-fed cadence.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("mirage_exuvium", "Mirage Exuvium", "Adaptive shell tuning now shares one logic with light and smoke.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("ossuary_rampart", "Ossuary Rampart", "Shell, marrow ecology, and crystal structure become one anti-burst wall.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("drift_parliament", "Drift Parliament", "Hunter shell routing now carries colonial pressure across shallow-liquid lines.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("salt_eclipse", "Salt Eclipse", "Saline refraction and adaptive shell weathering become one dim-space defense.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("bone_kiln_parliament", "Bone Kiln Parliament", "Shell structure, heat, and colonial burden become one heavy body-plan fortress.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("chorus_husk", "Chorus Husk", "Rhythm, membrane-shell logic, and distributed strain become one unstable body.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("whitewater_ossuary", "Whitewater Ossuary", "Harsh traversal and deep sustain reinforce a slow moving wall.", isTriad: true),
+                new MutationMeddley_SynergyDefinition("porcupine_redoubt_state", "Porcupine Redoubt", "Your rooted shell now treats quills as part of its fortification.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("estuary_husk_state", "Estuary Husk", "Your shell now behaves like a saline membrane instead of dry armor.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("skitter_bulwark_state", "Skitter Bulwark", "Your articulated pursuit shell now closes space like a chase-wall.", isUnusual: true),
+                new MutationMeddley_SynergyDefinition("hookstorm_frame_state", "Hookstorm Frame", "Committed shell contact now creates a hazard field instead of a single hit.", isUnusual: true)
             };
         }
 
@@ -434,10 +465,34 @@ namespace XRL.World.Parts.Mutation
                         && MutationMeddley_HasEvolution("hunter_shell")
                         && MutationMeddley_MutationHasEvolution("Walking Colony", "surveyor_swarm")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary");
+                case "salt_eclipse":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("adaptive_carapace")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix");
+                case "bone_kiln_parliament":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress")
+                        && MutationMeddley_MutationHasEvolution("Ash Metabolism", "furnace_skin")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "graft_parliament");
+                case "chorus_husk":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("adaptive_carapace")
+                        && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "graft_parliament");
+                case "whitewater_ossuary":
+                    return MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress")
+                        && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary")
+                        && MutationMeddley_MutationHasEvolution("Walking Colony", "marrow_hive");
                 case "porcupine_redoubt_state":
                     return MutationMeddley_HasEvolution("porcupine_redoubt");
                 case "estuary_husk_state":
                     return MutationMeddley_HasEvolution("estuary_husk");
+                case "skitter_bulwark_state":
+                    return MutationMeddley_HasEvolution("skitter_bulwark");
+                case "hookstorm_frame_state":
+                    return MutationMeddley_HasEvolution("hookstorm_frame");
                 default:
                     return false;
             }
@@ -458,6 +513,16 @@ namespace XRL.World.Parts.Mutation
             if (choice.Id == "estuary_husk")
             {
                 return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_EstuaryUnlockedKey);
+            }
+
+            if (choice.Id == "skitter_bulwark")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_SkitterUnlockedKey);
+            }
+
+            if (choice.Id == "hookstorm_frame")
+            {
+                return MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_HookstormUnlockedKey);
             }
 
             return false;
@@ -714,6 +779,26 @@ namespace XRL.World.Parts.Mutation
                 MutationMeddley_SetShift("Quickness", 2);
             }
 
+            if (MutationMeddley_IsTriadActive("salt_eclipse") && !lit && saline)
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("bone_kiln_parliament") && MutationMeddley_IsCurrentCellHot())
+            {
+                MutationMeddley_SetShift("AV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("chorus_husk"))
+            {
+                MutationMeddley_SetShift("DV", 2);
+            }
+
+            if (MutationMeddley_IsTriadActive("whitewater_ossuary") && wetGround)
+            {
+                MutationMeddley_SetShift("AV", 2);
+            }
+
             if (MutationMeddley_HasEvolution("porcupine_redoubt") && stationary)
             {
                 MutationMeddley_SetShift("AV", 2);
@@ -724,6 +809,18 @@ namespace XRL.World.Parts.Mutation
             {
                 MutationMeddley_SetShift("DV", 2);
                 MutationMeddley_SetShift("ColdResistance", 10);
+            }
+
+            if (MutationMeddley_HasEvolution("skitter_bulwark") && MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0)
+            {
+                MutationMeddley_SetShift("Quickness", 2);
+                MutationMeddley_SetShift("DV", 1);
+            }
+
+            if (MutationMeddley_HasEvolution("hookstorm_frame") && engaged)
+            {
+                MutationMeddley_SetShift("AV", 1);
+                MutationMeddley_SetShift("DV", 1);
             }
         }
 
@@ -773,6 +870,41 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_EstuaryProgressKey, 1, 5) >= 5)
             {
                 MutationMeddley_UnlockHiddenChoice(MutationMeddley_EstuaryUnlockedKey);
+            }
+        }
+
+        private void MutationMeddley_TrackSkitterBulwarkDiscovery()
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_SkitterUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("ravager_joints")
+                || !MutationMeddley_HasMutation("Multiple Legs")
+                || MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) == 0)
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_SkitterProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_SkitterUnlockedKey);
+            }
+        }
+
+        private void MutationMeddley_TrackHookstormFrameDiscovery()
+        {
+            if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_HookstormUnlockedKey)
+                || !MutationMeddley_HasUnspentTier(3)
+                || !MutationMeddley_HasEvolution("spur_lattice")
+                || !MutationMeddley_HasMutation("Quills")
+                || ParentObject == null
+                || !ParentObject.IsEngagedInMelee())
+            {
+                return;
+            }
+
+            if (MutationMeddley_AdvanceHiddenProgress(MutationMeddley_HookstormProgressKey, 1, 5) >= 5)
+            {
+                MutationMeddley_UnlockHiddenChoice(MutationMeddley_HookstormUnlockedKey);
             }
         }
 

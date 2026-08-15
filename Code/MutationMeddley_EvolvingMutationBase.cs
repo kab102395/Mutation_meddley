@@ -190,44 +190,62 @@ namespace XRL.World.Parts.Mutation
             List<MutationMeddley_SynergyDefinition> active = MutationMeddley_GetActiveSynergies();
             if (active.Count == 0)
             {
-                return "Synergies: none active.";
+                return "Pair Synergies: none active.\nTriads: none active.";
             }
 
-            StringBuilder normal = new StringBuilder("Synergies:");
+            StringBuilder pairs = new StringBuilder("Pair Synergies:");
+            StringBuilder triads = new StringBuilder("Triads:");
             StringBuilder unusual = new StringBuilder("UNUSUAL ADAPTATION:");
-            bool wroteNormal = false;
+            bool wrotePairs = false;
+            bool wroteTriads = false;
             bool wroteUnusual = false;
 
             for (int i = 0; i < active.Count; i++)
             {
-                StringBuilder target = active[i].IsUnusual ? unusual : normal;
+                StringBuilder target = active[i].IsUnusual
+                    ? unusual
+                    : (active[i].IsTriad ? triads : pairs);
                 target.Append("\n- ");
                 target.Append(active[i].Title);
-                target.Append(" - ");
+                target.Append(": ");
                 target.Append(active[i].Summary);
 
                 if (active[i].IsUnusual)
                 {
                     wroteUnusual = true;
                 }
+                else if (active[i].IsTriad)
+                {
+                    wroteTriads = true;
+                }
                 else
                 {
-                    wroteNormal = true;
+                    wrotePairs = true;
                 }
             }
 
-            if (!wroteNormal)
+            if (!wrotePairs)
             {
-                normal.Append("\n- none active");
+                pairs.Append("\n- none active");
             }
+
+            if (!wroteTriads)
+            {
+                triads.Append("\n- none active");
+            }
+
+            StringBuilder result = new StringBuilder();
+            result.Append(pairs.ToString());
+            result.Append("\n");
+            result.Append(triads.ToString());
 
             if (wroteUnusual)
             {
-                normal.Append("\n");
-                normal.Append(unusual.ToString());
+                result.Append("\n");
+                result.Append(unusual.ToString());
             }
 
-            return normal.ToString();
+            return result.ToString();
         }
 
         protected List<MutationMeddley_SynergyDefinition> MutationMeddley_GetActiveSynergies()
@@ -462,6 +480,59 @@ namespace XRL.World.Parts.Mutation
             }
 
             return false;
+        }
+
+        protected bool MutationMeddley_IsCurrentCellHot()
+        {
+            if (ParentObject == null || ParentObject.CurrentCell == null)
+            {
+                return false;
+            }
+
+            string description = ParentObject.CurrentCell.ToString();
+            if (string.IsNullOrEmpty(description))
+            {
+                return false;
+            }
+
+            string lowered = description.ToLowerInvariant();
+            return lowered.Contains("fire")
+                || lowered.Contains("burn")
+                || lowered.Contains("ash")
+                || lowered.Contains("cinder")
+                || lowered.Contains("lava")
+                || lowered.Contains("magma")
+                || lowered.Contains("furnace");
+        }
+
+        protected bool MutationMeddley_IsCurrentCellSmoky()
+        {
+            if (ParentObject == null || ParentObject.CurrentCell == null)
+            {
+                return false;
+            }
+
+            string description = ParentObject.CurrentCell.ToString();
+            if (string.IsNullOrEmpty(description))
+            {
+                return false;
+            }
+
+            string lowered = description.ToLowerInvariant();
+            return lowered.Contains("smoke")
+                || lowered.Contains("ash")
+                || lowered.Contains("gas")
+                || lowered.Contains("steam")
+                || lowered.Contains("soot")
+                || lowered.Contains("haze");
+        }
+
+        protected bool MutationMeddley_IsCurrentCellHostileTraversal()
+        {
+            return MutationMeddley_IsCurrentCellWet()
+                || MutationMeddley_IsCurrentCellSaline()
+                || MutationMeddley_IsCurrentCellHot()
+                || MutationMeddley_IsCurrentCellSmoky();
         }
 
         protected string MutationMeddley_GetStateValue(string key)
