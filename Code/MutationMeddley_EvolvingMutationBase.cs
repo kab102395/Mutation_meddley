@@ -39,6 +39,9 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_EvolvingMutationBase : BaseMutation
     {
+        private const string MutationMeddley_StateVersionKey = "statev";
+        private const string MutationMeddley_CurrentStateVersion = "1";
+
         // Keep these public serialized fields stable. Future framework state should
         // preferably be encoded inside EvolutionState unless an explicit save
         // migration is introduced.
@@ -436,6 +439,16 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_SetStateEnvelope(List<string> selected, Dictionary<string, string> metadata)
         {
+            if (metadata == null)
+            {
+                metadata = new Dictionary<string, string>();
+            }
+
+            if ((selected != null && selected.Count > 0) || metadata.Count > 0)
+            {
+                metadata[MutationMeddley_StateVersionKey] = MutationMeddley_CurrentStateVersion;
+            }
+
             StringBuilder state = new StringBuilder();
             if (selected != null && selected.Count > 0)
             {

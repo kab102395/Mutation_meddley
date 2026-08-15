@@ -22,7 +22,7 @@ Version `0.2.0` is the first strong content milestone. It contains:
 - a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
 - Linux/Zorin deployment, validation, log, and `Mods.csproj` helper scripts
 
-`Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. That keeps the first vanilla integration on supported mutation hooks and avoids shipping a guessed reimplementation of base-game shell logic.
+`Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. That keeps the first vanilla integration on supported mutation hooks and avoids shipping a guessed reimplementation of base-game shell logic. If vanilla `Carapace` is lost, the companion mutation becomes dormant but keeps its chosen path and stance for later reactivation.
 
 ## Zorin OS quick start
 
@@ -97,6 +97,8 @@ That copies the Qud-generated project file into the repository root for use with
 10. For `Living Crystal`, `Brineborn`, and `Carapace Evolution`, use the `Retune ...` ability after choosing a path and verify the stance changes.
 11. For `Brineborn`, verify that saline reserve changes only when interacting with qualifying saline ground or liquid contact.
 12. Save and reload after making choices to verify persistence.
+
+Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.2.0` reads that older shape and rewrites it into the current envelope on the next state change.
 
 To inspect the current Linux logs from the terminal:
 

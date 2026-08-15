@@ -76,6 +76,7 @@ Verify:
 14. `Living Crystal` shows different light, cadence, or contact-sensitive behavior by path
 15. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
 16. removing the mutation removes its activated abilities
+17. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
 ## Carapace adapter test
 
@@ -88,6 +89,7 @@ Verify:
 3. changing `Carapace Evolution` stances updates the shell-focused stat tradeoff
 4. vanilla `Carapace` still provides its ordinary shell behavior alongside the companion evolution layer
 5. save/reload preserves the companion path and stance while vanilla `Carapace` remains present
+6. losing vanilla `Carapace` makes `Carapace Evolution` dormant without deleting its saved path or stance, and regaining `Carapace` reactivates that same progression
 
 ## Save compatibility checks
 

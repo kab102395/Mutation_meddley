@@ -65,6 +65,8 @@ Version 0.2.0 now uses that field as a small state envelope:
 
 - selected evolution IDs remain the primary state
 - mutation-local metadata such as stance, cadence, or saline reserve are encoded into the same payload
+- old semicolon-only saves remain readable and are treated as the pre-envelope form
+- new writes stamp a lightweight envelope version so later migrations can distinguish state formats safely
 
 This keeps the save contract extensible without multiplying public serialized fields across every adaptive mutation.
 
@@ -86,7 +88,7 @@ Version 0.2.0 has three layers of content:
 - `Living Crystal` and `Brineborn` are Mutation Meddley-owned flagship mutations
 - `Carapace Evolution` is the first narrow vanilla adapter
 
-`Carapace Evolution` intentionally does not replace the base-game `Carapace` class. It is a companion mutation designed to pair with vanilla `Carapace`, and it remains dormant until vanilla `Carapace` is actually present.
+`Carapace Evolution` intentionally does not replace the base-game `Carapace` class. It is a companion mutation designed to pair with vanilla `Carapace`, and it remains dormant until vanilla `Carapace` is actually present. Dormancy suppresses shell augmentation and stance retuning without deleting the saved evolution path.
 
 ## Compatibility strategy
 
