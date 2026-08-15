@@ -956,7 +956,7 @@ namespace XRL.World.Parts.Mutation
                 || !MutationMeddley_HasEvolution("chimney_lungs")
                 || !smoky
                 || !moved
-                || (!MutationMeddley_HasMutation("Multiple Legs") && !MutationMeddley_HasSemanticTag("MOBILE")))
+                || (!MutationMeddley_HasMutation("Multiple Legs") && !MutationMeddley_HasOtherMutationWithTag("MOBILE")))
             {
                 return;
             }

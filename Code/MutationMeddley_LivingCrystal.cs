@@ -936,7 +936,8 @@ namespace XRL.World.Parts.Mutation
                 || !MutationMeddley_HasUnspentTier(3)
                 || !MutationMeddley_HasEvolution("faceted_bulwark")
                 || !MutationMeddley_HasMutation("Ash Metabolism")
-                || !MutationMeddley_HasMutation("Flaming Ray"))
+                || !MutationMeddley_HasMutation("Flaming Ray")
+                || !MutationMeddley_IsCurrentCellHot())
             {
                 return;
             }

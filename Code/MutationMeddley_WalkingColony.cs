@@ -745,7 +745,7 @@ namespace XRL.World.Parts.Mutation
                 result += 1;
             }
 
-            if (MutationMeddley_HasOtherMutationWithTag("BODY_PART_INTERACTION"))
+            if (MutationMeddley_HasOtherMutationWithTagExcept("BODY_PART_INTERACTION", "Multiple Legs"))
             {
                 result += 1;
             }
@@ -776,7 +776,8 @@ namespace XRL.World.Parts.Mutation
                 && MutationMeddley_GetCurrentModeId() == "knit_flesh"
                 && pressure > 0
                 && ParentObject != null
-                && !moved)
+                && !moved
+                && ParentObject.hitpoints < ParentObject.baseHitpoints)
             {
                 ParentObject.Heal(MutationMeddley_HasMutation("Regeneration") ? 2 : 1);
                 pressure -= 1;

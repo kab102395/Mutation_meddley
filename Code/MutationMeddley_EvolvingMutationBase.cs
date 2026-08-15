@@ -393,6 +393,51 @@ namespace XRL.World.Parts.Mutation
             return false;
         }
 
+        protected bool MutationMeddley_HasOtherMutationWithTagExcept(string tag, string mutationName)
+        {
+            if (ParentObject == null)
+            {
+                return false;
+            }
+
+            global::XRL.World.Parts.Mutations mutations = ParentObject.GetPart("Mutations")
+                as global::XRL.World.Parts.Mutations;
+
+            if (mutations == null)
+            {
+                return false;
+            }
+
+            foreach (BaseMutation mutation in mutations.MutationList)
+            {
+                if (mutation == null || mutation == this || mutation.Name == mutationName)
+                {
+                    continue;
+                }
+
+                MutationMeddley_EvolvingMutationBase evolving = mutation as MutationMeddley_EvolvingMutationBase;
+                if (evolving != null)
+                {
+                    if (evolving.MutationMeddley_GetCurrentSemanticTags().Contains(tag))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                foreach (string mutationTag in MutationMeddley_TagRegistry.MutationMeddley_GetTagsForVanillaMutation(mutation.Name))
+                {
+                    if (mutationTag == tag)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         protected HashSet<string> MutationMeddley_GetCurrentSemanticTags()
         {
             HashSet<string> tags = new HashSet<string>(StringComparer.Ordinal);

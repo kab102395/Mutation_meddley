@@ -2,7 +2,7 @@
   "ID": "MutationMeddley",
   "Title": "Mutation Meddley",
   "Description": "A branching mutation-evolution framework for Caves of Qud.",
-  "Version": "0.5.0",
+  "Version": "0.5.1",
   "Author": "Kyle A. Barrett",
   "Tags": "Mutation"
 }

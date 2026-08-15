@@ -1,6 +1,6 @@
 # Synergy Matrix
 
-This file records the intended `0.5.0` synergy/discovery surface so review and QA can track what is deliberate.
+This file records the intended `0.5.1` synergy/discovery surface so review and QA can track what is deliberate.
 
 ## State model
 
@@ -14,7 +14,7 @@ Only `discovered` and `selected` belong in persistent save state. Tags, active s
 
 - Hidden rank-9 adaptations must be discovered before the character spends tier 3 on that mutation.
 - If tier 3 is already spent, discovery progress stops for that hidden adaptation on that character.
-- There is no retroactive unlock-selection or respec flow in `0.5.0`.
+- There is no retroactive unlock-selection or respec flow in `0.5.1`.
 
 ## Ownership rules
 

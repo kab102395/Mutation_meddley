@@ -766,6 +766,7 @@ namespace XRL.World.Parts.Mutation
             int reserve = MutationMeddley_GetReserve();
             int moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0);
             int maxReserve = MutationMeddley_GetMaxReserve();
+            bool usedTidalMarrowsRecovery = false;
 
             if (saline)
             {
@@ -795,10 +796,12 @@ namespace XRL.World.Parts.Mutation
             if (MutationMeddley_HasEvolution("tidal_marrows")
                 && MutationMeddley_GetCurrentModeId() == "draw_brine"
                 && reserve > 0
-                && ParentObject != null)
+                && ParentObject != null
+                && ParentObject.hitpoints < ParentObject.baseHitpoints)
             {
                 ParentObject.Heal(MutationMeddley_HasMutation("Regeneration") ? 2 : 1);
                 reserve -= 1;
+                usedTidalMarrowsRecovery = true;
             }
 
             if (MutationMeddley_HasEvolution("saltglass_bastion")
@@ -856,7 +859,7 @@ namespace XRL.World.Parts.Mutation
             }
 
             MutationMeddley_TrackBrineReliquaryDiscovery(saline, moved);
-            MutationMeddley_TrackUndertowHeartDiscovery();
+            MutationMeddley_TrackUndertowHeartDiscovery(usedTidalMarrowsRecovery);
             MutationMeddley_TrackAbyssalBrineDiscovery(saline);
 
             MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Max(0, Math.Min(reserve, maxReserve)));
@@ -888,13 +891,14 @@ namespace XRL.World.Parts.Mutation
             }
         }
 
-        private void MutationMeddley_TrackUndertowHeartDiscovery()
+        private void MutationMeddley_TrackUndertowHeartDiscovery(bool usedTidalMarrowsRecovery)
         {
             if (MutationMeddley_IsHiddenChoiceUnlocked(MutationMeddley_UndertowUnlockedKey)
                 || !MutationMeddley_HasUnspentTier(3)
                 || !MutationMeddley_HasEvolution("tidal_marrows")
                 || !MutationMeddley_HasMutation("Regeneration")
-                || MutationMeddley_GetCurrentModeId() != "draw_brine")
+                || MutationMeddley_GetCurrentModeId() != "draw_brine"
+                || !usedTidalMarrowsRecovery)
             {
                 return;
             }

@@ -12,7 +12,7 @@ The tooling assumes a normal Linux shell and supports both the standard Steam la
 
 ## Current status
 
-Version `0.5.0` is the strange-ecology deepening milestone. It contains:
+Version `0.5.1` is the current stabilization milestone on top of the strange-ecology deepening pass. It contains:
 
 - a reusable evolution framework with a single extensible serialized state envelope
 - controller-friendly evolution and stance pickers built on `Popup.ShowOptionList`
@@ -102,7 +102,7 @@ That copies the Qud-generated project file into the repository root for use with
 11. For `Brineborn`, verify that saline reserve changes only when interacting with qualifying saline ground or liquid contact.
 12. Save and reload after making choices to verify persistence.
 
-Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.5.0` reads that older shape and rewrites it into the current envelope on the next state change.
+Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.5.1` reads that older shape and rewrites it into the current envelope on the next state change.
 
 To inspect the current Linux logs from the terminal:
 
