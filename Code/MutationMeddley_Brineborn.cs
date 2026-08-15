@@ -6,6 +6,11 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public class MutationMeddley_Brineborn : MutationMeddley_AdaptiveMutationBase
     {
+        private const string MutationMeddley_ReserveKey = "brine_reserve";
+        private const string MutationMeddley_MovedKey = "brine_moved";
+        private const string MutationMeddley_SalineKey = "brine_saline";
+        private const int MutationMeddley_MaxReserve = 6;
+
         public override string MutationMeddley_EvolutionDisplayName
         {
             get { return "Brineborn"; }
@@ -18,7 +23,28 @@ namespace XRL.World.Parts.Mutation
 
         protected override string MutationMeddley_ModeAbilityDescription
         {
-            get { return "Shift your saline metabolism between sustain, crystal hardening, and scouring motion."; }
+            get { return "Shift your saline metabolism between recovery, crystallization, and scouring pressure."; }
+        }
+
+        public override void Register(GameObject Object)
+        {
+            Object.RegisterPartEvent(this, "EndTurn");
+            Object.RegisterPartEvent(this, "EnteredCell");
+            base.Register(Object);
+        }
+
+        public override bool FireEvent(Event E)
+        {
+            if (E.ID == "EnteredCell")
+            {
+                MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
+            }
+            else if (E.ID == "EndTurn")
+            {
+                MutationMeddley_ProcessBrineTurn();
+            }
+
+            return base.FireEvent(E);
         }
 
         public override string GetDescription()
@@ -34,7 +60,13 @@ namespace XRL.World.Parts.Mutation
                 + "Rank 9: claim the estuarial capstone.\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
-                + MutationMeddley_DescribeModeState();
+                + MutationMeddley_DescribeModeState()
+                + "\n"
+                + "Saline reserve: "
+                + MutationMeddley_GetReserve()
+                + "/"
+                + MutationMeddley_MaxReserve
+                + (MutationMeddley_IsSalineEnvironment() ? " (saline ground)" : " (dry ground)");
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -47,7 +79,7 @@ namespace XRL.World.Parts.Mutation
                     "Your tissues store and recycle brine as a reserve against hardship.",
                     3,
                     1,
-                    detailText: "Sustain line. Better all-weather survivability and tempo recovery."
+                    detailText: "Sustain identity. Reserve becomes recovery and temperature stability."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "saltglass_bloom",
@@ -55,7 +87,7 @@ namespace XRL.World.Parts.Mutation
                     "Minerals harden across you in layered, glassy crusts.",
                     3,
                     1,
-                    detailText: "Crystallization line. Heavier shell, sharper tradeoff against motion."
+                    detailText: "Crystallization identity. Reserve becomes shell and edge."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "scouring_estuary",
@@ -63,35 +95,64 @@ namespace XRL.World.Parts.Mutation
                     "You process hostile conditions into a harsh, mobile ecology.",
                     3,
                     1,
-                    detailText: "Hostile-environment line. Favors aggressive repositioning and adaptation."
+                    detailText: "Pressure identity. Reserve becomes motion and hostile routing."
                 ),
+
                 new MutationMeddley_EvolutionChoice(
                     "tidal_marrows",
                     "Tidal Marrows",
-                    "Brine pulses deeper into your frame and steadies your rhythm.",
+                    "Brine pulses deeper into your frame and quietly closes wounds.",
                     6,
                     2,
                     "wellspring_flesh",
-                    "Deepens the sustain loop with broader temperature tolerance."
+                    "Spend reserve for direct recovery."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "cool_sump",
+                    "Cool Sump",
+                    "Deep saline stores blunt thermal pressure when the world turns hostile.",
+                    6,
+                    2,
+                    "wellspring_flesh",
+                    "Spend less aggressively; convert reserve into weather buffering."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "saltglass_bastion",
                     "Saltglass Bastion",
-                    "Your shell thickens into a layered salt-ceramic bulwark.",
+                    "Stationary reserve blooms into a heavy mineral shell.",
                     6,
                     2,
                     "saltglass_bloom",
-                    "Further commits to hardening and rooted defense."
+                    "Spend reserve while holding ground."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "knife_reef",
+                    "Knife Reef",
+                    "Reserve hardens into sharp, layered ridges as you shift position.",
+                    6,
+                    2,
+                    "saltglass_bloom",
+                    "Spend reserve while moving to keep the shell agile."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "desiccant_wake",
                     "Desiccant Wake",
-                    "Movement leaves behind a dry, punishing metabolic trail.",
+                    "Leaving brine behind lets you spend reserve to keep pressure on dry ground.",
                     6,
                     2,
                     "scouring_estuary",
-                    "Strengthens mobile pressure and extreme-condition readiness."
+                    "Spend reserve to stay dangerous away from saline safety."
                 ),
+                new MutationMeddley_EvolutionChoice(
+                    "brackish_jet",
+                    "Brackish Jet",
+                    "Reserve turns sudden saline surges into bursts of pursuit and repositioning.",
+                    6,
+                    2,
+                    "scouring_estuary",
+                    "Spend reserve immediately after fresh saline contact."
+                ),
+
                 new MutationMeddley_EvolutionChoice(
                     "sacred_reservoir",
                     "Sacred Reservoir",
@@ -99,25 +160,52 @@ namespace XRL.World.Parts.Mutation
                     9,
                     3,
                     "tidal_marrows",
-                    "Capstone sustain path with broad elemental stability."
+                    "Capstone recovery line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "glacier_brine",
+                    "Glacier Brine",
+                    "Cold, dense stores turn hardship into stillness and endurance.",
+                    9,
+                    3,
+                    "cool_sump",
+                    "Capstone thermal-buffer line."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "cathedral_of_salt",
                     "Cathedral of Salt",
-                    "Your shell rises in heavy, brilliant terraces of mineral armor.",
+                    "Your shell rises in brilliant mineral terraces whenever you settle into place.",
                     9,
                     3,
                     "saltglass_bastion",
-                    "Capstone control path with extreme hardening."
+                    "Capstone rooted-shell line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "reef_crown",
+                    "Reef Crown",
+                    "You wear reserve as moving saltglass edges rather than a single static bastion.",
+                    9,
+                    3,
+                    "knife_reef",
+                    "Capstone agile-shell line."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "whitewater_predator",
                     "Whitewater Predator",
-                    "You hunt as a moving front of abrasion and hungry salinity.",
+                    "Dry country becomes something you cross by consuming your own stored estuary.",
                     9,
                     3,
                     "desiccant_wake",
-                    "Capstone mobility path with extreme environmental adaptation."
+                    "Capstone dry-ground pressure line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "saltwind_hunter",
+                    "Saltwind Hunter",
+                    "Fresh contact with brine becomes the trigger for sudden predatory motion.",
+                    9,
+                    3,
+                    "brackish_jet",
+                    "Capstone fresh-contact burst line."
                 )
             };
         }
@@ -128,8 +216,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("draw_brine", "Draw Brine", "Favor even, restorative saline circulation."),
-                    new MutationMeddley_ModeChoice("cool_reserve", "Cool Reserve", "Hold deep mineral chill against hostile climates.")
+                    new MutationMeddley_ModeChoice("draw_brine", "Draw Brine", "Spend reserve more readily on recovery."),
+                    new MutationMeddley_ModeChoice("cool_reserve", "Cool Reserve", "Hold reserve longer for resilience and weather buffering.")
                 };
             }
 
@@ -137,8 +225,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("shell_up", "Shell Up", "Accrete a thick saltglass shell."),
-                    new MutationMeddley_ModeChoice("knife_rind", "Knife Rind", "Keep the shell thinner and sharper at the edges.")
+                    new MutationMeddley_ModeChoice("shell_up", "Shell Up", "Favor rooted shell growth."),
+                    new MutationMeddley_ModeChoice("knife_rind", "Knife Rind", "Favor moving mineral edges.")
                 };
             }
 
@@ -146,8 +234,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("brackish_sprint", "Brackish Sprint", "Turn abrasive pressure into speed."),
-                    new MutationMeddley_ModeChoice("dry_tide", "Dry Tide", "Lean into harsh climate tolerance while moving carefully.")
+                    new MutationMeddley_ModeChoice("dry_tide", "Dry Tide", "Spend reserve to keep pressure after leaving saline ground."),
+                    new MutationMeddley_ModeChoice("surge_tide", "Surge Tide", "Spend reserve to capitalize on fresh saline contact.")
                 };
             }
 
@@ -158,50 +246,183 @@ namespace XRL.World.Parts.Mutation
         {
             MutationMeddley_ClearCommonStatShifts();
 
+            int reserve = MutationMeddley_GetReserve();
+            bool saline = MutationMeddley_IsSalineEnvironment();
+
             if (MutationMeddley_HasEvolution("wellspring_flesh"))
             {
-                int depth = MutationMeddley_GetPathDepth("wellspring_flesh", "tidal_marrows", "sacred_reservoir");
-                MutationMeddley_SetShift("HeatResistance", 5 + (10 * depth));
-                MutationMeddley_SetShift("ColdResistance", 5 + (10 * depth));
+                MutationMeddley_SetShift("HeatResistance", 5 + (reserve * 2));
+                MutationMeddley_SetShift("ColdResistance", 5 + (reserve * 2));
 
-                if (MutationMeddley_ModeState == "draw_brine")
+                if (MutationMeddley_HasEvolution("tidal_marrows"))
                 {
-                    MutationMeddley_SetShift("MoveSpeed", 5 * depth);
+                    MutationMeddley_SetShift("DV", reserve / 2);
+                    if (MutationMeddley_HasEvolution("sacred_reservoir"))
+                    {
+                        MutationMeddley_SetShift("AV", reserve / 3);
+                    }
+                }
+                else if (MutationMeddley_HasEvolution("cool_sump"))
+                {
+                    MutationMeddley_SetShift("DV", saline ? 2 : 1);
+                    if (MutationMeddley_HasEvolution("glacier_brine"))
+                    {
+                        MutationMeddley_SetShift("AV", reserve / 3);
+                    }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("DV", 1 + depth);
+                    MutationMeddley_SetShift("DV", 1 + (reserve / 3));
                 }
             }
             else if (MutationMeddley_HasEvolution("saltglass_bloom"))
             {
-                int depth = MutationMeddley_GetPathDepth("saltglass_bloom", "saltglass_bastion", "cathedral_of_salt");
-                MutationMeddley_SetShift("AV", 1 + depth);
-
-                if (MutationMeddley_ModeState == "knife_rind")
+                if (MutationMeddley_HasEvolution("saltglass_bastion"))
                 {
-                    MutationMeddley_SetShift("DV", depth);
+                    MutationMeddley_SetShift("AV", 1 + (reserve / 2));
+                    if (MutationMeddley_HasEvolution("cathedral_of_salt"))
+                    {
+                        MutationMeddley_SetShift("DV", reserve / 3);
+                    }
+                }
+                else if (MutationMeddley_HasEvolution("knife_reef"))
+                {
+                    MutationMeddley_SetShift("DV", 1 + (reserve / 2));
+                    if (MutationMeddley_HasEvolution("reef_crown"))
+                    {
+                        MutationMeddley_SetShift("Quickness", reserve / 2);
+                    }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("MoveSpeed", -10 * depth);
+                    MutationMeddley_SetShift("AV", 1 + (reserve / 3));
+                    MutationMeddley_SetShift("DV", reserve / 4);
                 }
             }
             else if (MutationMeddley_HasEvolution("scouring_estuary"))
             {
-                int depth = MutationMeddley_GetPathDepth("scouring_estuary", "desiccant_wake", "whitewater_predator");
-                MutationMeddley_SetShift("MoveSpeed", 10 + (10 * depth));
-
-                if (MutationMeddley_ModeState == "dry_tide")
+                if (MutationMeddley_HasEvolution("desiccant_wake"))
                 {
-                    MutationMeddley_SetShift("HeatResistance", 10 + (5 * depth));
-                    MutationMeddley_SetShift("ColdResistance", 10 + (5 * depth));
+                    MutationMeddley_SetShift("Quickness", reserve / 2);
+                    if (MutationMeddley_HasEvolution("whitewater_predator"))
+                    {
+                        MutationMeddley_SetShift("DV", 1 + (reserve / 3));
+                    }
+                }
+                else if (MutationMeddley_HasEvolution("brackish_jet"))
+                {
+                    MutationMeddley_SetShift("DV", saline ? 2 + (reserve / 3) : reserve / 4);
+                    if (MutationMeddley_HasEvolution("saltwind_hunter"))
+                    {
+                        MutationMeddley_SetShift("Quickness", saline ? 2 + (reserve / 3) : 0);
+                    }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("DV", 1 + depth);
+                    MutationMeddley_SetShift("Quickness", reserve / 3);
+                    MutationMeddley_SetShift("DV", reserve / 4);
                 }
             }
+        }
+
+        private int MutationMeddley_GetReserve()
+        {
+            return MutationMeddley_GetStateInt(MutationMeddley_ReserveKey, 0);
+        }
+
+        private void MutationMeddley_ProcessBrineTurn()
+        {
+            bool saline = MutationMeddley_IsSalineEnvironment();
+            int reserve = MutationMeddley_GetReserve();
+            int moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0);
+
+            if (saline)
+            {
+                reserve = Math.Min(MutationMeddley_MaxReserve, reserve + (MutationMeddley_HasEvolution("saltwind_hunter") ? 2 : 1));
+            }
+            else
+            {
+                reserve = Math.Max(0, reserve - (MutationMeddley_HasEvolution("glacier_brine") ? 0 : 1));
+            }
+
+            if (MutationMeddley_HasEvolution("tidal_marrows")
+                && MutationMeddley_GetCurrentModeId() == "draw_brine"
+                && reserve > 0
+                && ParentObject != null)
+            {
+                ParentObject.Heal(1);
+                reserve -= 1;
+            }
+
+            if (MutationMeddley_HasEvolution("saltglass_bastion")
+                && MutationMeddley_GetCurrentModeId() == "shell_up"
+                && reserve > 0
+                && moved == 0)
+            {
+                reserve -= 1;
+                reserve = Math.Min(MutationMeddley_MaxReserve, reserve + (MutationMeddley_HasEvolution("cathedral_of_salt") ? 1 : 0));
+            }
+
+            if (MutationMeddley_HasEvolution("knife_reef")
+                && MutationMeddley_GetCurrentModeId() == "knife_rind"
+                && reserve > 0
+                && moved > 0)
+            {
+                reserve -= 1;
+            }
+
+            if (MutationMeddley_HasEvolution("desiccant_wake")
+                && MutationMeddley_GetCurrentModeId() == "dry_tide"
+                && reserve > 0
+                && moved > 0
+                && !saline)
+            {
+                reserve -= 1;
+            }
+
+            if (MutationMeddley_HasEvolution("brackish_jet")
+                && MutationMeddley_GetCurrentModeId() == "surge_tide"
+                && reserve > 0
+                && moved > 0
+                && saline)
+            {
+                reserve -= 1;
+            }
+
+            MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Max(0, Math.Min(reserve, MutationMeddley_MaxReserve)));
+            MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
+            MutationMeddley_SetStateInt(MutationMeddley_SalineKey, saline ? 1 : 0);
+            MutationMeddley_RefreshPassiveEffects();
+        }
+
+        private bool MutationMeddley_IsSalineEnvironment()
+        {
+            if (ParentObject == null || ParentObject.CurrentCell == null)
+            {
+                return false;
+            }
+
+            string cellDescription = ParentObject.CurrentCell.ToString();
+            if (!string.IsNullOrEmpty(cellDescription))
+            {
+                string loweredTerrain = cellDescription.ToLowerInvariant();
+                if (loweredTerrain.Contains("salt") || loweredTerrain.Contains("brine"))
+                {
+                    return true;
+                }
+            }
+
+            object liquid = ParentObject.CurrentCell.GetOpenLiquidVolume();
+            if (liquid != null)
+            {
+                string liquidName = liquid.ToString().ToLowerInvariant();
+                if (liquidName.Contains("salt") || liquidName.Contains("brine"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

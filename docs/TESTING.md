@@ -72,8 +72,10 @@ Verify:
 10. rank 9 only shows capstones belonging to the selected rank-6 branch
 11. the option-list picker works from keyboard and controller-friendly inputs without numeric text entry
 12. changing stance with `Retune ...` visibly changes the mutation's stat profile and level text
-13. save/reload preserves the selected path and current stance
-14. removing the mutation removes its activated abilities
+13. `Brineborn` only builds saline reserve from qualifying saline world-state interaction
+14. `Living Crystal` shows different light, cadence, or contact-sensitive behavior by path
+15. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
+16. removing the mutation removes its activated abilities
 
 ## Carapace adapter test
 
@@ -81,8 +83,8 @@ Verify:
 
 Verify:
 
-1. taking both `Carapace` and `Carapace Evolution` produces the intended shell-focused build
-2. `Carapace Evolution` alone still behaves as a coherent standalone mutation
+1. taking `Carapace Evolution` alone leaves it dormant and clearly reports the dependency
+2. taking both `Carapace` and `Carapace Evolution` produces the intended shell-focused build
 3. changing `Carapace Evolution` stances updates the shell-focused stat tradeoff
 4. vanilla `Carapace` still provides its ordinary shell behavior alongside the companion evolution layer
 5. save/reload preserves the companion path and stance while vanilla `Carapace` remains present

@@ -6,6 +6,10 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public class MutationMeddley_LivingCrystal : MutationMeddley_AdaptiveMutationBase
     {
+        private const string MutationMeddley_MovedKey = "lc_moved";
+        private const string MutationMeddley_StationaryKey = "lc_stationary";
+        private const string MutationMeddley_CadenceKey = "lc_cadence";
+
         public override string MutationMeddley_EvolutionDisplayName
         {
             get { return "Living Crystal"; }
@@ -21,6 +25,56 @@ namespace XRL.World.Parts.Mutation
             get { return "Shift your crystalline posture to emphasize your current evolution path."; }
         }
 
+        public override void Register(GameObject Object)
+        {
+            Object.RegisterPartEvent(this, "EndTurn");
+            Object.RegisterPartEvent(this, "EnteredCell");
+            base.Register(Object);
+        }
+
+        public override bool FireEvent(Event E)
+        {
+            if (E.ID == "EnteredCell")
+            {
+                MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
+                if (MutationMeddley_HasEvolution("resonant_crystal"))
+                {
+                    int cadence = MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
+                    MutationMeddley_SetStateInt(
+                        MutationMeddley_CadenceKey,
+                        Math.Min(cadence + 1, 5)
+                    );
+                }
+
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "EndTurn")
+            {
+                int moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0);
+                MutationMeddley_SetStateInt(
+                    MutationMeddley_StationaryKey,
+                    moved == 0 ? 1 : 0
+                );
+
+                if (MutationMeddley_HasEvolution("resonant_crystal") && moved == 0)
+                {
+                    MutationMeddley_SetStateInt(
+                        MutationMeddley_CadenceKey,
+                        Math.Max(MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0) - 1, 0)
+                    );
+                }
+                else if (!MutationMeddley_HasEvolution("resonant_crystal"))
+                {
+                    MutationMeddley_SetStateInt(MutationMeddley_CadenceKey, 0);
+                }
+
+                MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
+                MutationMeddley_RefreshPassiveEffects();
+            }
+
+            return base.FireEvent(E);
+        }
+
         public override string GetDescription()
         {
             return "Your body is slowly replacing pliant tissue with living crystal.\n\n"
@@ -30,11 +84,14 @@ namespace XRL.World.Parts.Mutation
         public override string GetLevelText(int Level)
         {
             return "Rank 3: choose a crystalline identity.\n"
-                + "Rank 6: specialize that lattice.\n"
+                + "Rank 6: specialize that identity.\n"
                 + "Rank 9: secure its capstone.\n\n"
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
-                + MutationMeddley_DescribeModeState();
+                + MutationMeddley_DescribeModeState()
+                + "\n"
+                + "Cadence: "
+                + MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -47,7 +104,7 @@ namespace XRL.World.Parts.Mutation
                     "Harden toward impact, structure, and immovable force.",
                     3,
                     1,
-                    detailText: "Heavy defensive path. Stronger AV, slower repositioning."
+                    detailText: "Structural identity. Rewards pressure, bracing, and contact."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "prismatic_matrix",
@@ -55,7 +112,7 @@ namespace XRL.World.Parts.Mutation
                     "Split light and threat through refractive geometry.",
                     3,
                     1,
-                    detailText: "Evasive resistance path. Balances DV with elemental resilience."
+                    detailText: "Light identity. Your shell changes behavior in lit and unlit spaces."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "resonant_crystal",
@@ -63,61 +120,117 @@ namespace XRL.World.Parts.Mutation
                     "Turn your body into a humming instrument of stress and motion.",
                     3,
                     1,
-                    detailText: "Mobile control path. Prioritizes speed, rhythm, and flexible defense."
+                    detailText: "Rhythm identity. Movement builds cadence that branches spend differently."
                 ),
+
                 new MutationMeddley_EvolutionChoice(
-                    "reinforced_facets",
-                    "Reinforced Facets",
-                    "Dense growth spreads load across interlocking crystal plates.",
+                    "faceted_bulwark",
+                    "Faceted Bulwark",
+                    "Your facets spread force across broad defensive planes.",
                     6,
                     2,
                     "diamond_lattice",
-                    "Deepens the tank role with still greater structural bias."
+                    "Best when enemies stay on you and you answer pressure with certainty."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "dense_core",
+                    "Dense Core",
+                    "Your crystal mass condenses into a brutal, rooted center.",
+                    6,
+                    2,
+                    "diamond_lattice",
+                    "Best when you hold ground and let the shell take the load."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "sunlens_array",
                     "Sunlens Array",
-                    "Facet geometry bends glare and thermal pressure away from you.",
+                    "Facet geometry drinks in bright exposure and redirects it.",
                     6,
                     2,
                     "prismatic_matrix",
-                    "Leans harder into heat and cold mitigation with reflective motion."
+                    "Lit cells become your strongest operating space."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "shade_reflector",
+                    "Shade Reflector",
+                    "Your shell refracts threat through dimness and angled cover.",
+                    6,
+                    2,
+                    "prismatic_matrix",
+                    "Dark cells and low light become part of your defense."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "choral_spines",
                     "Choral Spines",
-                    "Resonant growths turn movement into a constant predatory cadence.",
+                    "Movement turns your body into a predatory crystalline chorus.",
                     6,
                     2,
                     "resonant_crystal",
-                    "Sharpens tempo and stance-shifting mobility."
+                    "Cadence becomes aggression and tempo."
                 ),
+                new MutationMeddley_EvolutionChoice(
+                    "tuning_fork_frame",
+                    "Tuning Fork Frame",
+                    "Your crystal frame stores rhythm and releases it as guarded precision.",
+                    6,
+                    2,
+                    "resonant_crystal",
+                    "Cadence becomes steadiness and timing."
+                ),
+
                 new MutationMeddley_EvolutionChoice(
                     "impact_cathedral",
                     "Impact Cathedral",
-                    "Your body becomes a shrine to pure structural refusal.",
+                    "Your shell becomes a sanctuary for crushing contact and held lines.",
                     9,
                     3,
-                    "reinforced_facets",
-                    "Capstone fortress line with severe weight and speed tradeoffs."
+                    "faceted_bulwark",
+                    "Capstone contact-defense line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "anchor_maze",
+                    "Anchor Maze",
+                    "Your rooted shell becomes a nearly immovable labyrinth of facets.",
+                    9,
+                    3,
+                    "dense_core",
+                    "Capstone bracing line."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "mirrorshard_halo",
                     "Mirrorshard Halo",
-                    "You diffuse hostile energy through a corona of mirrored splinters.",
+                    "Bright light blooms into a hard corona of refracted defense.",
                     9,
                     3,
                     "sunlens_array",
-                    "Capstone refractive line with strong thermal adaptation."
+                    "Capstone bright-space line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "eclipse_veil",
+                    "Eclipse Veil",
+                    "Dimness gathers around your shell as layered concealment and refraction.",
+                    9,
+                    3,
+                    "shade_reflector",
+                    "Capstone dark-space line."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "song_of_fracture",
                     "Song of Fracture",
-                    "Your crystal body vibrates just ahead of danger.",
+                    "Your stride becomes a sharp, escalating crystalline attack rhythm.",
                     9,
                     3,
                     "choral_spines",
-                    "Capstone resonance line with strong mobility and footwork bias."
+                    "Capstone mobile cadence line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "stilltone_engine",
+                    "Stilltone Engine",
+                    "Stored rhythm resolves into an uncanny, poised defensive engine.",
+                    9,
+                    3,
+                    "tuning_fork_frame",
+                    "Capstone guarded cadence line."
                 )
             };
         }
@@ -129,7 +242,7 @@ namespace XRL.World.Parts.Mutation
                 return new List<MutationMeddley_ModeChoice>
                 {
                     new MutationMeddley_ModeChoice("facet_lock", "Facet Lock", "Compress into a dense, anchored shell."),
-                    new MutationMeddley_ModeChoice("saw_edges", "Saw Edges", "Open sharp seams for more agile defense.")
+                    new MutationMeddley_ModeChoice("saw_edges", "Saw Edges", "Open sharp seams for more active contact defense.")
                 };
             }
 
@@ -137,8 +250,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("dawn_glare", "Dawn Glare", "Favor heat-shedding and nimble reflection."),
-                    new MutationMeddley_ModeChoice("dusk_glare", "Dusk Glare", "Favor cold-shedding and angled evasion.")
+                    new MutationMeddley_ModeChoice("dawn_glare", "Dawn Glare", "Favor bright-space refraction."),
+                    new MutationMeddley_ModeChoice("dusk_glare", "Dusk Glare", "Favor dim-space refraction.")
                 };
             }
 
@@ -146,8 +259,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("pulse_step", "Pulse Step", "Let vibration carry you into motion."),
-                    new MutationMeddley_ModeChoice("humming_guard", "Humming Guard", "Stabilize your rhythm into guarded movement.")
+                    new MutationMeddley_ModeChoice("pulse_step", "Pulse Step", "Turn cadence into motion and attack rhythm."),
+                    new MutationMeddley_ModeChoice("humming_guard", "Humming Guard", "Turn cadence into poised defense.")
                 };
             }
 
@@ -160,44 +273,113 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("diamond_lattice"))
             {
-                int depth = MutationMeddley_GetPathDepth("diamond_lattice", "reinforced_facets", "impact_cathedral");
-                MutationMeddley_SetShift("AV", 1 + depth);
-                MutationMeddley_SetShift("MoveSpeed", -10 * depth);
+                bool engaged = ParentObject != null && ParentObject.IsEngagedInMelee();
+                bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
 
-                if (MutationMeddley_ModeState == "saw_edges")
+                MutationMeddley_SetShift("AV", 1);
+
+                if (MutationMeddley_HasEvolution("faceted_bulwark"))
                 {
-                    MutationMeddley_SetShift("AV", depth);
-                    MutationMeddley_SetShift("DV", depth);
+                    if (engaged)
+                    {
+                        MutationMeddley_SetShift("AV", MutationMeddley_HasEvolution("impact_cathedral") ? 5 : 4);
+                        MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "saw_edges" ? 2 : 1);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("AV", 2);
+                    }
+                }
+                else if (MutationMeddley_HasEvolution("dense_core"))
+                {
+                    if (stationary)
+                    {
+                        MutationMeddley_SetShift("AV", MutationMeddley_HasEvolution("anchor_maze") ? 6 : 4);
+                        MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "saw_edges" ? 1 : 0);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("AV", 2);
+                    }
+                }
+                else
+                {
+                    MutationMeddley_SetShift("AV", engaged ? 3 : 2);
                 }
             }
             else if (MutationMeddley_HasEvolution("prismatic_matrix"))
             {
-                int depth = MutationMeddley_GetPathDepth("prismatic_matrix", "sunlens_array", "mirrorshard_halo");
-                MutationMeddley_SetShift("DV", 1 + depth);
+                bool lit = ParentObject != null
+                    && ParentObject.CurrentCell != null
+                    && ParentObject.CurrentCell.IsLit();
 
-                if (MutationMeddley_ModeState == "dusk_glare")
+                if (MutationMeddley_HasEvolution("sunlens_array"))
                 {
-                    MutationMeddley_SetShift("ColdResistance", 10 + (10 * depth));
-                    MutationMeddley_SetShift("HeatResistance", 5 * depth);
+                    if (lit)
+                    {
+                        MutationMeddley_SetShift("DV", MutationMeddley_HasEvolution("mirrorshard_halo") ? 4 : 3);
+                        MutationMeddley_SetShift("HeatResistance", MutationMeddley_HasEvolution("mirrorshard_halo") ? 35 : 20);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("DV", 1);
+                        MutationMeddley_SetShift("HeatResistance", 10);
+                    }
+                }
+                else if (MutationMeddley_HasEvolution("shade_reflector"))
+                {
+                    if (!lit)
+                    {
+                        MutationMeddley_SetShift("DV", MutationMeddley_HasEvolution("eclipse_veil") ? 5 : 3);
+                        MutationMeddley_SetShift("ColdResistance", MutationMeddley_HasEvolution("eclipse_veil") ? 35 : 20);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("DV", 1);
+                        MutationMeddley_SetShift("ColdResistance", 10);
+                    }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("HeatResistance", 10 + (10 * depth));
-                    MutationMeddley_SetShift("ColdResistance", 5 * depth);
+                    MutationMeddley_SetShift("DV", lit ? 2 : 1);
+                    MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "dawn_glare" ? 15 : 5);
+                    MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "dusk_glare" ? 15 : 5);
                 }
             }
             else if (MutationMeddley_HasEvolution("resonant_crystal"))
             {
-                int depth = MutationMeddley_GetPathDepth("resonant_crystal", "choral_spines", "song_of_fracture");
-                MutationMeddley_SetShift("MoveSpeed", 10 + (10 * depth));
+                int cadence = MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0);
 
-                if (MutationMeddley_ModeState == "humming_guard")
+                if (MutationMeddley_HasEvolution("choral_spines"))
                 {
-                    MutationMeddley_SetShift("DV", 1 + depth);
+                    MutationMeddley_SetShift(
+                        "Quickness",
+                        cadence + (MutationMeddley_HasEvolution("song_of_fracture") ? 2 : 0)
+                    );
+                    MutationMeddley_SetShift(
+                        "DV",
+                        MutationMeddley_GetCurrentModeId() == "pulse_step"
+                            ? Math.Max(cadence - 1, 0)
+                            : cadence / 2
+                    );
+                }
+                else if (MutationMeddley_HasEvolution("tuning_fork_frame"))
+                {
+                    MutationMeddley_SetShift(
+                        "DV",
+                        cadence + (MutationMeddley_HasEvolution("stilltone_engine") ? 2 : 0)
+                    );
+                    MutationMeddley_SetShift(
+                        "AV",
+                        MutationMeddley_GetCurrentModeId() == "humming_guard"
+                            ? cadence / 2
+                            : 0
+                    );
                 }
                 else
                 {
-                    MutationMeddley_SetShift("Quickness", 1 + depth);
+                    MutationMeddley_SetShift("Quickness", cadence / 2);
+                    MutationMeddley_SetShift("DV", cadence / 2);
                 }
             }
         }

@@ -6,6 +6,9 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public class MutationMeddley_CarapaceEvolution : MutationMeddley_AdaptiveMutationBase
     {
+        private const string MutationMeddley_MovedKey = "carapace_moved";
+        private const string MutationMeddley_StationaryKey = "carapace_stationary";
+
         public override string MutationMeddley_EvolutionDisplayName
         {
             get { return "Carapace Evolution"; }
@@ -21,6 +24,33 @@ namespace XRL.World.Parts.Mutation
             get { return "Shift your augmented shell between fortress, pursuit, and adaptation stances."; }
         }
 
+        public override void Register(GameObject Object)
+        {
+            Object.RegisterPartEvent(this, "EndTurn");
+            Object.RegisterPartEvent(this, "EnteredCell");
+            base.Register(Object);
+        }
+
+        public override bool FireEvent(Event E)
+        {
+            if (E.ID == "EnteredCell")
+            {
+                MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "EndTurn")
+            {
+                MutationMeddley_SetStateInt(
+                    MutationMeddley_StationaryKey,
+                    MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) == 0 ? 1 : 0
+                );
+                MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 0);
+                MutationMeddley_RefreshPassiveEffects();
+            }
+
+            return base.FireEvent(E);
+        }
+
         public override string GetDescription()
         {
             return "A Mutation Meddley companion evolution intended to pair with vanilla Carapace.\n\n"
@@ -29,15 +59,30 @@ namespace XRL.World.Parts.Mutation
 
         public override string GetLevelText(int Level)
         {
-            string intro = "Intended to pair with vanilla Carapace for a full shell-focused build.\n"
+            string intro = "Requires vanilla Carapace to activate.\n"
                 + "Rank 3: choose the shell's identity.\n"
                 + "Rank 6: specialize the shell.\n"
                 + "Rank 9: claim its capstone.\n\n";
+
+            if (!MutationMeddley_IsFunctionallyActive())
+            {
+                intro += "Dormant: vanilla Carapace is not currently present.\n\n";
+            }
 
             return intro
                 + MutationMeddley_GetEvolutionSummary()
                 + "\n"
                 + MutationMeddley_DescribeModeState();
+        }
+
+        protected override bool MutationMeddley_IsFunctionallyActive()
+        {
+            return MutationMeddley_HasVanillaCarapace();
+        }
+
+        protected override string MutationMeddley_GetInactiveReason()
+        {
+            return "Carapace Evolution is dormant.\n\nTake vanilla Carapace first, then evolve the shell through Mutation Meddley.";
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
@@ -47,80 +92,136 @@ namespace XRL.World.Parts.Mutation
                 new MutationMeddley_EvolutionChoice(
                     "fortress",
                     "Fortress",
-                    "Become slower, denser, and brutally difficult to dislodge.",
+                    "Become denser, more rooted, and brutally difficult to dislodge.",
                     3,
                     1,
-                    detailText: "Heavy defense path built around anchoring and attrition."
+                    detailText: "Static defense identity."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "hunter_shell",
                     "Hunter Shell",
-                    "Articulate your shell for pursuit and predatory close combat.",
+                    "Articulate the shell for pursuit and close-range pressure.",
                     3,
                     1,
-                    detailText: "Mobile shell path that trades some stillness for tempo."
+                    detailText: "Predatory shell identity."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "adaptive_carapace",
                     "Adaptive Carapace",
-                    "Retune your shell toward weather, hostile substances, and ambient stress.",
+                    "Retune the shell toward weather, exposure, and hostile environments.",
                     3,
                     1,
-                    detailText: "Environmental shell path with strong resistance pivots."
+                    detailText: "Environmental shell identity."
+                ),
+
+                new MutationMeddley_EvolutionChoice(
+                    "faceted_keep",
+                    "Faceted Keep",
+                    "Hold contact lines by making the shell broad and punishing.",
+                    6,
+                    2,
+                    "fortress",
+                    "Fortress specialization for adjacent pressure."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "entrenched_bastion",
                     "Entrenched Bastion",
-                    "Layer your shell into a still heavier defensive redoubt.",
+                    "Root the shell until stillness becomes its own defense.",
                     6,
                     2,
                     "fortress",
-                    "Deepens the fortress path with stronger anchoring."
+                    "Fortress specialization for planted defense."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "ravager_joints",
                     "Ravager Joints",
-                    "Segment the shell for faster lateral pressure and chase.",
+                    "Segment the shell for pursuit and close pursuit angles.",
                     6,
                     2,
                     "hunter_shell",
-                    "Deepens the hunter line with harder commitment to movement."
+                    "Hunter specialization for sticky melee pursuit."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "spur_lattice",
+                    "Spur Lattice",
+                    "Use the shell as a forward-leaning killing frame rather than a pure chase tool.",
+                    6,
+                    2,
+                    "hunter_shell",
+                    "Hunter specialization for harder contact."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "thermal_baffles",
                     "Thermal Baffles",
-                    "Grow reactive channels that steer heat and cold through your shell.",
+                    "Grow reactive channels that steer heat and cold through the shell.",
                     6,
                     2,
                     "adaptive_carapace",
-                    "Deepens the adaptive line with stronger elemental retuning."
+                    "Adaptive specialization for climate response."
                 ),
+                new MutationMeddley_EvolutionChoice(
+                    "mire_sheath",
+                    "Mire Sheath",
+                    "Tune the shell to foul ground, liquid contact, and slogging weather.",
+                    6,
+                    2,
+                    "adaptive_carapace",
+                    "Adaptive specialization for terrain contact."
+                ),
+
                 new MutationMeddley_EvolutionChoice(
                     "living_fortress",
                     "Living Fortress",
-                    "Your shell becomes a near-static fortress of layered certainty.",
+                    "Your shell becomes a held line that refuses collapse.",
+                    9,
+                    3,
+                    "faceted_keep",
+                    "Capstone contact-defense line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "redoubt_engine",
+                    "Redoubt Engine",
+                    "Stillness hardens the shell into a patient defensive machine.",
                     9,
                     3,
                     "entrenched_bastion",
-                    "Capstone fortress line with severe mobility sacrifice."
+                    "Capstone rooted-defense line."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "pursuit_predator",
                     "Pursuit Predator",
-                    "Your shell is now a weaponized frame for relentless pressure.",
+                    "Your shell becomes a continuous frame for pressure and chase.",
                     9,
                     3,
                     "ravager_joints",
-                    "Capstone hunter line with strong speed bias."
+                    "Capstone pursuit line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "hooked_pursuer",
+                    "Hooked Pursuer",
+                    "Your shell leans harder into committed, close-range violence.",
+                    9,
+                    3,
+                    "spur_lattice",
+                    "Capstone contact-hunter line."
                 ),
                 new MutationMeddley_EvolutionChoice(
                     "storm_carapace",
                     "Storm Carapace",
-                    "Your shell continually rebalances itself against climate and exposure.",
+                    "Climate and exposure become something the shell continually rebalances.",
                     9,
                     3,
                     "thermal_baffles",
-                    "Capstone adaptive line with strong temperature resilience."
+                    "Capstone climate line."
+                ),
+                new MutationMeddley_EvolutionChoice(
+                    "bog_shell",
+                    "Bog Shell",
+                    "The shell learns to thrive when the ground is foul, wet, or choking.",
+                    9,
+                    3,
+                    "mire_sheath",
+                    "Capstone terrain-contact line."
                 )
             };
         }
@@ -131,8 +232,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("anchor_down", "Anchor Down", "Settle your shell into a rooted defensive posture."),
-                    new MutationMeddley_ModeChoice("spiteful_wall", "Spiteful Wall", "Loosen the shell slightly for more reactive defense.")
+                    new MutationMeddley_ModeChoice("anchor_down", "Anchor Down", "Favor planted defense."),
+                    new MutationMeddley_ModeChoice("spiteful_wall", "Spiteful Wall", "Favor defensive contact pressure.")
                 };
             }
 
@@ -140,8 +241,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("skirmish_gait", "Skirmish Gait", "Favor speed, angles, and stickiness."),
-                    new MutationMeddley_ModeChoice("ramming_gait", "Ramming Gait", "Carry more shell mass into the chase.")
+                    new MutationMeddley_ModeChoice("skirmish_gait", "Skirmish Gait", "Favor pursuit and timing."),
+                    new MutationMeddley_ModeChoice("ramming_gait", "Ramming Gait", "Favor committed contact.")
                 };
             }
 
@@ -149,8 +250,8 @@ namespace XRL.World.Parts.Mutation
             {
                 return new List<MutationMeddley_ModeChoice>
                 {
-                    new MutationMeddley_ModeChoice("ember_veil", "Ember Veil", "Tune the shell for heat and dry stress."),
-                    new MutationMeddley_ModeChoice("rime_veil", "Rime Veil", "Tune the shell for cold and biting exposure.")
+                    new MutationMeddley_ModeChoice("ember_veil", "Ember Veil", "Favor heat and dry exposure."),
+                    new MutationMeddley_ModeChoice("rime_veil", "Rime Veil", "Favor cold and foul contact.")
                 };
             }
 
@@ -161,49 +262,128 @@ namespace XRL.World.Parts.Mutation
         {
             MutationMeddley_ClearCommonStatShifts();
 
+            if (!MutationMeddley_IsFunctionallyActive())
+            {
+                return;
+            }
+
+            bool engaged = ParentObject != null && ParentObject.IsEngagedInMelee();
+            bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
+            bool wetGround = MutationMeddley_IsWetGround();
+
             if (MutationMeddley_HasEvolution("fortress"))
             {
-                int depth = MutationMeddley_GetPathDepth("fortress", "entrenched_bastion", "living_fortress");
-                MutationMeddley_SetShift("AV", 1 + depth);
+                MutationMeddley_SetShift("AV", 1);
 
-                if (MutationMeddley_ModeState == "spiteful_wall")
+                if (MutationMeddley_HasEvolution("faceted_keep"))
                 {
-                    MutationMeddley_SetShift("DV", depth);
-                    MutationMeddley_SetShift("MoveSpeed", -5 * depth);
+                    MutationMeddley_SetShift("AV", engaged ? 4 : 2);
+                    MutationMeddley_SetShift("DV", MutationMeddley_HasEvolution("living_fortress") && engaged ? 2 : 1);
+                }
+                else if (MutationMeddley_HasEvolution("entrenched_bastion"))
+                {
+                    MutationMeddley_SetShift("AV", stationary ? 5 : 2);
+                    if (MutationMeddley_HasEvolution("redoubt_engine") && stationary)
+                    {
+                        MutationMeddley_SetShift("DV", 2);
+                    }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("MoveSpeed", -10 * depth);
+                    MutationMeddley_SetShift("AV", 2);
                 }
             }
             else if (MutationMeddley_HasEvolution("hunter_shell"))
             {
-                int depth = MutationMeddley_GetPathDepth("hunter_shell", "ravager_joints", "pursuit_predator");
-                MutationMeddley_SetShift("DV", 1 + depth);
-                MutationMeddley_SetShift("MoveSpeed", 5 + (10 * depth));
+                MutationMeddley_SetShift("DV", 1);
 
-                if (MutationMeddley_ModeState == "ramming_gait")
+                if (MutationMeddley_HasEvolution("ravager_joints"))
                 {
-                    MutationMeddley_SetShift("AV", depth);
+                    MutationMeddley_SetShift("Quickness", MutationMeddley_HasEvolution("pursuit_predator") ? 4 : 2);
+                    MutationMeddley_SetShift("DV", engaged ? 3 : 2);
+                }
+                else if (MutationMeddley_HasEvolution("spur_lattice"))
+                {
+                    MutationMeddley_SetShift("AV", engaged ? (MutationMeddley_HasEvolution("hooked_pursuer") ? 3 : 2) : 1);
+                    MutationMeddley_SetShift("Quickness", 1);
+                }
+                else
+                {
+                    MutationMeddley_SetShift("Quickness", 1);
+                    MutationMeddley_SetShift("DV", 2);
                 }
             }
             else if (MutationMeddley_HasEvolution("adaptive_carapace"))
             {
-                int depth = MutationMeddley_GetPathDepth("adaptive_carapace", "thermal_baffles", "storm_carapace");
-
-                if (MutationMeddley_ModeState == "rime_veil")
+                if (MutationMeddley_HasEvolution("thermal_baffles"))
                 {
-                    MutationMeddley_SetShift("ColdResistance", 10 + (10 * depth));
-                    MutationMeddley_SetShift("HeatResistance", 5 * depth);
+                    MutationMeddley_SetShift(
+                        "HeatResistance",
+                        MutationMeddley_GetCurrentModeId() == "ember_veil"
+                            ? (MutationMeddley_HasEvolution("storm_carapace") ? 35 : 20)
+                            : 5
+                    );
+                    MutationMeddley_SetShift(
+                        "ColdResistance",
+                        MutationMeddley_GetCurrentModeId() == "rime_veil"
+                            ? (MutationMeddley_HasEvolution("storm_carapace") ? 35 : 20)
+                            : 5
+                    );
+                    MutationMeddley_SetShift("DV", 1 + (MutationMeddley_HasEvolution("storm_carapace") ? 1 : 0));
+                }
+                else if (MutationMeddley_HasEvolution("mire_sheath"))
+                {
+                    MutationMeddley_SetShift("DV", wetGround ? 3 : 1);
+                    MutationMeddley_SetShift("AV", wetGround && MutationMeddley_HasEvolution("bog_shell") ? 2 : 0);
+                    MutationMeddley_SetShift("ColdResistance", wetGround ? 10 : 0);
                 }
                 else
                 {
-                    MutationMeddley_SetShift("HeatResistance", 10 + (10 * depth));
-                    MutationMeddley_SetShift("ColdResistance", 5 * depth);
+                    MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "ember_veil" ? 15 : 5);
+                    MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "rime_veil" ? 15 : 5);
                 }
-
-                MutationMeddley_SetShift("DV", depth);
             }
+        }
+
+        private bool MutationMeddley_HasVanillaCarapace()
+        {
+            if (ParentObject == null)
+            {
+                return false;
+            }
+
+            global::XRL.World.Parts.Mutations mutations = ParentObject.GetPart("Mutations")
+                as global::XRL.World.Parts.Mutations;
+
+            return mutations != null
+                && mutations.GetMutationByName("Carapace") != null;
+        }
+
+        private bool MutationMeddley_IsWetGround()
+        {
+            if (ParentObject == null || ParentObject.CurrentCell == null)
+            {
+                return false;
+            }
+
+            object liquid = ParentObject.CurrentCell.GetOpenLiquidVolume();
+            if (liquid != null)
+            {
+                return true;
+            }
+
+            string cellDescription = ParentObject.CurrentCell.ToString();
+            if (string.IsNullOrEmpty(cellDescription))
+            {
+                return false;
+            }
+
+            string loweredTerrain = cellDescription.ToLowerInvariant();
+            return loweredTerrain.Contains("water")
+                || loweredTerrain.Contains("pool")
+                || loweredTerrain.Contains("mire")
+                || loweredTerrain.Contains("bog")
+                || loweredTerrain.Contains("marsh");
         }
     }
 }

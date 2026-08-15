@@ -59,9 +59,14 @@ rank 3
 
 ## Persistence
 
-The proof-of-concept base class stores selected evolution IDs in the stable serialized string field `MutationMeddley_EvolutionState`.
+The framework stores mutation state in the stable serialized string field `MutationMeddley_EvolutionState`.
 
-This is intentionally conservative. A string payload can be extended later without immediately changing the serialized field layout of every mutation.
+Version 0.2.0 now uses that field as a small state envelope:
+
+- selected evolution IDs remain the primary state
+- mutation-local metadata such as stance, cadence, or saline reserve are encoded into the same payload
+
+This keeps the save contract extensible without multiplying public serialized fields across every adaptive mutation.
 
 Do not change the type of this field. If the framework eventually needs richer save state, introduce an explicit migration strategy first.
 
@@ -81,7 +86,7 @@ Version 0.2.0 has three layers of content:
 - `Living Crystal` and `Brineborn` are Mutation Meddley-owned flagship mutations
 - `Carapace Evolution` is the first narrow vanilla adapter
 
-`Carapace Evolution` intentionally does not replace the base-game `Carapace` class. It is a companion mutation designed to pair with vanilla `Carapace`, which preserves current shell behavior while validating the adapter pattern on supported systems.
+`Carapace Evolution` intentionally does not replace the base-game `Carapace` class. It is a companion mutation designed to pair with vanilla `Carapace`, and it remains dormant until vanilla `Carapace` is actually present.
 
 ## Compatibility strategy
 

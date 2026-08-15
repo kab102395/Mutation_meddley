@@ -23,7 +23,6 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_AdaptiveMutationBase : MutationMeddley_EvolvingMutationBase
     {
-        public string MutationMeddley_ModeState = "";
         public Guid MutationMeddley_ModeAbilityID = Guid.Empty;
 
         protected virtual string MutationMeddley_ModeAbilityClass
@@ -86,7 +85,7 @@ namespace XRL.World.Parts.Mutation
             List<MutationMeddley_ModeChoice> modes = MutationMeddley_GetModeChoices();
             for (int i = 0; i < modes.Count; i++)
             {
-                if (modes[i].Id == MutationMeddley_ModeState)
+                if (modes[i].Id == MutationMeddley_GetCurrentModeId())
                 {
                     return modes[i].Name;
                 }
@@ -155,6 +154,16 @@ namespace XRL.World.Parts.Mutation
             return "Current stance: " + MutationMeddley_GetCurrentModeName() + ".";
         }
 
+        protected string MutationMeddley_GetCurrentModeId()
+        {
+            return MutationMeddley_GetStateValue("mode");
+        }
+
+        protected void MutationMeddley_SetCurrentModeId(string id)
+        {
+            MutationMeddley_SetStateValue("mode", id);
+        }
+
         private void MutationMeddley_AddModeAbility()
         {
             if (MutationMeddley_ModeAbilityID != Guid.Empty)
@@ -175,23 +184,29 @@ namespace XRL.World.Parts.Mutation
             List<MutationMeddley_ModeChoice> modes = MutationMeddley_GetModeChoices();
             if (modes.Count == 0)
             {
-                MutationMeddley_ModeState = "";
+                MutationMeddley_SetCurrentModeId("");
                 return;
             }
 
             for (int i = 0; i < modes.Count; i++)
             {
-                if (modes[i].Id == MutationMeddley_ModeState)
+                if (modes[i].Id == MutationMeddley_GetCurrentModeId())
                 {
                     return;
                 }
             }
 
-            MutationMeddley_ModeState = modes[0].Id;
+            MutationMeddley_SetCurrentModeId(modes[0].Id);
         }
 
         private void MutationMeddley_ShowModePicker()
         {
+            if (!MutationMeddley_IsFunctionallyActive())
+            {
+                Popup.Show(MutationMeddley_GetInactiveReason());
+                return;
+            }
+
             List<MutationMeddley_ModeChoice> modes = MutationMeddley_GetModeChoices();
             if (modes.Count == 0)
             {
@@ -214,7 +229,7 @@ namespace XRL.World.Parts.Mutation
                 option.Append("\n");
                 option.Append(modes[i].Description);
 
-                if (modes[i].Id == MutationMeddley_ModeState)
+                if (modes[i].Id == MutationMeddley_GetCurrentModeId())
                 {
                     option.Append("\n(Current)");
                 }
@@ -235,7 +250,7 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
-            MutationMeddley_ModeState = modes[selection].Id;
+            MutationMeddley_SetCurrentModeId(modes[selection].Id);
             MutationMeddley_RefreshPassiveEffects();
             UseEnergy(1000, "Physical Mutation");
         }

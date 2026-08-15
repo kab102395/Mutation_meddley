@@ -14,9 +14,9 @@ The tooling assumes a normal Linux shell and supports both the standard Steam la
 
 Version `0.2.0` is the first strong content milestone. It contains:
 
-- a reusable evolution framework with stable serialized path state
+- a reusable evolution framework with a single extensible serialized state envelope
 - controller-friendly evolution and stance pickers built on `Popup.ShowOptionList`
-- tiered rank 3, 6, and 9 branching with prerequisites and tier locking
+- deeper rank 3, 6, and 9 branching with prerequisites and tier locking
 - a developer regression mutation, `Evolution Seed [DEV]`
 - two Mutation Meddley-owned flagship mutations: `Living Crystal` and `Brineborn`
 - a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
@@ -91,11 +91,12 @@ That copies the Qud-generated project file into the repository root for use with
 5. Enable **Mutation Meddley** in the in-game mod configuration if necessary.
 6. Start a new mutant character and take one or more of:
    `Evolution Seed [DEV]`, `Living Crystal`, `Brineborn`, or `Carapace Evolution`.
-7. If testing `Carapace Evolution`, also take vanilla `Carapace` for the intended shell-focused pairing.
+7. If testing `Carapace Evolution`, also take vanilla `Carapace`; without it, the companion mutation should remain dormant.
 8. Increase the mutation rank normally.
 9. At ranks 3, 6, and 9, use each mutation's `Evolve ...` ability and choose a branch from the controller-friendly option list.
 10. For `Living Crystal`, `Brineborn`, and `Carapace Evolution`, use the `Retune ...` ability after choosing a path and verify the stance changes.
-11. Save and reload after making choices to verify persistence.
+11. For `Brineborn`, verify that saline reserve changes only when interacting with qualifying saline ground or liquid contact.
+12. Save and reload after making choices to verify persistence.
 
 To inspect the current Linux logs from the terminal:
 
