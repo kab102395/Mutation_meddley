@@ -8,6 +8,17 @@ Mutation Meddley is a Caves of Qud mutation framework and mutation pack focused 
 
 The framework should make it possible to add many mutations without duplicating branch-selection and persistence logic in every mutation class.
 
+## Development platform
+
+The owner's primary development and test platform is **Zorin OS / Linux**.
+
+- Write repository tooling for Bash/Linux first.
+- Use Linux paths in primary documentation and examples.
+- Do not introduce Windows-only build/deploy requirements unless explicitly requested.
+- Support standard Steam and Flatpak Steam layouts where practical.
+- Keep path overrides available for nonstandard Steam libraries or Qud configuration locations.
+- Treat filesystem path casing as significant.
+
 ## Hard constraints
 
 1. Do not invent Caves of Qud APIs. Verify API names/signatures against current game assemblies, current official modding documentation, or known-good current examples before using them.
@@ -20,6 +31,8 @@ The framework should make it possible to add many mutations without duplicating 
 8. Treat save compatibility as a design requirement. Do not casually add/remove/change serialized public fields on existing mutation classes. Add an explicit migration plan when serialized shape must change.
 9. Use named arguments for Qud APIs with optional parameters when practical.
 10. Do not use unseeded randomness for gameplay mechanics when Qud provides a seeded alternative.
+11. Qud's installed/current assemblies and its runtime scripting compiler are authoritative. A local editor build does not prove the mod loads in-game.
+12. Keep Qud-generated `Mods.csproj`, `bin/`, `obj/`, logs, and `workshop.json` out of source control.
 
 ## Evolution model
 
@@ -55,6 +68,15 @@ For each new gameplay mutation:
 
 ## Testing boundary
 
-Do not claim that C# changes compile in Caves of Qud unless they have actually been loaded by a current local Qud installation or validated against the exact current game assemblies.
+Do not claim that C# changes compile in Caves of Qud unless they have actually been loaded by the owner's current Linux Qud installation or validated against the exact current game assemblies.
+
+On this repository, the normal local loop is:
+
+```bash
+bash tools/check.sh
+bash tools/deploy.sh
+# restart/test Caves of Qud
+bash tools/logs.sh
+```
 
 When a build/load error occurs, use the exact compiler/runtime message from Qud's logs before editing APIs by guesswork.
