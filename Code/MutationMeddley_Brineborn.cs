@@ -45,6 +45,9 @@ namespace XRL.World.Parts.Mutation
         {
             Object.RegisterPartEvent(this, "EndTurn");
             Object.RegisterPartEvent(this, "EnteredCell");
+            Object.RegisterPartEvent(this, "AttackerDealtDamage");
+            Object.RegisterPartEvent(this, "TookDamage");
+            Object.RegisterPartEvent(this, "TookEnvironmentalDamage");
             base.Register(Object);
         }
 
@@ -53,6 +56,16 @@ namespace XRL.World.Parts.Mutation
             if (E.ID == "EnteredCell")
             {
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
+            }
+            else if (E.ID == "AttackerDealtDamage")
+            {
+                MutationMeddley_HandleBrineStrike();
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "TookDamage" || E.ID == "TookEnvironmentalDamage")
+            {
+                MutationMeddley_HandleBrinePressure();
+                MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
             {
@@ -98,17 +111,17 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("wellspring_flesh"))
             {
-                yield return "Wellspring Flesh uses Draw Brine to spend reserve into mend charges. Mend only spends when healing can actually occur.";
+                yield return "Wellspring Flesh uses Draw Brine to build mend, then spends mend when pressure arrives or wounds open.";
                 yield return "Current mend: " + MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) + ". Cool Reserve banks the next mend into weatherproofing instead of raw sustain.";
             }
             else if (MutationMeddley_HasEvolution("saltglass_bloom"))
             {
-                yield return "Saltglass Bloom turns reserve into anchored bastion or moving knife-rind edges depending on stance.";
+                yield return "Saltglass Bloom turns reserve into bastion and spends bastion when the shell is tested or a sharp line connects.";
                 yield return "Current bastion: " + MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) + ". Shell Up likes stationary reserve; Knife Rind likes movement.";
             }
             else if (MutationMeddley_HasEvolution("scouring_estuary"))
             {
-                yield return "Scouring Estuary turns reserve into wake pressure after movement. Dry Tide favors dry pursuit; Surge Tide favors fresh saline contact.";
+                yield return "Scouring Estuary turns reserve into wake pressure after movement, then spends wake on successful pursuit contact.";
                 yield return "Current wake: " + MutationMeddley_GetStateInt(MutationMeddley_WakeKey, 0) + ".";
             }
             else
@@ -845,9 +858,9 @@ namespace XRL.World.Parts.Mutation
             bool usedKnifeRind = false;
             bool usedDryTide = false;
             bool usedSurgeTide = false;
-            int mend = 0;
-            int bastion = 0;
-            int wake = 0;
+            int mend = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) - 1);
+            int bastion = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) - 1);
+            int wake = Math.Max(0, MutationMeddley_GetStateInt(MutationMeddley_WakeKey, 0) - 1);
 
             if (saline)
             {
@@ -966,6 +979,59 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateInt(MutationMeddley_BastionKey, Math.Max(0, Math.Min(bastion, 4)));
             MutationMeddley_SetStateInt(MutationMeddley_WakeKey, Math.Max(0, Math.Min(wake, 4)));
             MutationMeddley_RefreshPassiveEffects();
+        }
+
+        private void MutationMeddley_HandleBrinePressure()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("wellspring_flesh") && MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_MendKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_AddPlayerMessage("Stored brine closes over the fresh damage.");
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("saltglass_bloom") && MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_BastionKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_AddPlayerMessage("Saltglass bastion flakes away instead of your flesh.");
+            }
+        }
+
+        private void MutationMeddley_HandleBrineStrike()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool saline = MutationMeddley_IsSalineEnvironment();
+
+            if (MutationMeddley_HasEvolution("saltglass_bloom") && MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_BastionKey, 1);
+                MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
+                MutationMeddley_AddPlayerMessage("Saltglass edges break loose on the hit and feed your reserve.");
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("scouring_estuary") && MutationMeddley_GetStateInt(MutationMeddley_WakeKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_WakeKey, 1);
+                MutationMeddley_TryHeal(1);
+                if (saline && MutationMeddley_HasEvolution("brackish_jet"))
+                {
+                    MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
+                }
+
+                MutationMeddley_AddPlayerMessage("Your estuary wake crashes through the contact.");
+            }
         }
 
         private bool MutationMeddley_IsSalineEnvironment()

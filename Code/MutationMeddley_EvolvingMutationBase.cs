@@ -606,6 +606,34 @@ namespace XRL.World.Parts.Mutation
             return true;
         }
 
+        protected void MutationMeddley_AddPlayerMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message) || ParentObject == null || !ParentObject.IsPlayer())
+            {
+                return;
+            }
+
+            XRL.Messages.MessageQueue.AddPlayerMessage(message);
+        }
+
+        protected int MutationMeddley_ConsumeStateInt(string key, int amount = 1)
+        {
+            if (amount <= 0)
+            {
+                return 0;
+            }
+
+            int current = MutationMeddley_GetStateInt(key, 0);
+            if (current <= 0)
+            {
+                return 0;
+            }
+
+            int consumed = Math.Min(current, amount);
+            MutationMeddley_SetStateInt(key, current - consumed);
+            return consumed;
+        }
+
         protected string MutationMeddley_GetStateValue(string key)
         {
             Dictionary<string, string> metadata = MutationMeddley_GetStateMetadata();

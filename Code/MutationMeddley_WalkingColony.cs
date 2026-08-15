@@ -41,6 +41,9 @@ namespace XRL.World.Parts.Mutation
         {
             Object.RegisterPartEvent(this, "EndTurn");
             Object.RegisterPartEvent(this, "EnteredCell");
+            Object.RegisterPartEvent(this, "AttackerDealtDamage");
+            Object.RegisterPartEvent(this, "TookDamage");
+            Object.RegisterPartEvent(this, "TookEnvironmentalDamage");
             base.Register(Object);
         }
 
@@ -49,6 +52,16 @@ namespace XRL.World.Parts.Mutation
             if (E.ID == "EnteredCell")
             {
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "AttackerDealtDamage")
+            {
+                MutationMeddley_HandleColonyStrike();
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "TookDamage" || E.ID == "TookEnvironmentalDamage")
+            {
+                MutationMeddley_HandleColonyPressure();
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
@@ -94,17 +107,17 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("marrow_hive"))
             {
-                yield return "Marrow Hive turns pressure into stitch reserve. Knit Flesh only spends when healing can actually happen; Bank Scars turns stillness into tougher recovery windows.";
+                yield return "Marrow Hive turns pressure into stitch reserve, then spends stitch when new wounds arrive.";
                 yield return "Current stitch: " + MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("surveyor_swarm"))
             {
-                yield return "Surveyor Swarm turns movement into scout pressure. Range Ahead likes hostile ground; Harry Line spends pressure into chase control.";
+                yield return "Surveyor Swarm turns movement into scout pressure, then spends scout on successful chase contact.";
                 yield return "Current scout pressure: " + MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("graft_parliament"))
             {
-                yield return "Graft Parliament stores delegated load while your body plan is crowded. Delegate Load favors composure; Override Frame favors opportunistic body theft.";
+                yield return "Graft Parliament stores delegated load, then spends that load when the frame is stressed.";
                 yield return "Current delegated load: " + MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0) + ".";
             }
             else
@@ -882,6 +895,48 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateInt(MutationMeddley_ScoutKey, Math.Max(0, Math.Min(scout, 4)));
             MutationMeddley_SetStateInt(MutationMeddley_ParliamentKey, Math.Max(0, Math.Min(parliament, 4)));
             MutationMeddley_RefreshPassiveEffects();
+        }
+
+        private void MutationMeddley_HandleColonyPressure()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("marrow_hive") && MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_StitchKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_AddPlayerMessage("The colony knits the fresh damage shut.");
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("graft_parliament") && MutationMeddley_GetStateInt(MutationMeddley_ParliamentKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_ParliamentKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
+                MutationMeddley_AddPlayerMessage("The colony redistributes the strain across the frame.");
+            }
+        }
+
+        private void MutationMeddley_HandleColonyStrike()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+
+            if (MutationMeddley_HasEvolution("surveyor_swarm") && moved && MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_ScoutKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
+                MutationMeddley_AddPlayerMessage("Your surveyor colony cashes out the pursuit line.");
+            }
         }
 
         private void MutationMeddley_TrackMoltParliamentDiscovery()

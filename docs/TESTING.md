@@ -77,12 +77,13 @@ Verify:
 15. `Ash Metabolism` behaves differently in hot, smoky, and ordinary spaces and spends embers differently by path
 16. `Walking Colony` changes behavior with movement cadence, recovery windows, and body-plan-compatible builds
 17. active synergies appear directly in mutation level text and update after branch, stance, or mutation-loadout changes
-18. unusual hidden adaptations only appear after their discovery conditions have been satisfied
-19. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
-20. removing the mutation removes its activated abilities
-21. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
+18. each owned mutation visibly spends its stored branch state during play instead of only accumulating passive output
+19. unusual hidden adaptations only appear after their discovery conditions have been satisfied
+20. save/reload preserves the selected path and current stance or reserve data encoded in the shared state payload
+21. removing the mutation removes its activated abilities
+22. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
-Supported vanilla synergy pack for `0.5.2`:
+Supported vanilla synergy pack for `0.6.0`:
 
 - `Carapace`
 - `Regeneration`

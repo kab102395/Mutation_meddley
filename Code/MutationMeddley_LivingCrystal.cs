@@ -41,6 +41,9 @@ namespace XRL.World.Parts.Mutation
         {
             Object.RegisterPartEvent(this, "EndTurn");
             Object.RegisterPartEvent(this, "EnteredCell");
+            Object.RegisterPartEvent(this, "AttackerDealtDamage");
+            Object.RegisterPartEvent(this, "TookDamage");
+            Object.RegisterPartEvent(this, "TookEnvironmentalDamage");
             base.Register(Object);
         }
 
@@ -57,6 +60,16 @@ namespace XRL.World.Parts.Mutation
                     );
                 }
 
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "AttackerDealtDamage")
+            {
+                MutationMeddley_HandleCrystalStrike();
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "TookDamage" || E.ID == "TookEnvironmentalDamage")
+            {
+                MutationMeddley_HandleCrystalPressure();
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
@@ -121,7 +134,7 @@ namespace XRL.World.Parts.Mutation
         {
             if (MutationMeddley_HasEvolution("diamond_lattice"))
             {
-                yield return "Diamond Lattice builds structural stress from pressure and bracing, then cashes that stress out through your stance.";
+                yield return "Diamond Lattice builds structural stress from pressure and spends it when contact lands or pressure arrives.";
                 yield return "Current stress: " + MutationMeddley_GetStateInt(MutationMeddley_StressKey, 0) + ".";
                 if (MutationMeddley_HasEvolution("heat_sink_choir"))
                 {
@@ -130,7 +143,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("prismatic_matrix"))
             {
-                yield return "Prismatic Matrix stores separate dawn and dusk alignments from bright and dim space.";
+                yield return "Prismatic Matrix stores dawn and dusk alignment, then discharges the matching side when bright or dim pressure peaks.";
                 yield return "Current alignment: dawn "
                     + MutationMeddley_GetStateInt(MutationMeddley_DawnKey, 0)
                     + ", dusk "
@@ -147,7 +160,7 @@ namespace XRL.World.Parts.Mutation
             }
             else if (MutationMeddley_HasEvolution("resonant_crystal"))
             {
-                yield return "Resonant Crystal turns movement cadence into a release state that stance spends differently.";
+                yield return "Resonant Crystal turns movement cadence into release, then spends release on successful exchanges.";
                 yield return "Current release: " + MutationMeddley_GetStateInt(MutationMeddley_ReleaseKey, 0) + ".";
                 if (MutationMeddley_HasEvolution("tuning_fork_frame"))
                 {
@@ -596,35 +609,35 @@ namespace XRL.World.Parts.Mutation
             {
                 MutationMeddley_SetShift("AV", 1);
                 MutationMeddley_SetShift("Toughness", 1);
-                MutationMeddley_SetShift("AV", stress / 2);
-                MutationMeddley_SetShift("Strength", MutationMeddley_GetCurrentModeId() == "saw_edges" ? 1 + (stress / 2) : stress / 3);
+                MutationMeddley_SetShift("AV", stress / 3);
+                MutationMeddley_SetShift("Strength", MutationMeddley_GetCurrentModeId() == "saw_edges" ? 1 + (stress / 3) : stress / 4);
                 if (MutationMeddley_HasEvolution("faceted_bulwark"))
                 {
                     if (engaged)
                     {
-                        MutationMeddley_SetShift("AV", 2 + stress + (MutationMeddley_HasEvolution("impact_cathedral") ? 1 : 0));
-                        MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "saw_edges" ? 1 + (stress / 2) : 1);
+                        MutationMeddley_SetShift("AV", 1 + (stress / 2) + (MutationMeddley_HasEvolution("impact_cathedral") ? 1 : 0));
+                        MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "saw_edges" ? 1 + (stress / 3) : 1);
                     }
                     else
                     {
-                        MutationMeddley_SetShift("AV", 1 + (stress / 2));
+                        MutationMeddley_SetShift("AV", 1 + (stress / 3));
                     }
                 }
                 else if (MutationMeddley_HasEvolution("dense_core"))
                 {
                     if (stationary)
                     {
-                        MutationMeddley_SetShift("AV", 2 + stress + (MutationMeddley_HasEvolution("anchor_maze") ? 1 : 0));
-                        MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "saw_edges" ? stress / 2 : 0);
+                        MutationMeddley_SetShift("AV", 1 + (stress / 2) + (MutationMeddley_HasEvolution("anchor_maze") ? 1 : 0));
+                        MutationMeddley_SetShift("DV", MutationMeddley_GetCurrentModeId() == "saw_edges" ? stress / 3 : 0);
                     }
                     else
                     {
-                        MutationMeddley_SetShift("AV", 1 + (stress / 2));
+                        MutationMeddley_SetShift("AV", 1 + (stress / 3));
                     }
                 }
                 else
                 {
-                    MutationMeddley_SetShift("AV", engaged ? 2 + stress : 1 + (stress / 2));
+                    MutationMeddley_SetShift("AV", engaged ? 1 + (stress / 2) : 1 + (stress / 3));
                 }
 
                 if (MutationMeddley_HasMutation("Electrical Generation"))
@@ -655,7 +668,7 @@ namespace XRL.World.Parts.Mutation
             else if (MutationMeddley_HasEvolution("prismatic_matrix"))
             {
                 MutationMeddley_SetShift("Ego", 1);
-                MutationMeddley_SetShift("DV", lit ? dawn / 2 : dusk / 2);
+                MutationMeddley_SetShift("DV", lit ? dawn / 3 : dusk / 3);
 
                 if (MutationMeddley_HasEvolution("sunlens_array"))
                 {
@@ -663,10 +676,10 @@ namespace XRL.World.Parts.Mutation
                     {
                         MutationMeddley_SetShift(
                             "DV",
-                            1 + dawn + (MutationMeddley_HasEvolution("mirrorshard_halo") ? 1 : 0)
+                            1 + (dawn / 2) + (MutationMeddley_HasEvolution("mirrorshard_halo") ? 1 : 0)
                         );
-                        MutationMeddley_SetShift("HeatResistance", 10 + (dawn * 3));
-                        MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "dawn_glare" ? 1 + (dawn / 2) : 0);
+                        MutationMeddley_SetShift("HeatResistance", 10 + (dawn * 2));
+                        MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "dawn_glare" ? 1 + (dawn / 3) : 0);
                     }
                     else
                     {
@@ -680,10 +693,10 @@ namespace XRL.World.Parts.Mutation
                     {
                         MutationMeddley_SetShift(
                             "DV",
-                            1 + dusk + (MutationMeddley_HasEvolution("eclipse_veil") ? 1 : 0)
+                            1 + (dusk / 2) + (MutationMeddley_HasEvolution("eclipse_veil") ? 1 : 0)
                         );
-                        MutationMeddley_SetShift("ColdResistance", 10 + (dusk * 3));
-                        MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "dusk_glare" ? 1 + (dusk / 2) : 0);
+                        MutationMeddley_SetShift("ColdResistance", 10 + (dusk * 2));
+                        MutationMeddley_SetShift("Quickness", MutationMeddley_GetCurrentModeId() == "dusk_glare" ? 1 + (dusk / 3) : 0);
                     }
                     else
                     {
@@ -693,7 +706,7 @@ namespace XRL.World.Parts.Mutation
                 }
                 else
                 {
-                    MutationMeddley_SetShift("DV", lit ? 1 + dawn : 1 + dusk);
+                    MutationMeddley_SetShift("DV", lit ? 1 + (dawn / 2) : 1 + (dusk / 2));
                     MutationMeddley_SetShift("HeatResistance", MutationMeddley_GetCurrentModeId() == "dawn_glare" ? 5 + (dawn * 2) : dawn);
                     MutationMeddley_SetShift("ColdResistance", MutationMeddley_GetCurrentModeId() == "dusk_glare" ? 5 + (dusk * 2) : dusk);
                 }
@@ -742,21 +755,21 @@ namespace XRL.World.Parts.Mutation
 
                 if (MutationMeddley_HasEvolution("choral_spines"))
                 {
-                    MutationMeddley_SetShift("Quickness", cadence + release + (MutationMeddley_HasEvolution("song_of_fracture") ? 1 : 0));
+                    MutationMeddley_SetShift("Quickness", (cadence / 2) + release + (MutationMeddley_HasEvolution("song_of_fracture") ? 1 : 0));
                     MutationMeddley_SetShift(
                         "DV",
-                        MutationMeddley_GetCurrentModeId() == "pulse_step" ? Math.Max(cadence + release - 1, 0) : (cadence / 2) + (release / 2)
+                        MutationMeddley_GetCurrentModeId() == "pulse_step" ? Math.Max((cadence / 2) + release - 1, 0) : (cadence / 3) + (release / 2)
                     );
                 }
                 else if (MutationMeddley_HasEvolution("tuning_fork_frame"))
                 {
-                    MutationMeddley_SetShift("DV", cadence + release + (MutationMeddley_HasEvolution("stilltone_engine") ? 1 : 0));
-                    MutationMeddley_SetShift("AV", MutationMeddley_GetCurrentModeId() == "humming_guard" ? (cadence / 2) + release : 0);
+                    MutationMeddley_SetShift("DV", (cadence / 2) + release + (MutationMeddley_HasEvolution("stilltone_engine") ? 1 : 0));
+                    MutationMeddley_SetShift("AV", MutationMeddley_GetCurrentModeId() == "humming_guard" ? (cadence / 3) + release : 0);
                 }
                 else
                 {
-                    MutationMeddley_SetShift("Quickness", (cadence / 2) + release);
-                    MutationMeddley_SetShift("DV", (cadence / 2) + (release / 2));
+                    MutationMeddley_SetShift("Quickness", (cadence / 3) + release);
+                    MutationMeddley_SetShift("DV", (cadence / 3) + (release / 2));
                 }
 
                 if (MutationMeddley_HasEvolution("fractured_choir"))
@@ -938,6 +951,120 @@ namespace XRL.World.Parts.Mutation
             {
                 MutationMeddley_SetShift("DV", 2);
                 MutationMeddley_SetShift("Quickness", 1 + (dusk / 2));
+            }
+        }
+
+        private void MutationMeddley_HandleCrystalPressure()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool lit = MutationMeddley_IsCurrentCellLit();
+            bool hot = MutationMeddley_IsCurrentCellHot();
+            bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
+
+            if (MutationMeddley_HasEvolution("diamond_lattice"))
+            {
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_StressKey, MutationMeddley_HasEvolution("dense_core") && stationary ? 1 : 2);
+                if (spent > 0)
+                {
+                    MutationMeddley_TryHeal(1);
+                    if (MutationMeddley_GetCurrentModeId() == "saw_edges")
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_ReleaseKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ReleaseKey, 0) + spent, 4));
+                    }
+
+                    MutationMeddley_AddPlayerMessage("Your crystal lattice sheds stress under pressure.");
+                }
+
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("prismatic_matrix"))
+            {
+                if (lit && MutationMeddley_GetStateInt(MutationMeddley_DawnKey, 0) > 0)
+                {
+                    MutationMeddley_ConsumeStateInt(MutationMeddley_DawnKey, 1);
+                    MutationMeddley_TryHeal(1);
+                    MutationMeddley_AddPlayerMessage("Bright facets flare and turn the pressure aside.");
+                }
+                else if (!lit && MutationMeddley_GetStateInt(MutationMeddley_DuskKey, 0) > 0)
+                {
+                    MutationMeddley_ConsumeStateInt(MutationMeddley_DuskKey, 1);
+                    MutationMeddley_TryHeal(1);
+                    MutationMeddley_AddPlayerMessage("Dim facets fold the threat back into shadow.");
+                }
+
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("resonant_crystal")
+                && MutationMeddley_GetCurrentModeId() == "humming_guard"
+                && MutationMeddley_GetStateInt(MutationMeddley_ReleaseKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_ReleaseKey, 1);
+                MutationMeddley_TryHeal(hot ? 2 : 1);
+                MutationMeddley_AddPlayerMessage("Your guarded resonance discharges into a stabilizing hum.");
+            }
+        }
+
+        private void MutationMeddley_HandleCrystalStrike()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool lit = MutationMeddley_IsCurrentCellLit();
+            bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+
+            if (MutationMeddley_HasEvolution("diamond_lattice") && MutationMeddley_GetStateInt(MutationMeddley_StressKey, 0) > 0)
+            {
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_StressKey, 1);
+                if (spent > 0 && MutationMeddley_GetCurrentModeId() == "saw_edges")
+                {
+                    MutationMeddley_SetStateInt(MutationMeddley_ReleaseKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_ReleaseKey, 0) + spent, 4));
+                    MutationMeddley_AddPlayerMessage("Your crystal edges spend stress on the strike.");
+                }
+
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("prismatic_matrix"))
+            {
+                if (lit && MutationMeddley_GetStateInt(MutationMeddley_DawnKey, 0) > 0)
+                {
+                    MutationMeddley_ConsumeStateInt(MutationMeddley_DawnKey, 1);
+                    MutationMeddley_TryHeal(1);
+                    MutationMeddley_AddPlayerMessage("Dawn glare discharges through the hit.");
+                }
+                else if (!lit && MutationMeddley_GetStateInt(MutationMeddley_DuskKey, 0) > 0)
+                {
+                    MutationMeddley_ConsumeStateInt(MutationMeddley_DuskKey, 1);
+                    MutationMeddley_TryHeal(1);
+                    MutationMeddley_AddPlayerMessage("Dusk glare folds your strike into a cold shimmer.");
+                }
+
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("resonant_crystal") && MutationMeddley_GetStateInt(MutationMeddley_ReleaseKey, 0) > 0)
+            {
+                int spent = MutationMeddley_ConsumeStateInt(MutationMeddley_ReleaseKey, MutationMeddley_GetCurrentModeId() == "pulse_step" ? 1 : 2);
+                if (spent > 0)
+                {
+                    MutationMeddley_TryHeal(1);
+                    if (MutationMeddley_GetCurrentModeId() == "pulse_step" && moved)
+                    {
+                        MutationMeddley_SetStateInt(MutationMeddley_CadenceKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_CadenceKey, 0) + 1, 6));
+                    }
+
+                    MutationMeddley_AddPlayerMessage(MutationMeddley_GetCurrentModeId() == "pulse_step"
+                        ? "Your stride releases a cutting crystal pulse."
+                        : "Your crystal frame discharges its stored hum.");
+                }
             }
         }
 

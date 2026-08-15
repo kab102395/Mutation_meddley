@@ -42,6 +42,9 @@ namespace XRL.World.Parts.Mutation
         {
             Object.RegisterPartEvent(this, "EndTurn");
             Object.RegisterPartEvent(this, "EnteredCell");
+            Object.RegisterPartEvent(this, "AttackerDealtDamage");
+            Object.RegisterPartEvent(this, "TookDamage");
+            Object.RegisterPartEvent(this, "TookEnvironmentalDamage");
             base.Register(Object);
         }
 
@@ -50,6 +53,16 @@ namespace XRL.World.Parts.Mutation
             if (E.ID == "EnteredCell")
             {
                 MutationMeddley_SetStateInt(MutationMeddley_MovedKey, 1);
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "AttackerDealtDamage")
+            {
+                MutationMeddley_HandleAshStrike();
+                MutationMeddley_RefreshPassiveEffects();
+            }
+            else if (E.ID == "TookDamage" || E.ID == "TookEnvironmentalDamage")
+            {
+                MutationMeddley_HandleAshPressure();
                 MutationMeddley_RefreshPassiveEffects();
             }
             else if (E.ID == "EndTurn")
@@ -97,17 +110,17 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("furnace_skin"))
             {
-                yield return "Furnace Skin banks embers into kiln layers. Bank Heat stores plating; Flare Heat burns layers into brighter retaliation.";
+                yield return "Furnace Skin banks embers into kiln layers, then spends kiln when pressure lands or flare heat connects.";
                 yield return "Current kiln: " + MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("cinder_gut"))
             {
-                yield return "Cinder Gut spends embers into rush. Feast Ash pays for predator tempo; Stoke Ash keeps the engine hot.";
+                yield return "Cinder Gut spends embers into rush, then cashes rush out on successful pursuit contact.";
                 yield return "Current rush: " + MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0) + ".";
             }
             else if (MutationMeddley_HasEvolution("smoke_organ"))
             {
-                yield return "Smoke Organ turns smoke into haze states. Veil Smoke stores evasive haze; Draft Smoke stores mobile draft pressure.";
+                yield return "Smoke Organ turns smoke into haze, then spends haze when smoke cover or movement pressure is tested.";
                 yield return "Current haze: " + MutationMeddley_GetStateInt(MutationMeddley_HazeKey, 0) + ".";
             }
             else
@@ -951,6 +964,59 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateInt(MutationMeddley_RushKey, Math.Max(0, Math.Min(rush, 4)));
             MutationMeddley_SetStateInt(MutationMeddley_HazeKey, Math.Max(0, Math.Min(haze, 4)));
             MutationMeddley_RefreshPassiveEffects();
+        }
+
+        private void MutationMeddley_HandleAshPressure()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool smoky = MutationMeddley_IsCurrentCellSmoky();
+
+            if (MutationMeddley_HasEvolution("furnace_skin") && MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_KilnKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_AddPlayerMessage("Kiln heat cracks across your skin instead of your flesh.");
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("smoke_organ") && smoky && MutationMeddley_GetStateInt(MutationMeddley_HazeKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_HazeKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_AddPlayerMessage("Smoke thickens and carries the blow away from you.");
+            }
+        }
+
+        private void MutationMeddley_HandleAshStrike()
+        {
+            if (ParentObject == null)
+            {
+                return;
+            }
+
+            bool smoky = MutationMeddley_IsCurrentCellSmoky();
+            bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
+
+            if (MutationMeddley_HasEvolution("cinder_gut") && MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_RushKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_SetStateInt(MutationMeddley_EmbersKey, Math.Min(MutationMeddley_GetEmbers() + 1, MutationMeddley_GetMaxEmbers()));
+                MutationMeddley_AddPlayerMessage("Your cinder rush burns through the strike and feeds itself.");
+                return;
+            }
+
+            if (MutationMeddley_HasEvolution("smoke_organ") && smoky && moved && MutationMeddley_GetStateInt(MutationMeddley_HazeKey, 0) > 0)
+            {
+                MutationMeddley_ConsumeStateInt(MutationMeddley_HazeKey, 1);
+                MutationMeddley_TryHeal(1);
+                MutationMeddley_SetStateInt(MutationMeddley_RushKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0) + 1, 4));
+                MutationMeddley_AddPlayerMessage("Your haze folds the route around the hit.");
+            }
         }
 
         private void MutationMeddley_TrackVolcanicMemoryDiscovery(bool hot)
