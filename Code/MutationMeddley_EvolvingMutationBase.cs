@@ -46,12 +46,14 @@ namespace XRL.World.Parts.Mutation
         {
             public bool TargetResolved;
             public bool DamageDispatched;
+            public bool EventContinued;
+            public bool HitPointLossObserved;
             public bool RecursionSuppressed;
         }
 
         private const string MutationMeddley_StateVersionKey = "statev";
         private const string MutationMeddley_CurrentStateVersion = "1";
-        private int MutationMeddley_BonusDamageDispatchDepth;
+        private static int MutationMeddley_BonusDamageDispatchDepth;
         internal static bool MutationMeddley_DebugDamageTracingEnabled;
 
         // Keep these public serialized fields stable. Future framework state should
@@ -695,6 +697,8 @@ namespace XRL.World.Parts.Mutation
             {
                 TargetResolved = target != null,
                 DamageDispatched = false,
+                EventContinued = false,
+                HitPointLossObserved = false,
                 RecursionSuppressed = false
             };
 
@@ -714,6 +718,7 @@ namespace XRL.World.Parts.Mutation
                 return result;
             }
 
+            int hitPointsBefore = target.hitpoints;
             MutationMeddley_BonusDamageDispatchDepth += 1;
             try
             {
@@ -723,7 +728,9 @@ namespace XRL.World.Parts.Mutation
                 takeDamage.SetParameter("Owner", ParentObject);
                 takeDamage.SetParameter("Attacker", ParentObject);
                 takeDamage.SetParameter("Message", label);
-                result.DamageDispatched = target.FireEvent(takeDamage);
+                result.DamageDispatched = true;
+                result.EventContinued = target.FireEvent(takeDamage);
+                result.HitPointLossObserved = target.hitpoints < hitPointsBefore;
             }
             finally
             {
@@ -736,6 +743,10 @@ namespace XRL.World.Parts.Mutation
                     + amount
                     + ", dispatched="
                     + result.DamageDispatched
+                    + ", eventContinued="
+                    + result.EventContinued
+                    + ", hpLossObserved="
+                    + result.HitPointLossObserved
                     + ", recursionSuppressed=false"
             );
             return result;
