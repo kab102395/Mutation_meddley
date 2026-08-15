@@ -51,10 +51,22 @@ namespace XRL.World.Parts.Mutation
             public bool RecursionSuppressed;
         }
 
+        private enum MutationMeddley_DamageEventContext
+        {
+            None,
+            Incoming,
+            OutgoingMeleeContact,
+            OutgoingNonMelee
+        }
+
         private const string MutationMeddley_StateVersionKey = "statev";
         private const string MutationMeddley_CurrentStateVersion = "1";
         private static int MutationMeddley_BonusDamageDispatchDepth;
         internal static bool MutationMeddley_DebugDamageTracingEnabled;
+
+        [NonSerialized]
+        private MutationMeddley_DamageEventContext MutationMeddley_CurrentDamageEventContext =
+            MutationMeddley_DamageEventContext.None;
 
         // Keep these public serialized fields stable. Future framework state should
         // preferably be encoded inside EvolutionState unless an explicit save
@@ -81,11 +93,14 @@ namespace XRL.World.Parts.Mutation
         {
             if (E.ID == MutationMeddley_GetEvolutionCommand())
             {
+                MutationMeddley_CurrentDamageEventContext = MutationMeddley_DamageEventContext.None;
                 MutationMeddley_ShowEvolutionPicker();
                 return false;
             }
 
-            return base.FireEvent(E);
+            bool result = base.FireEvent(E);
+            MutationMeddley_CurrentDamageEventContext = MutationMeddley_DamageEventContext.None;
+            return result;
         }
 
         public override bool Mutate(GameObject GO, int Level)
@@ -644,12 +659,48 @@ namespace XRL.World.Parts.Mutation
 
         protected GameObject MutationMeddley_GetIncomingDamageSource(Event E)
         {
+            MutationMeddley_CurrentDamageEventContext = MutationMeddley_DamageEventContext.Incoming;
             return MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
         }
 
         protected GameObject MutationMeddley_GetOutgoingDamageTarget(Event E)
         {
-            return MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+            GameObject target = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+            bool meleeContact = MutationMeddley_IsLikelyMeleeContact(target);
+            MutationMeddley_CurrentDamageEventContext = meleeContact
+                ? MutationMeddley_DamageEventContext.OutgoingMeleeContact
+                : MutationMeddley_DamageEventContext.OutgoingNonMelee;
+
+            if (!meleeContact)
+            {
+                MutationMeddley_TraceDamageProc(
+                    "contact.gate",
+                    "rejected outgoing damage as non-contact; targetResolved=" + (target != null)
+                );
+            }
+
+            return target;
+        }
+
+        protected bool MutationMeddley_IsLikelyMeleeContact(GameObject target)
+        {
+            if (ParentObject == null
+                || target == null
+                || ParentObject.CurrentCell == null
+                || target.CurrentCell == null
+                || !ParentObject.IsEngagedInMelee())
+            {
+                return false;
+            }
+
+            int dx = Math.Abs(ParentObject.CurrentCell.X - target.CurrentCell.X);
+            int dy = Math.Abs(ParentObject.CurrentCell.Y - target.CurrentCell.Y);
+            return dx <= 1 && dy <= 1 && (dx > 0 || dy > 0);
+        }
+
+        protected bool MutationMeddley_IsOutgoingMeleeContactContext()
+        {
+            return MutationMeddley_CurrentDamageEventContext == MutationMeddley_DamageEventContext.OutgoingMeleeContact;
         }
 
         protected void MutationMeddley_TraceDamageProc(string context, string detail)
@@ -754,6 +805,15 @@ namespace XRL.World.Parts.Mutation
 
         protected int MutationMeddley_ConsumeStateInt(string key, int amount = 1)
         {
+            if (MutationMeddley_CurrentDamageEventContext == MutationMeddley_DamageEventContext.OutgoingNonMelee)
+            {
+                MutationMeddley_TraceDamageProc(
+                    "contact.consume",
+                    "preserved state '" + key + "' because outgoing damage was not adjacent melee contact"
+                );
+                return 0;
+            }
+
             if (amount <= 0)
             {
                 return 0;
