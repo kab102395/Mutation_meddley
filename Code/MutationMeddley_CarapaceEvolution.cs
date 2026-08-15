@@ -1104,6 +1104,12 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("carapace.pressure", "suppressed recursive shell pressure handling");
+                return;
+            }
+
             bool engaged = ParentObject.IsEngagedInMelee();
             bool stationary = MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0;
             bool wetGround = MutationMeddley_IsCurrentCellWet();
@@ -1113,7 +1119,7 @@ namespace XRL.World.Parts.Mutation
             int heat = MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0);
             int mire = MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0);
             int rime = MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0);
-            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+            GameObject source = MutationMeddley_GetIncomingDamageSource(E);
 
             if (MutationMeddley_HasEvolution("fortress") && brace > 0)
             {
@@ -1128,7 +1134,12 @@ namespace XRL.World.Parts.Mutation
                     bool struckBack = false;
                     if (spiteful && engaged)
                     {
-                        struckBack = MutationMeddley_TryBonusDamage(source, spent + (MutationMeddley_HasEvolution("faceted_keep") ? 1 : 0), "spiteful wall");
+                        MutationMeddley_BonusDamageResult result = MutationMeddley_TryBonusDamage(
+                            source,
+                            spent + (MutationMeddley_HasEvolution("faceted_keep") ? 1 : 0),
+                            "spiteful wall",
+                            "carapace.spiteful_wall");
+                        struckBack = result.DamageDispatched;
                         if (!struckBack)
                         {
                             MutationMeddley_SetStateInt(
@@ -1198,13 +1209,19 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("carapace.strike", "suppressed recursive shell strike handling");
+                return;
+            }
+
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
             bool wetGround = MutationMeddley_IsCurrentCellWet();
             int impact = MutationMeddley_GetStateInt(MutationMeddley_ImpactKey, 0);
             int heat = MutationMeddley_GetStateInt(MutationMeddley_HeatAttuneKey, 0);
             int mire = MutationMeddley_GetStateInt(MutationMeddley_MireAttuneKey, 0);
             int rime = MutationMeddley_GetStateInt(MutationMeddley_RimeAttuneKey, 0);
-            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+            GameObject defender = MutationMeddley_GetOutgoingDamageTarget(E);
 
             if (MutationMeddley_HasEvolution("hunter_shell") && impact > 0)
             {
@@ -1243,7 +1260,12 @@ namespace XRL.World.Parts.Mutation
                             shellDamage += 1;
                         }
 
-                        bool struck = MutationMeddley_TryBonusDamage(defender, shellDamage, "ramming shell");
+                        MutationMeddley_BonusDamageResult result = MutationMeddley_TryBonusDamage(
+                            defender,
+                            shellDamage,
+                            "ramming shell",
+                            "carapace.ramming_shell");
+                        bool struck = result.DamageDispatched;
                         if (struck)
                         {
                             MutationMeddley_AddPlayerMessage("Your shell-slam cashes out stored impact into the prey.");

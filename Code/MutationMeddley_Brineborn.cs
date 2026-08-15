@@ -988,8 +988,14 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("brine.pressure", "suppressed recursive brine pressure handling");
+                return;
+            }
+
             bool saline = MutationMeddley_IsSalineEnvironment();
-            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+            GameObject source = MutationMeddley_GetIncomingDamageSource(E);
 
             if (MutationMeddley_HasEvolution("wellspring_flesh") && MutationMeddley_GetStateInt(MutationMeddley_MendKey, 0) > 0)
             {
@@ -1018,7 +1024,12 @@ namespace XRL.World.Parts.Mutation
                     int damage = spent
                         + (MutationMeddley_HasEvolution("saltglass_bastion") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("brine_reliquary") && saline ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(source, damage, "saltglass bastion");
+                    MutationMeddley_BonusDamageResult bastionResult = MutationMeddley_TryBonusDamage(
+                        source,
+                        damage,
+                        "saltglass bastion",
+                        "brine.bastion_pressure");
+                    bool struck = bastionResult.DamageDispatched;
                     if (!struck && MutationMeddley_GetCurrentModeId() == "shell_up")
                     {
                         MutationMeddley_SetStateInt(MutationMeddley_BastionKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) + 1, 4));
@@ -1038,8 +1049,14 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("brine.strike", "suppressed recursive brine strike handling");
+                return;
+            }
+
             bool saline = MutationMeddley_IsSalineEnvironment();
-            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+            GameObject defender = MutationMeddley_GetOutgoingDamageTarget(E);
 
             if (MutationMeddley_HasEvolution("saltglass_bloom") && MutationMeddley_GetStateInt(MutationMeddley_BastionKey, 0) > 0)
             {
@@ -1047,7 +1064,12 @@ namespace XRL.World.Parts.Mutation
                 if (spent > 0)
                 {
                     int damage = spent + (MutationMeddley_HasEvolution("knife_reef") ? 1 : 0) + (MutationMeddley_HasEvolution("reef_crown") ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "saltglass edge");
+                    MutationMeddley_BonusDamageResult edgeResult = MutationMeddley_TryBonusDamage(
+                        defender,
+                        damage,
+                        "saltglass edge",
+                        "brine.edge_strike");
+                    bool struck = edgeResult.DamageDispatched;
                     MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));
                     if (MutationMeddley_GetCurrentModeId() == "shell_up" && MutationMeddley_HasEvolution("cathedral_of_salt"))
                     {
@@ -1068,7 +1090,12 @@ namespace XRL.World.Parts.Mutation
                     int damage = spent
                         + (MutationMeddley_HasEvolution("brackish_jet") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("salt_ghost") && saline ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "estuary wake");
+                    MutationMeddley_BonusDamageResult wakeResult = MutationMeddley_TryBonusDamage(
+                        defender,
+                        damage,
+                        "estuary wake",
+                        "brine.wake_strike");
+                    bool struck = wakeResult.DamageDispatched;
                     if (saline && MutationMeddley_HasEvolution("brackish_jet"))
                     {
                         MutationMeddley_SetStateInt(MutationMeddley_ReserveKey, Math.Min(MutationMeddley_GetReserve() + 1, MutationMeddley_GetMaxReserve()));

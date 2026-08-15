@@ -83,7 +83,7 @@ Verify:
 21. removing the mutation removes its activated abilities
 22. an older save that only contains semicolon-separated evolution IDs still loads and keeps the correct path after the envelope rewrite
 
-Supported vanilla synergy pack for `0.6.0`:
+Supported vanilla synergy pack for `0.6.1`:
 
 - `Carapace`
 - `Regeneration`
@@ -112,6 +112,18 @@ Verify:
 5. save/reload preserves the companion path and stance while vanilla `Carapace` remains present
 6. losing vanilla `Carapace` makes `Carapace Evolution` dormant without deleting its saved path or stance, and regaining `Carapace` reactivates that same progression
 7. shell-facing synergies with `Multiple Legs`, `Quills`, `Regeneration`, `Burrowing Claws`, and `Amphibious` disappear while dormant and return once vanilla `Carapace` returns
+
+## Damage plumbing hardening test
+
+Use `Evolution Seed [DEV]` to toggle `Toggle Mutation Meddley Damage Trace [DEV]` on only for controlled proc checks.
+
+Verify:
+
+1. one outgoing stored-hit branch spends once, resolves its defender through the shared outgoing-hit helper, and dispatches one bonus-damage follow-through
+2. one incoming retaliatory branch spends once, resolves its source through the shared incoming-pressure helper, and dispatches one retaliation
+3. no bonus-damage spend recursively re-enters the same mutation handler and burns extra stored state
+4. when target or source resolution fails, tracing reports the miss and the mutation falls back cleanly without corrupting path, stance, or meter state
+5. after the controlled check, turn damage tracing back off before ordinary gameplay validation
 
 ## Synergy and hidden-adaptation test
 

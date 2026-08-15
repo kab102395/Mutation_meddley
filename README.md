@@ -12,7 +12,7 @@ The tooling assumes a normal Linux shell and supports both the standard Steam la
 
 ## Current status
 
-Version `0.6.0` is the current event-driven verb milestone. It contains:
+Version `0.6.1` is the current damage-plumbing hardening release on top of the event-driven verb milestone. It contains:
 
 - a reusable evolution framework with a single extensible serialized state envelope
 - controller-friendly evolution and stance pickers built on `Popup.ShowOptionList`
@@ -20,6 +20,7 @@ Version `0.6.0` is the current event-driven verb milestone. It contains:
 - a shared runtime semantic-tag and synergy-query layer
 - surfaced synergy summaries directly in mutation level text
 - event-driven branch verbs that spend stored shell, crystal, brine, ash, and colony states on pressure or successful contact
+- a shared explicit damage-dispatch path with branch-local proc guards and developer trace toggles for controlled playtest validation
 - a developer regression mutation, `Evolution Seed [DEV]`
 - four Mutation Meddley-owned flagship mutations: `Living Crystal`, `Brineborn`, `Ash Metabolism`, and `Walking Colony`
 - a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
@@ -103,7 +104,9 @@ That copies the Qud-generated project file into the repository root for use with
 11. For `Brineborn`, verify that saline reserve changes only when interacting with qualifying saline ground or liquid contact.
 12. Save and reload after making choices to verify persistence.
 
-Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.6.0` reads that older shape and rewrites it into the current envelope on the next state change.
+Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly; version `0.6.1` reads that older shape and rewrites it into the current envelope on the next state change.
+
+For controlled proc validation, `Evolution Seed [DEV]` now exposes `Toggle Mutation Meddley Damage Trace [DEV]`. Leave it off for normal play. Turn it on only when verifying target/source resolution, one-proc-per-spend behavior, or bonus-damage failure paths during development.
 
 To inspect the current Linux logs from the terminal:
 

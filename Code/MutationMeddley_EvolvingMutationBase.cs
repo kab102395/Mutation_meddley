@@ -42,8 +42,17 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_EvolvingMutationBase : BaseMutation
     {
+        protected struct MutationMeddley_BonusDamageResult
+        {
+            public bool TargetResolved;
+            public bool DamageDispatched;
+            public bool RecursionSuppressed;
+        }
+
         private const string MutationMeddley_StateVersionKey = "statev";
         private const string MutationMeddley_CurrentStateVersion = "1";
+        private int MutationMeddley_BonusDamageDispatchDepth;
+        internal static bool MutationMeddley_DebugDamageTracingEnabled;
 
         // Keep these public serialized fields stable. Future framework state should
         // preferably be encoded inside EvolutionState unless an explicit save
@@ -616,97 +625,120 @@ namespace XRL.World.Parts.Mutation
             XRL.Messages.MessageQueue.AddPlayerMessage(message);
         }
 
-        protected GameObject MutationMeddley_GetEventGameObject(Event E, params string[] names)
+        protected void MutationMeddley_SetDamageTraceEnabled(bool enabled)
+        {
+            MutationMeddley_DebugDamageTracingEnabled = enabled;
+        }
+
+        protected bool MutationMeddley_IsDamageTraceEnabled()
+        {
+            return MutationMeddley_DebugDamageTracingEnabled;
+        }
+
+        protected bool MutationMeddley_IsBonusDamageDispatchActive()
+        {
+            return MutationMeddley_BonusDamageDispatchDepth > 0;
+        }
+
+        protected GameObject MutationMeddley_GetIncomingDamageSource(Event E)
+        {
+            return MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+        }
+
+        protected GameObject MutationMeddley_GetOutgoingDamageTarget(Event E)
+        {
+            return MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+        }
+
+        protected void MutationMeddley_TraceDamageProc(string context, string detail)
+        {
+            if (!MutationMeddley_DebugDamageTracingEnabled)
+            {
+                return;
+            }
+
+            MutationMeddley_AddPlayerMessage("[MM TRACE] " + context + ": " + detail);
+        }
+
+        private GameObject MutationMeddley_GetEventGameObject(Event E, params string[] names)
         {
             if (E == null || names == null)
             {
                 return null;
             }
 
-            Type eventType = E.GetType();
             for (int i = 0; i < names.Length; i++)
             {
-                object value = null;
-                var getGameObjectParameter = eventType.GetMethod("GetGameObjectParameter", new[] { typeof(string) });
-                if (getGameObjectParameter != null)
+                GameObject parameterObject = E.GetGameObjectParameter(names[i]);
+                if (parameterObject != null)
                 {
-                    value = getGameObjectParameter.Invoke(E, new object[] { names[i] });
-                }
-                else
-                {
-                    var getParameter = eventType.GetMethod("GetParameter", new[] { typeof(string) });
-                    if (getParameter != null)
-                    {
-                        value = getParameter.Invoke(E, new object[] { names[i] });
-                    }
+                    return parameterObject;
                 }
 
-                if (value is GameObject gameObject)
+                object parameterValue = E.GetParameter(names[i]);
+                if (parameterValue is GameObject)
                 {
-                    return gameObject;
+                    return parameterValue as GameObject;
                 }
             }
 
             return null;
         }
 
-        protected bool MutationMeddley_TryBonusDamage(GameObject target, int amount, string label)
+        protected MutationMeddley_BonusDamageResult MutationMeddley_TryBonusDamage(
+            GameObject target,
+            int amount,
+            string label,
+            string context)
         {
-            if (target == null || amount <= 0)
+            MutationMeddley_BonusDamageResult result = new MutationMeddley_BonusDamageResult
             {
-                return false;
+                TargetResolved = target != null,
+                DamageDispatched = false,
+                RecursionSuppressed = false
+            };
+
+            if (!result.TargetResolved || amount <= 0)
+            {
+                MutationMeddley_TraceDamageProc(
+                    context,
+                    "targetResolved=" + result.TargetResolved + ", amount=" + amount + ", dispatched=false"
+                );
+                return result;
             }
 
-            var methods = target.GetType().GetMethods();
-            for (int i = 0; i < methods.Length; i++)
+            if (MutationMeddley_BonusDamageDispatchDepth > 0)
             {
-                if (methods[i].Name != "TakeDamage")
-                {
-                    continue;
-                }
-
-                var parameters = methods[i].GetParameters();
-                object[] args = new object[parameters.Length];
-                for (int j = 0; j < parameters.Length; j++)
-                {
-                    Type parameterType = parameters[j].ParameterType;
-                    if (parameterType == typeof(int))
-                    {
-                        args[j] = amount;
-                    }
-                    else if (parameterType == typeof(string))
-                    {
-                        args[j] = label;
-                    }
-                    else if (parameterType == typeof(GameObject))
-                    {
-                        args[j] = ParentObject;
-                    }
-                    else if (parameterType == typeof(bool))
-                    {
-                        args[j] = false;
-                    }
-                    else if (parameterType.IsValueType)
-                    {
-                        args[j] = Activator.CreateInstance(parameterType);
-                    }
-                    else
-                    {
-                        args[j] = null;
-                    }
-                }
-
-                try
-                {
-                    methods[i].Invoke(target, args);
-                    return true;
-                }
-                catch
-                {
-                }
+                result.RecursionSuppressed = true;
+                MutationMeddley_TraceDamageProc(context, "targetResolved=true, amount=" + amount + ", recursionSuppressed=true");
+                return result;
             }
 
-            return false;
+            MutationMeddley_BonusDamageDispatchDepth += 1;
+            try
+            {
+                Damage damage = new Damage(amount);
+                Event takeDamage = Event.New("TakeDamage");
+                takeDamage.SetParameter("Damage", damage);
+                takeDamage.SetParameter("Owner", ParentObject);
+                takeDamage.SetParameter("Attacker", ParentObject);
+                takeDamage.SetParameter("Message", label);
+                result.DamageDispatched = target.FireEvent(takeDamage);
+            }
+            finally
+            {
+                MutationMeddley_BonusDamageDispatchDepth -= 1;
+            }
+
+            MutationMeddley_TraceDamageProc(
+                context,
+                "targetResolved=true, amount="
+                    + amount
+                    + ", dispatched="
+                    + result.DamageDispatched
+                    + ", recursionSuppressed=false"
+            );
+            return result;
         }
 
         protected int MutationMeddley_ConsumeStateInt(string key, int amount = 1)

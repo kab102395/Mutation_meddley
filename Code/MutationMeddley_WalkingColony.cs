@@ -904,7 +904,13 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
-            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("colony.pressure", "suppressed recursive colony pressure handling");
+                return;
+            }
+
+            GameObject source = MutationMeddley_GetIncomingDamageSource(E);
 
             if (MutationMeddley_HasEvolution("marrow_hive") && MutationMeddley_GetStateInt(MutationMeddley_StitchKey, 0) > 0)
             {
@@ -933,7 +939,12 @@ namespace XRL.World.Parts.Mutation
                     int damage = spent
                         + (MutationMeddley_HasEvolution("borrowed_hands") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("molt_parliament") ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(source, damage, "delegated strain");
+                    MutationMeddley_BonusDamageResult parliamentResult = MutationMeddley_TryBonusDamage(
+                        source,
+                        damage,
+                        "delegated strain",
+                        "colony.parliament_pressure");
+                    bool struck = parliamentResult.DamageDispatched;
                     MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
                     if (!struck && MutationMeddley_HasEvolution("nerve_delegation"))
                     {
@@ -954,8 +965,14 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("colony.strike", "suppressed recursive colony strike handling");
+                return;
+            }
+
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
-            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+            GameObject defender = MutationMeddley_GetOutgoingDamageTarget(E);
 
             if (MutationMeddley_HasEvolution("surveyor_swarm") && moved && MutationMeddley_GetStateInt(MutationMeddley_ScoutKey, 0) > 0)
             {
@@ -965,7 +982,12 @@ namespace XRL.World.Parts.Mutation
                     int damage = spent
                         + (MutationMeddley_HasEvolution("latch_runners") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("wake_trail") ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "surveyor line");
+                    MutationMeddley_BonusDamageResult scoutResult = MutationMeddley_TryBonusDamage(
+                        defender,
+                        damage,
+                        "surveyor line",
+                        "colony.scout_strike");
+                    bool struck = scoutResult.DamageDispatched;
                     MutationMeddley_SetStateInt(MutationMeddley_ColonyKey, Math.Min(MutationMeddley_GetColonyPressure() + 1, MutationMeddley_GetMaxColonyPressure()));
                     if (MutationMeddley_HasEvolution("tendon_scouts") || MutationMeddley_HasEvolution("march_cartography"))
                     {

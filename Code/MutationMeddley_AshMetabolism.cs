@@ -973,9 +973,15 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("ash.pressure", "suppressed recursive ash pressure handling");
+                return;
+            }
+
             bool smoky = MutationMeddley_IsCurrentCellSmoky();
             bool hot = MutationMeddley_IsCurrentCellHot();
-            GameObject source = MutationMeddley_GetEventGameObject(E, "Source", "Attacker", "Actor");
+            GameObject source = MutationMeddley_GetIncomingDamageSource(E);
 
             if (MutationMeddley_HasEvolution("furnace_skin") && MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0) > 0)
             {
@@ -985,7 +991,12 @@ namespace XRL.World.Parts.Mutation
                     int damage = spent
                         + (MutationMeddley_HasEvolution("kiln_plating") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("volcanic_memory") && hot ? 1 : 0);
-                    bool flared = MutationMeddley_TryBonusDamage(source, damage, "kiln heat");
+                    MutationMeddley_BonusDamageResult kilnResult = MutationMeddley_TryBonusDamage(
+                        source,
+                        damage,
+                        "kiln heat",
+                        "ash.kiln_pressure");
+                    bool flared = kilnResult.DamageDispatched;
                     if (MutationMeddley_HasEvolution("radiant_soot") && MutationMeddley_IsCurrentCellLit())
                     {
                         MutationMeddley_SetStateInt(MutationMeddley_KilnKey, Math.Min(MutationMeddley_GetStateInt(MutationMeddley_KilnKey, 0) + 1, 4));
@@ -1024,10 +1035,16 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_IsBonusDamageDispatchActive())
+            {
+                MutationMeddley_TraceDamageProc("ash.strike", "suppressed recursive ash strike handling");
+                return;
+            }
+
             bool smoky = MutationMeddley_IsCurrentCellSmoky();
             bool moved = MutationMeddley_GetStateInt(MutationMeddley_MovedKey, 0) > 0;
             bool hot = MutationMeddley_IsCurrentCellHot();
-            GameObject defender = MutationMeddley_GetEventGameObject(E, "Defender", "Target", "Object");
+            GameObject defender = MutationMeddley_GetOutgoingDamageTarget(E);
 
             if (MutationMeddley_HasEvolution("cinder_gut") && MutationMeddley_GetStateInt(MutationMeddley_RushKey, 0) > 0)
             {
@@ -1037,7 +1054,12 @@ namespace XRL.World.Parts.Mutation
                     int damage = spent
                         + (MutationMeddley_HasEvolution("coal_maw") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("wake_eater") && moved ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "cinder rush");
+                    MutationMeddley_BonusDamageResult rushResult = MutationMeddley_TryBonusDamage(
+                        defender,
+                        damage,
+                        "cinder rush",
+                        "ash.rush_strike");
+                    bool struck = rushResult.DamageDispatched;
                     MutationMeddley_SetStateInt(MutationMeddley_EmbersKey, Math.Min(MutationMeddley_GetEmbers() + 1, MutationMeddley_GetMaxEmbers()));
                     if ((moved && MutationMeddley_HasEvolution("coal_maw")) || (hot && MutationMeddley_HasEvolution("pyre_circulation")))
                     {
@@ -1058,7 +1080,12 @@ namespace XRL.World.Parts.Mutation
                 {
                     int damage = (MutationMeddley_HasEvolution("ash_veil") ? 1 : 0)
                         + (MutationMeddley_HasEvolution("cenotaph_haze") ? 1 : 0);
-                    bool struck = MutationMeddley_TryBonusDamage(defender, damage, "ash haze");
+                    MutationMeddley_BonusDamageResult hazeResult = MutationMeddley_TryBonusDamage(
+                        defender,
+                        damage,
+                        "ash haze",
+                        "ash.haze_strike");
+                    bool struck = hazeResult.DamageDispatched;
                     MutationMeddley_SetStateInt(MutationMeddley_EmbersKey, Math.Min(MutationMeddley_GetEmbers() + 1, MutationMeddley_GetMaxEmbers()));
                     if (MutationMeddley_HasEvolution("chimney_lungs") || MutationMeddley_HasEvolution("cinder_jet"))
                     {

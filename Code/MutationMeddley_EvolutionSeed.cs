@@ -6,9 +6,42 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public class MutationMeddley_EvolutionSeed : MutationMeddley_EvolvingMutationBase
     {
+        private Guid MutationMeddley_DebugTraceAbilityID = Guid.Empty;
+
         public override string MutationMeddley_EvolutionDisplayName
         {
             get { return "Evolution Seed [DEV]"; }
+        }
+
+        public override void Register(GameObject Object)
+        {
+            Object.RegisterPartEvent(this, "MutationMeddley_ToggleDamageTrace");
+            base.Register(Object);
+        }
+
+        public override bool FireEvent(Event E)
+        {
+            if (E.ID == "MutationMeddley_ToggleDamageTrace")
+            {
+                bool enabled = !MutationMeddley_IsDamageTraceEnabled();
+                MutationMeddley_SetDamageTraceEnabled(enabled);
+                MutationMeddley_AddPlayerMessage("Mutation Meddley damage tracing " + (enabled ? "enabled." : "disabled."));
+                return false;
+            }
+
+            return base.FireEvent(E);
+        }
+
+        public override bool Mutate(GameObject GO, int Level)
+        {
+            MutationMeddley_AddDebugTraceAbility();
+            return base.Mutate(GO, Level);
+        }
+
+        public override bool Unmutate(GameObject GO)
+        {
+            RemoveMyActivatedAbility(ref MutationMeddley_DebugTraceAbilityID);
+            return base.Unmutate(GO);
         }
 
         public override string GetDescription()
@@ -21,10 +54,26 @@ namespace XRL.World.Parts.Mutation
             string text = "Framework test mutation. It intentionally has no final combat effect.\n"
                 + "Rank 3: choose a primary adaptation.\n"
                 + "Rank 6: specialize that adaptation.\n"
-                + "Rank 9: choose its capstone.\n\n"
+                + "Rank 9: choose its capstone.\n"
+                + "Damage trace: " + (MutationMeddley_IsDamageTraceEnabled() ? "enabled" : "disabled") + ".\n\n"
                 + MutationMeddley_GetEvolutionSummary();
 
             return text;
+        }
+
+        private void MutationMeddley_AddDebugTraceAbility()
+        {
+            if (MutationMeddley_DebugTraceAbilityID != Guid.Empty)
+            {
+                return;
+            }
+
+            MutationMeddley_DebugTraceAbilityID = AddMyActivatedAbility(
+                Name: "Toggle Mutation Meddley Damage Trace [DEV]",
+                Command: "MutationMeddley_ToggleDamageTrace",
+                Class: "Physical Mutation",
+                Description: "Enable or disable Mutation Meddley damage trace messages for the current session."
+            );
         }
 
         protected override List<MutationMeddley_EvolutionChoice> MutationMeddley_GetEvolutionChoices()
