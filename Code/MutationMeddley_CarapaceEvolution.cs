@@ -335,19 +335,33 @@ namespace XRL.World.Parts.Mutation
                 case "vanilla_carapace":
                     return MutationMeddley_HasVanillaCarapace();
                 case "multiple_legs":
-                    return MutationMeddley_HasMutation("Multiple Legs") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Multiple Legs")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("hunter_shell");
                 case "quills":
-                    return MutationMeddley_HasMutation("Quills") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Quills")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && (MutationMeddley_HasEvolution("fortress") || MutationMeddley_HasEvolution("hunter_shell"));
                 case "regeneration":
-                    return MutationMeddley_HasMutation("Regeneration") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Regeneration")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("fortress");
                 case "burrowing_claws":
-                    return MutationMeddley_HasMutation("Burrowing Claws") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Burrowing Claws")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && (MutationMeddley_HasEvolution("hunter_shell") || MutationMeddley_HasEvolution("adaptive_carapace"));
                 case "amphibious":
-                    return MutationMeddley_HasMutation("Amphibious") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Amphibious")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasEvolution("adaptive_carapace");
                 case "living_crystal_pair":
-                    return MutationMeddley_HasMutation("Living Crystal") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Living Crystal")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasAnyEvolution();
                 case "brineborn_pair":
-                    return MutationMeddley_HasMutation("Brineborn") && MutationMeddley_IsFunctionallyActive();
+                    return MutationMeddley_HasMutation("Brineborn")
+                        && MutationMeddley_IsFunctionallyActive()
+                        && MutationMeddley_HasAnyEvolution();
                 case "cathedral_organism":
                     return MutationMeddley_IsFunctionallyActive()
                         && MutationMeddley_HasEvolution("fortress")
@@ -593,8 +607,13 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (MutationMeddley_HasSelectionAtTier(3))
+            {
+                return;
+            }
+
             if (!MutationMeddley_HasMutation("Quills")
-                || !MutationMeddley_HasEvolution("fortress")
+                || !MutationMeddley_HasEvolution("faceted_keep")
                 || MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) == 0)
             {
                 return;

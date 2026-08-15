@@ -328,31 +328,43 @@ namespace XRL.World.Parts.Mutation
             switch (synergy.Id)
             {
                 case "electrical_generation":
-                    return MutationMeddley_HasMutation("Electrical Generation");
+                    return MutationMeddley_HasMutation("Electrical Generation")
+                        && (MutationMeddley_HasEvolution("diamond_lattice") || MutationMeddley_HasEvolution("resonant_crystal"));
                 case "light_manipulation":
                     return MutationMeddley_HasMutation("Light Manipulation") && MutationMeddley_HasEvolution("prismatic_matrix");
                 case "flaming_ray":
-                    return MutationMeddley_HasMutation("Flaming Ray");
+                    return MutationMeddley_HasMutation("Flaming Ray")
+                        && (MutationMeddley_HasEvolution("diamond_lattice") || MutationMeddley_HasEvolution("prismatic_matrix"));
                 case "freezing_ray":
-                    return MutationMeddley_HasMutation("Freezing Ray");
+                    return MutationMeddley_HasMutation("Freezing Ray")
+                        && (MutationMeddley_HasEvolution("diamond_lattice") || MutationMeddley_HasEvolution("prismatic_matrix"));
                 case "phasing":
-                    return MutationMeddley_HasMutation("Phasing");
+                    return MutationMeddley_HasMutation("Phasing")
+                        && (MutationMeddley_HasEvolution("prismatic_matrix") || MutationMeddley_HasEvolution("resonant_crystal"));
                 case "heightened_hearing":
                     return MutationMeddley_HasMutation("Heightened Hearing") && MutationMeddley_HasEvolution("resonant_crystal");
                 case "brineborn_pair":
-                    return MutationMeddley_HasMutation("Brineborn");
+                    return MutationMeddley_HasMutation("Brineborn") && MutationMeddley_HasAnyEvolution();
                 case "carapace_pair":
-                    return MutationMeddley_HasMutation("Carapace Evolution") || MutationMeddley_HasMutation("Carapace");
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && (
+                            MutationMeddley_HasEvolution("diamond_lattice")
+                            || MutationMeddley_HasEvolution("prismatic_matrix")
+                            || MutationMeddley_HasEvolution("resonant_crystal")
+                        );
                 case "cathedral_organism":
-                    return MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress")
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress")
                         && MutationMeddley_HasEvolution("diamond_lattice")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "saltglass_bloom");
                 case "breakwater_predator":
-                    return MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
                         && MutationMeddley_HasEvolution("resonant_crystal")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "scouring_estuary");
                 case "prism_estuary":
-                    return MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace")
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace")
                         && MutationMeddley_HasEvolution("prismatic_matrix")
                         && MutationMeddley_MutationHasEvolution("Brineborn", "wellspring_flesh");
                 case "fractured_choir_state":
@@ -561,7 +573,7 @@ namespace XRL.World.Parts.Mutation
                 }
             }
 
-            if (MutationMeddley_HasMutation("Carapace Evolution"))
+            if (MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution"))
             {
                 if (MutationMeddley_HasEvolution("diamond_lattice")
                     && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress")
@@ -622,7 +634,8 @@ namespace XRL.World.Parts.Mutation
                 cadence += 1;
             }
 
-            if (MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
+            if (MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell")
                 && MutationMeddley_HasEvolution("resonant_crystal"))
             {
                 cadence += 1;
@@ -643,7 +656,12 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
-            if (!MutationMeddley_HasEvolution("resonant_crystal") || !MutationMeddley_HasMutation("Heightened Hearing"))
+            if (MutationMeddley_HasSelectionAtTier(3))
+            {
+                return;
+            }
+
+            if (!MutationMeddley_HasEvolution("choral_spines") || !MutationMeddley_HasMutation("Heightened Hearing"))
             {
                 return;
             }

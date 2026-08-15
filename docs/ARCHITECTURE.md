@@ -77,6 +77,7 @@ For synergy/discovery content, keep the boundary explicit:
 - semantic tags, active pair synergies, and current triad eligibility are derived runtime state
 - hidden discovery flags and hidden evolution selections are persistent history
 - treat `eligible`, `discovered`, and `selected` as different states rather than collapsing them into one boolean
+- hidden rank-gated discoveries must be found before that tier is spent on the current character; discovery is not retroactive respec state
 
 ## UI strategy
 

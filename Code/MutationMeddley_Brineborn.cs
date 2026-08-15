@@ -308,31 +308,35 @@ namespace XRL.World.Parts.Mutation
             switch (synergy.Id)
             {
                 case "amphibious":
-                    return MutationMeddley_HasMutation("Amphibious");
+                    return MutationMeddley_HasMutation("Amphibious") && MutationMeddley_HasAnyEvolution();
                 case "regeneration":
-                    return MutationMeddley_HasMutation("Regeneration");
+                    return MutationMeddley_HasMutation("Regeneration") && MutationMeddley_HasEvolution("wellspring_flesh");
                 case "photosynthetic_skin":
-                    return MutationMeddley_HasMutation("Photosynthetic Skin");
+                    return MutationMeddley_HasMutation("Photosynthetic Skin") && MutationMeddley_HasAnyEvolution();
                 case "multiple_legs":
-                    return MutationMeddley_HasMutation("Multiple Legs");
+                    return MutationMeddley_HasMutation("Multiple Legs") && MutationMeddley_HasEvolution("scouring_estuary");
                 case "electrical_generation":
-                    return MutationMeddley_HasMutation("Electrical Generation");
+                    return MutationMeddley_HasMutation("Electrical Generation") && MutationMeddley_HasAnyEvolution();
                 case "burrowing_claws":
-                    return MutationMeddley_HasMutation("Burrowing Claws");
+                    return MutationMeddley_HasMutation("Burrowing Claws")
+                        && (MutationMeddley_HasEvolution("scouring_estuary") || MutationMeddley_HasEvolution("wellspring_flesh"));
                 case "living_crystal_pair":
-                    return MutationMeddley_HasMutation("Living Crystal");
+                    return MutationMeddley_HasMutation("Living Crystal") && MutationMeddley_HasAnyEvolution();
                 case "carapace_pair":
-                    return MutationMeddley_HasMutation("Carapace Evolution");
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution") && MutationMeddley_HasAnyEvolution();
                 case "cathedral_organism":
-                    return MutationMeddley_HasEvolution("saltglass_bloom")
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("saltglass_bloom")
                         && MutationMeddley_MutationHasEvolution("Living Crystal", "diamond_lattice")
                         && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress");
                 case "breakwater_predator":
-                    return MutationMeddley_HasEvolution("scouring_estuary")
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("scouring_estuary")
                         && MutationMeddley_MutationHasEvolution("Living Crystal", "resonant_crystal")
                         && MutationMeddley_MutationHasEvolution("Carapace Evolution", "hunter_shell");
                 case "prism_estuary":
-                    return MutationMeddley_HasEvolution("wellspring_flesh")
+                    return MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution")
+                        && MutationMeddley_HasEvolution("wellspring_flesh")
                         && MutationMeddley_MutationHasEvolution("Living Crystal", "prismatic_matrix")
                         && MutationMeddley_MutationHasEvolution("Carapace Evolution", "adaptive_carapace");
                 case "salt_ghost_state":
@@ -490,7 +494,7 @@ namespace XRL.World.Parts.Mutation
                 }
             }
 
-            if (MutationMeddley_HasMutation("Carapace Evolution"))
+            if (MutationMeddley_MutationIsFunctionallyActive("Carapace Evolution"))
             {
                 if (MutationMeddley_HasEvolution("saltglass_bloom")
                     && MutationMeddley_MutationHasEvolution("Carapace Evolution", "fortress"))
@@ -640,7 +644,10 @@ namespace XRL.World.Parts.Mutation
                 reserve = Math.Min(maxReserve, reserve + 1);
             }
 
-            if (MutationMeddley_HasMutation("Phasing") && saline)
+            if (!MutationMeddley_HasSelectionAtTier(3)
+                && MutationMeddley_HasMutation("Phasing")
+                && saline
+                && MutationMeddley_HasEvolution("brackish_jet"))
             {
                 int progress = MutationMeddley_GetStateInt(MutationMeddley_SaltGhostProgressKey, 0) + 1;
                 MutationMeddley_SetStateInt(MutationMeddley_SaltGhostProgressKey, progress);

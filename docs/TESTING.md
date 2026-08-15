@@ -120,6 +120,7 @@ Verify:
 4. `Fractured Choir`, `Salt Ghost`, and `Porcupine Redoubt` require their discovery conditions before they appear at rank 9
 5. save/reload preserves hidden unlock state and active triad/synergy reporting
 6. active tags and synergies are recomputed from the live build after reload rather than being restored as stale authoritative state
+7. after a rank-9 slot is already spent on that character, the corresponding hidden adaptation no longer discovers late and does not appear retroactively
 
 ## Save compatibility checks
 

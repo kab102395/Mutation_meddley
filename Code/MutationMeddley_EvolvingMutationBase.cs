@@ -259,6 +259,14 @@ namespace XRL.World.Parts.Mutation
             return mutation != null && mutation.MutationMeddley_HasEvolution(evolutionId);
         }
 
+        protected bool MutationMeddley_MutationIsFunctionallyActive(string mutationName)
+        {
+            MutationMeddley_EvolvingMutationBase mutation = MutationMeddley_GetMutationByName(mutationName)
+                as MutationMeddley_EvolvingMutationBase;
+
+            return mutation != null && mutation.MutationMeddley_PeekIsFunctionallyActive();
+        }
+
         protected bool MutationMeddley_MutationHasMode(string mutationName, string modeId)
         {
             MutationMeddley_AdaptiveMutationBase mutation = MutationMeddley_GetMutationByName(mutationName)
@@ -269,7 +277,13 @@ namespace XRL.World.Parts.Mutation
 
         protected bool MutationMeddley_MutationHasSemanticTag(string mutationName, string tag)
         {
-            MutationMeddley_EvolvingMutationBase mutation = MutationMeddley_GetMutationByName(mutationName)
+            BaseMutation liveMutation = MutationMeddley_GetMutationByName(mutationName);
+            if (liveMutation == null)
+            {
+                return false;
+            }
+
+            MutationMeddley_EvolvingMutationBase mutation = liveMutation
                 as MutationMeddley_EvolvingMutationBase;
 
             if (mutation != null)
@@ -286,6 +300,11 @@ namespace XRL.World.Parts.Mutation
             }
 
             return false;
+        }
+
+        internal bool MutationMeddley_PeekIsFunctionallyActive()
+        {
+            return MutationMeddley_IsFunctionallyActive();
         }
 
         protected BaseMutation MutationMeddley_GetMutationByName(string mutationName)

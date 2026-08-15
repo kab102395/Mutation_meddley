@@ -10,6 +10,12 @@ This file records the intended `0.3.0` synergy/discovery surface so review and Q
 
 Only `discovered` and `selected` belong in persistent save state. Tags, active synergies, and triad eligibility are derived at runtime.
 
+## Late discovery policy
+
+- Hidden rank-9 adaptations must be discovered before the character spends tier 3 on that mutation.
+- If tier 3 is already spent, discovery progress stops for that hidden adaptation on that character.
+- There is no retroactive unlock-selection or respec flow in `0.3.0`.
+
 ## Ownership rules
 
 - A visible synergy may be shown by multiple mutation pages.
