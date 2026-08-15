@@ -77,8 +77,8 @@ namespace XRL.World.Parts.Mutation
                 || E.ID == "TookEnvironmentalDamage")
             {
                 // Concrete mutations already refresh in most of these paths. Doing it
-                // once here as the final pass keeps shared baseline/capstone additions
-                // and Brineborn movement-sensitive passives in sync.
+                // once here as the final pass keeps shared baseline/capstone additions,
+                // continuous rank scaling, and movement-sensitive passives in sync.
                 MutationMeddley_RefreshPassiveEffects();
                 MutationMeddley_ApplyStaticFreezePassiveEffects();
             }
@@ -192,6 +192,90 @@ namespace XRL.World.Parts.Mutation
             StatShifter.SetStatShift(stat, currentAmount, true);
         }
 
+        protected int MutationMeddley_GetContinuousProgressionMaturity()
+        {
+            int level = Math.Max(1, Level);
+            return level <= 1 ? 0 : (level + 1) / 3;
+        }
+
+        protected int MutationMeddley_GetContinuousProgressionVerbGrowth()
+        {
+            int level = Math.Max(1, Level);
+            return Math.Max(0, (level - 1) / 3);
+        }
+
+        protected int MutationMeddley_GetContinuousProgressionBaselineCap(int baseCap)
+        {
+            return Math.Max(0, baseCap) + (Math.Max(1, Level) >= 2 ? 1 : 0);
+        }
+
+        private int MutationMeddley_ScaleContinuousVerbAmount(int amount)
+        {
+            if (amount <= 0)
+            {
+                return amount;
+            }
+
+            return amount + MutationMeddley_GetContinuousProgressionVerbGrowth();
+        }
+
+        protected new bool MutationMeddley_TryHeal(int amount)
+        {
+            return base.MutationMeddley_TryHeal(MutationMeddley_ScaleContinuousVerbAmount(amount));
+        }
+
+        protected new MutationMeddley_BonusDamageResult MutationMeddley_TryBonusDamage(
+            GameObject target,
+            int amount,
+            string label,
+            string context)
+        {
+            return base.MutationMeddley_TryBonusDamage(
+                target,
+                MutationMeddley_ScaleContinuousVerbAmount(amount),
+                label,
+                context
+            );
+        }
+
+        private string MutationMeddley_GetContinuousProgressionSummary()
+        {
+            int level = Math.Max(1, Level);
+            int maturity = MutationMeddley_GetContinuousProgressionMaturity();
+            int verbGrowth = MutationMeddley_GetContinuousProgressionVerbGrowth();
+            string next;
+
+            if (level >= 10)
+            {
+                next = "normal mutation-point progression is complete at rank 10; physical rapid-advancement levels continue these formulas.";
+            }
+            else
+            {
+                int nextLevel = level + 1;
+                if (nextLevel == 3 || nextLevel == 6 || nextLevel == 9)
+                {
+                    next = "rank " + nextLevel + " adds the next evolution milestone while retaining all prior scaling.";
+                }
+                else if (nextLevel == 2 || nextLevel == 5 || nextLevel == 8)
+                {
+                    next = "rank " + nextLevel + " increases the branch maturity passive.";
+                }
+                else
+                {
+                    next = "rank " + nextLevel + " increases Mutation Meddley healing/bonus-damage output and the branch's verb-support passive.";
+                }
+            }
+
+            return "Continuous growth: rank "
+                + level
+                + ", maturity tier "
+                + maturity
+                + ", verb output +"
+                + verbGrowth
+                + ". Next: "
+                + next;
+        }
+
         protected string MutationMeddley_DescribeModeState()
         {
             if (!MutationMeddley_HasAnyEvolution())
@@ -209,13 +293,15 @@ namespace XRL.World.Parts.Mutation
 
         protected string MutationMeddley_GetUsageSummary()
         {
-            return "Ranks 1-2 retain a baseline passive and reactive loop.\n"
+            return "Every mutation rank strengthens the biology you already have.\n"
+                + "Ranks 3, 6, and 9 additionally unlock identity, specialization, and capstone choices.\n"
                 + "Use Evolve "
                 + MutationMeddley_EvolutionDisplayName
-                + " at ranks 3, 6, and 9 to choose branches.\n"
+                + " at those milestones.\n"
                 + "Use "
                 + MutationMeddley_ModeAbilityName
-                + " to switch stance after you have a path.";
+                + " to switch stance after you have a path.\n"
+                + MutationMeddley_GetContinuousProgressionSummary();
         }
 
         protected string MutationMeddley_GetCurrentMechanicsSummary()
@@ -461,22 +547,23 @@ namespace XRL.World.Parts.Mutation
 
             if (!MutationMeddley_HasAnyEvolution())
             {
+                int baselineCap = MutationMeddley_GetContinuousProgressionBaselineCap(2);
                 switch (MutationMeddley_EvolutionDisplayName)
                 {
                     case "Carapace Evolution":
-                        yield return "Baseline shell reflex: holding ground stores up to 2 brace; incoming damage spends 1 brace to close 1 wound.";
+                        yield return "Baseline shell reflex: holding ground stores up to " + baselineCap + " brace; incoming damage spends 1 brace to close a wound.";
                         break;
                     case "Living Crystal":
-                        yield return "Baseline lattice reflex: stillness or close pressure stores up to 2 stress; incoming damage spends 1 stress to close 1 wound.";
+                        yield return "Baseline lattice reflex: stillness or close pressure stores up to " + baselineCap + " stress; incoming damage spends 1 stress to close a fracture.";
                         break;
                     case "Brineborn":
-                        yield return "Baseline brine reflex: saline reserve already grants weather resistance; incoming damage can spend 1 reserve to close 1 wound.";
+                        yield return "Baseline brine reflex: saline reserve grants weather resistance; incoming damage can spend 1 reserve to close a wound.";
                         break;
                     case "Ash Metabolism":
-                        yield return "Baseline ember reflex: embers already grant heat resistance; incoming damage can spend 1 ember to cauterize 1 wound.";
+                        yield return "Baseline ember reflex: embers grant heat resistance; incoming damage can spend 1 ember to cauterize a wound.";
                         break;
                     case "Walking Colony":
-                        yield return "Baseline colony reflex: pressure already firms the body; incoming damage can spend 1 pressure to close 1 wound.";
+                        yield return "Baseline colony reflex: pressure firms the body; incoming damage can spend 1 pressure to close a wound.";
                         break;
                 }
 
@@ -641,19 +728,21 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            int baselineCap = MutationMeddley_GetContinuousProgressionBaselineCap(2);
+
             if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution")
             {
                 int brace = MutationMeddley_GetStateInt("carapace_brace", 0);
                 brace = MutationMeddley_MovedSinceLastEndTurn
                     ? Math.Max(0, brace - 1)
-                    : Math.Min(2, brace + 1);
+                    : Math.Min(baselineCap, brace + 1);
                 MutationMeddley_SetStateInt("carapace_brace", brace);
             }
             else if (MutationMeddley_EvolutionDisplayName == "Living Crystal")
             {
                 int stress = MutationMeddley_GetStateInt("lc_stress", 0);
                 stress = (!MutationMeddley_MovedSinceLastEndTurn || ParentObject.IsEngagedInMelee())
-                    ? Math.Min(2, stress + 1)
+                    ? Math.Min(baselineCap, stress + 1)
                     : Math.Max(0, stress - 1);
                 MutationMeddley_SetStateInt("lc_stress", stress);
             }
@@ -1030,9 +1119,121 @@ namespace XRL.World.Parts.Mutation
             return maxReserve;
         }
 
+        private void MutationMeddley_ApplyContinuousProgressionPassiveEffects()
+        {
+            int maturity = MutationMeddley_GetContinuousProgressionMaturity();
+            int verbGrowth = MutationMeddley_GetContinuousProgressionVerbGrowth();
+
+            if (maturity <= 0 && verbGrowth <= 0)
+            {
+                return;
+            }
+
+            switch (MutationMeddley_EvolutionDisplayName)
+            {
+                case "Carapace Evolution":
+                    if (MutationMeddley_HasEvolution("hunter_shell"))
+                    {
+                        MutationMeddley_SetShift("Agility", maturity);
+                        MutationMeddley_SetShift("Quickness", verbGrowth * 2);
+                    }
+                    else if (MutationMeddley_HasEvolution("adaptive_carapace"))
+                    {
+                        MutationMeddley_SetShift("Willpower", maturity);
+                        MutationMeddley_SetShift("HeatResistance", verbGrowth * 3);
+                        MutationMeddley_SetShift("ColdResistance", verbGrowth * 3);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("Toughness", maturity);
+                        MutationMeddley_SetShift("AV", verbGrowth);
+                    }
+                    break;
+                case "Living Crystal":
+                    if (MutationMeddley_HasEvolution("prismatic_matrix"))
+                    {
+                        MutationMeddley_SetShift("Agility", maturity);
+                        MutationMeddley_SetShift("DV", verbGrowth);
+                    }
+                    else if (MutationMeddley_HasEvolution("resonant_crystal"))
+                    {
+                        MutationMeddley_SetShift("Ego", maturity);
+                        MutationMeddley_SetShift("Quickness", verbGrowth * 2);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("Toughness", maturity);
+                        MutationMeddley_SetShift("AV", verbGrowth);
+                    }
+                    break;
+                case "Brineborn":
+                    if (MutationMeddley_HasEvolution("saltglass_bloom"))
+                    {
+                        MutationMeddley_SetShift("Toughness", maturity);
+                        MutationMeddley_SetShift("AV", verbGrowth);
+                    }
+                    else if (MutationMeddley_HasEvolution("scouring_estuary"))
+                    {
+                        MutationMeddley_SetShift("Agility", maturity);
+                        MutationMeddley_SetShift("Quickness", verbGrowth * 2);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("Toughness", maturity);
+                        MutationMeddley_SetShift("HeatResistance", verbGrowth * 2);
+                        MutationMeddley_SetShift("ColdResistance", verbGrowth * 2);
+                    }
+                    break;
+                case "Ash Metabolism":
+                    if (MutationMeddley_HasEvolution("cinder_gut"))
+                    {
+                        MutationMeddley_SetShift("Agility", maturity);
+                        MutationMeddley_SetShift("Quickness", verbGrowth * 2);
+                        MutationMeddley_SetShift("HeatResistance", verbGrowth * 2);
+                    }
+                    else if (MutationMeddley_HasEvolution("smoke_organ"))
+                    {
+                        MutationMeddley_SetShift("Ego", maturity);
+                        MutationMeddley_SetShift("DV", verbGrowth);
+                        MutationMeddley_SetShift("HeatResistance", verbGrowth * 2);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("Toughness", maturity);
+                        MutationMeddley_SetShift("AV", verbGrowth);
+                        MutationMeddley_SetShift("HeatResistance", verbGrowth * 3);
+                    }
+                    break;
+                case "Walking Colony":
+                    if (MutationMeddley_HasEvolution("surveyor_swarm"))
+                    {
+                        MutationMeddley_SetShift("Agility", maturity);
+                        MutationMeddley_SetShift("Quickness", verbGrowth * 2);
+                    }
+                    else if (MutationMeddley_HasEvolution("graft_parliament"))
+                    {
+                        MutationMeddley_SetShift("Intelligence", maturity);
+                        MutationMeddley_SetShift("Willpower", verbGrowth);
+                    }
+                    else
+                    {
+                        MutationMeddley_SetShift("Toughness", maturity);
+                        MutationMeddley_SetShift("AV", verbGrowth);
+                    }
+                    break;
+            }
+        }
+
         private void MutationMeddley_ApplyStaticFreezePassiveEffects()
         {
-            if (!MutationMeddley_IsFunctionallyActive() || MutationMeddley_HasAnyEvolution())
+            if (!MutationMeddley_IsFunctionallyActive())
+            {
+                return;
+            }
+
+            MutationMeddley_ApplyContinuousProgressionPassiveEffects();
+
+            if (MutationMeddley_HasAnyEvolution())
             {
                 return;
             }
