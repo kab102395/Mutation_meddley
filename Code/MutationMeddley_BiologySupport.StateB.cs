@@ -95,7 +95,13 @@ namespace XRL.World.Parts
 
         private int MutationMeddley_GetAshEmberCap(MutationMeddley_AdaptiveMutationBase mutation)
         {
-            return 6 + (MutationMeddley_HasMutationByName("Flaming Ray") ? 1 : 0);
+            // Match Ash Metabolism's actual live cap exactly. The first 0.7.1
+            // telemetry copy omitted Photosynthetic Skin in lit cells and could show
+            // 7/7 while the mutation itself was using an 8-point cap.
+            int cap = 6;
+            if (MutationMeddley_HasMutationByName("Flaming Ray")) cap += 1;
+            if (MutationMeddley_HasMutationByName("Photosynthetic Skin") && MutationMeddley_IsCurrentCellLit()) cap += 1;
+            return cap;
         }
 
         private int MutationMeddley_GetColonyPressureCap()
@@ -103,11 +109,13 @@ namespace XRL.World.Parts
             int cap = 6;
             if (MutationMeddley_HasMutationByName("Multiple Legs")) cap += 1;
 
-            MutationMeddley_AdaptiveMutationBase carapace = MutationMeddley_GetMutation("Carapace Evolution");
-            if (MutationMeddley_HasMutationByName("Quills")
-                || MutationMeddley_HasMutationByName("Burrowing Claws")
-                || MutationMeddley_HasMutationByName("Carapace")
-                || (carapace != null && carapace.MutationMeddley_PeekIsFunctionallyActive()))
+            // Walking Colony's real rule is semantic: one additional compatible
+            // BODY_PART_INTERACTION mutation other than Multiple Legs. Until the
+            // telemetry provider is fully moved into the concrete mutation, mirror
+            // the complete known registry instead of a loose shell approximation.
+            if (MutationMeddley_HasMutationByName("Carapace")
+                || MutationMeddley_HasMutationByName("Quills")
+                || MutationMeddley_HasMutationByName("Burrowing Claws"))
             {
                 cap += 1;
             }
