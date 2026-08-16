@@ -133,6 +133,43 @@ namespace XRL.World.Parts
             return result;
         }
 
+        private ActivatedAbilities MutationMeddley_GetActivatedAbilities()
+        {
+            return ParentObject == null
+                ? null
+                : ParentObject.GetPart("ActivatedAbilities") as ActivatedAbilities;
+        }
+
+        private bool MutationMeddley_AbilityExists(Guid abilityID)
+        {
+            ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilities();
+            return abilityID != Guid.Empty
+                && abilities != null
+                && abilities.AbilityByGuid != null
+                && abilities.AbilityByGuid.ContainsKey(abilityID);
+        }
+
+        private Guid MutationMeddley_AddAbility(string name, string command, string description)
+        {
+            ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilities();
+            if (abilities == null)
+            {
+                return Guid.Empty;
+            }
+
+            return abilities.AddAbility(
+                name,
+                command,
+                "Physical Mutation",
+                -1,
+                false,
+                false,
+                description,
+                "-",
+                false,
+                false);
+        }
+
         private void MutationMeddley_RefreshAbilitySurface()
         {
             List<MutationMeddley_AdaptiveMutationBase> owned = MutationMeddley_GetOwnedMutations();
@@ -183,18 +220,15 @@ namespace XRL.World.Parts
 
         private void MutationMeddley_EnsureBiologyAbility()
         {
-            if (MutationMeddley_BiologyAbilityID != Guid.Empty
-                && MyActivatedAbility(MutationMeddley_BiologyAbilityID) != null)
+            if (MutationMeddley_AbilityExists(MutationMeddley_BiologyAbilityID))
             {
                 return;
             }
 
-            MutationMeddley_BiologyAbilityID = AddMyActivatedAbility(
-                Name: "Mutation Meddley Biology",
-                Command: BiologyCommand,
-                Class: "Physical Mutation",
-                Description: MutationMeddley_GetBiologyAbilityDescription()
-            );
+            MutationMeddley_BiologyAbilityID = MutationMeddley_AddAbility(
+                "Mutation Meddley Biology",
+                BiologyCommand,
+                MutationMeddley_GetBiologyAbilityDescription());
         }
 
         private void MutationMeddley_EnsureActionAbility(
@@ -214,7 +248,7 @@ namespace XRL.World.Parts
             string desiredSignature = MutationMeddley_GetActionSignature(mutation);
             string desiredName = MutationMeddley_GetActionName(mutation);
 
-            bool missing = abilityID == Guid.Empty || MyActivatedAbility(abilityID) == null;
+            bool missing = !MutationMeddley_AbilityExists(abilityID);
             if (!missing && signature == desiredSignature)
             {
                 return;
@@ -225,12 +259,10 @@ namespace XRL.World.Parts
                 MutationMeddley_RemoveAbility(ref abilityID);
             }
 
-            abilityID = AddMyActivatedAbility(
-                Name: desiredName,
-                Command: command,
-                Class: "Physical Mutation",
-                Description: MutationMeddley_GetActionDescription(mutation)
-            );
+            abilityID = MutationMeddley_AddAbility(
+                desiredName,
+                command,
+                MutationMeddley_GetActionDescription(mutation));
             signature = desiredSignature;
         }
 
@@ -252,24 +284,29 @@ namespace XRL.World.Parts
 
         private void MutationMeddley_UpdateAbilityDescription(Guid abilityID, string description)
         {
-            if (abilityID == Guid.Empty)
+            ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilities();
+            if (abilityID == Guid.Empty
+                || abilities == null
+                || abilities.AbilityByGuid == null
+                || !abilities.AbilityByGuid.ContainsKey(abilityID))
             {
                 return;
             }
 
-            var ability = MyActivatedAbility(abilityID);
-            if (ability != null)
-            {
-                ability.Description = description;
-            }
+            abilities.AbilityByGuid[abilityID].Description = description;
         }
 
         private void MutationMeddley_RemoveAbility(ref Guid abilityID)
         {
-            if (abilityID != Guid.Empty)
+            ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilities();
+            if (abilityID != Guid.Empty
+                && abilities != null
+                && abilities.AbilityByGuid != null
+                && abilities.AbilityByGuid.ContainsKey(abilityID))
             {
-                RemoveMyActivatedAbility(ref abilityID);
+                abilities.RemoveAbility(abilityID);
             }
+            abilityID = Guid.Empty;
         }
 
         private void MutationMeddley_RemoveActionAbilities()
