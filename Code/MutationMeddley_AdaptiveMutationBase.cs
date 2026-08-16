@@ -23,6 +23,9 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_AdaptiveMutationBase : MutationMeddley_EvolvingMutationBase
     {
+        private const string MutationMeddley_PrimaryActionGuidKey = "primary_action_guid";
+        private const string MutationMeddley_PrimaryActionSignatureKey = "primary_action_signature";
+
         private static readonly string[] MutationMeddley_CommonStatNames = new string[]
         {
             "AV",
@@ -72,6 +75,7 @@ namespace XRL.World.Parts.Mutation
         {
             Object.RegisterPartEvent(this, MutationMeddley_GetModeCommand());
             base.Register(Object);
+            MutationMeddley_EnsureBiologySupport(Object);
             MutationMeddley_OnEvolutionStateChanged();
         }
 
@@ -96,9 +100,6 @@ namespace XRL.World.Parts.Mutation
                 || E.ID == "TookDamage"
                 || E.ID == "TookEnvironmentalDamage")
             {
-                // Concrete mutations already refresh in most of these paths. Doing it
-                // once here as the final pass keeps shared baseline/capstone additions,
-                // continuous rank scaling, and movement-sensitive passives in sync.
                 MutationMeddley_RefreshPassiveEffects();
                 MutationMeddley_ApplyStaticFreezePassiveEffects();
                 MutationMeddley_CommitCommonStatShifts();
@@ -106,6 +107,13 @@ namespace XRL.World.Parts.Mutation
 
             if (E.ID == "EndTurn")
             {
+                // Mutation-specific activated abilities are mutation-owned and
+                // self-heal on the same dependable turn event the mutation already
+                // receives. This catches old saves, stale GUIDs, dependency dormancy,
+                // and late character-creation ordering without relying on Biology.
+                MutationMeddley_SyncModeAbility();
+                MutationMeddley_SyncPrimaryActionAbility();
+                MutationMeddley_EnsureBiologySupport(ParentObject);
                 MutationMeddley_MovedSinceLastEndTurn = false;
             }
 
@@ -114,12 +122,16 @@ namespace XRL.World.Parts.Mutation
 
         public override bool Mutate(GameObject GO, int Level)
         {
-            MutationMeddley_AddModeAbility();
-            return base.Mutate(GO, Level);
+            bool result = base.Mutate(GO, Level);
+            MutationMeddley_EnsureBiologySupport(GO);
+            MutationMeddley_SyncModeAbility();
+            MutationMeddley_SyncPrimaryActionAbility();
+            return result;
         }
 
         public override bool Unmutate(GameObject GO)
         {
+            MutationMeddley_RemovePrimaryActionAbility();
             MutationMeddley_ClearCommonStatShifts();
             MutationMeddley_CommitCommonStatShifts();
             RemoveMyActivatedAbility(ref MutationMeddley_ModeAbilityID);
@@ -128,11 +140,180 @@ namespace XRL.World.Parts.Mutation
 
         protected override void MutationMeddley_OnEvolutionStateChanged()
         {
-            MutationMeddley_AddModeAbility();
             MutationMeddley_EnsureValidMode();
+            MutationMeddley_SyncModeAbility();
+            MutationMeddley_SyncPrimaryActionAbility();
             MutationMeddley_RefreshPassiveEffects();
             MutationMeddley_ApplyStaticFreezePassiveEffects();
             MutationMeddley_CommitCommonStatShifts();
+            MutationMeddley_EnsureBiologySupport(ParentObject);
+        }
+
+        private global::XRL.World.Parts.MutationMeddley_BiologySupport MutationMeddley_EnsureBiologySupport(GameObject Object)
+        {
+            if (Object == null || !Object.IsPlayer())
+            {
+                return null;
+            }
+
+            return global::XRL.World.Parts.MutationMeddley_BiologySupport.MutationMeddley_EnsureInstalled(Object);
+        }
+
+        private global::XRL.World.Parts.ActivatedAbilities MutationMeddley_GetActivatedAbilitiesPart()
+        {
+            if (ParentObject == null)
+            {
+                return null;
+            }
+
+            return ParentObject.GetPart("ActivatedAbilities") as global::XRL.World.Parts.ActivatedAbilities;
+        }
+
+        private bool MutationMeddley_ActivatedAbilityExists(Guid abilityID)
+        {
+            global::XRL.World.Parts.ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilitiesPart();
+            return abilityID != Guid.Empty
+                && abilities != null
+                && abilities.AbilityByGuid != null
+                && abilities.AbilityByGuid.ContainsKey(abilityID);
+        }
+
+        private void MutationMeddley_SyncModeAbility()
+        {
+            List<MutationMeddley_ModeChoice> modes = MutationMeddley_GetModeChoices();
+            bool shouldExist = MutationMeddley_IsFunctionallyActive() && modes.Count > 0;
+
+            if (!shouldExist)
+            {
+                if (MutationMeddley_ModeAbilityID != Guid.Empty)
+                {
+                    RemoveMyActivatedAbility(ref MutationMeddley_ModeAbilityID);
+                }
+                return;
+            }
+
+            if (MutationMeddley_ModeAbilityID != Guid.Empty
+                && !MutationMeddley_ActivatedAbilityExists(MutationMeddley_ModeAbilityID))
+            {
+                MutationMeddley_ModeAbilityID = Guid.Empty;
+            }
+
+            if (MutationMeddley_ModeAbilityID == Guid.Empty)
+            {
+                MutationMeddley_ModeAbilityID = AddMyActivatedAbility(
+                    Name: MutationMeddley_ModeAbilityName,
+                    Command: MutationMeddley_GetModeCommand(),
+                    Class: MutationMeddley_ModeAbilityClass,
+                    Description: MutationMeddley_ModeAbilityDescription
+                );
+            }
+            else
+            {
+                global::XRL.World.Parts.ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilitiesPart();
+                if (abilities != null
+                    && abilities.AbilityByGuid != null
+                    && abilities.AbilityByGuid.ContainsKey(MutationMeddley_ModeAbilityID))
+                {
+                    abilities.AbilityByGuid[MutationMeddley_ModeAbilityID].Description = MutationMeddley_ModeAbilityDescription;
+                }
+            }
+        }
+
+        private Guid MutationMeddley_GetSavedPrimaryActionGuid()
+        {
+            Guid abilityID;
+            if (Guid.TryParse(MutationMeddley_GetStateValue(MutationMeddley_PrimaryActionGuidKey), out abilityID))
+            {
+                return abilityID;
+            }
+
+            return Guid.Empty;
+        }
+
+        private void MutationMeddley_RemovePrimaryActionAbility()
+        {
+            Guid abilityID = MutationMeddley_GetSavedPrimaryActionGuid();
+            global::XRL.World.Parts.ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilitiesPart();
+            if (abilityID != Guid.Empty
+                && abilities != null
+                && abilities.AbilityByGuid != null
+                && abilities.AbilityByGuid.ContainsKey(abilityID))
+            {
+                abilities.RemoveAbility(abilityID);
+            }
+
+            MutationMeddley_SetStateValue(MutationMeddley_PrimaryActionGuidKey, "");
+            MutationMeddley_SetStateValue(MutationMeddley_PrimaryActionSignatureKey, "");
+        }
+
+        private void MutationMeddley_SyncPrimaryActionAbility()
+        {
+            if (ParentObject == null || !ParentObject.IsPlayer())
+            {
+                return;
+            }
+
+            global::XRL.World.Parts.MutationMeddley_BiologySupport support =
+                MutationMeddley_EnsureBiologySupport(ParentObject);
+            if (support == null)
+            {
+                return;
+            }
+
+            string command = support.MutationMeddley_GetPrimaryActionCommandForMutation(this);
+            string desiredSignature = support.MutationMeddley_GetPrimaryActionSignatureForMutation(this);
+            string desiredName = support.MutationMeddley_GetPrimaryActionNameForMutation(this);
+            string desiredDescription = support.MutationMeddley_GetPrimaryActionDescriptionForMutation(this);
+
+            bool shouldExist = MutationMeddley_IsFunctionallyActive()
+                && !string.IsNullOrEmpty(command)
+                && !string.IsNullOrEmpty(desiredSignature)
+                && !string.IsNullOrEmpty(desiredName);
+
+            Guid abilityID = MutationMeddley_GetSavedPrimaryActionGuid();
+            bool exists = MutationMeddley_ActivatedAbilityExists(abilityID);
+            string savedSignature = MutationMeddley_GetStateValue(MutationMeddley_PrimaryActionSignatureKey);
+
+            if (!shouldExist)
+            {
+                if (abilityID != Guid.Empty || !string.IsNullOrEmpty(savedSignature))
+                {
+                    MutationMeddley_RemovePrimaryActionAbility();
+                }
+                return;
+            }
+
+            if (!exists || savedSignature != desiredSignature)
+            {
+                if (exists)
+                {
+                    global::XRL.World.Parts.ActivatedAbilities abilities = MutationMeddley_GetActivatedAbilitiesPart();
+                    abilities.RemoveAbility(abilityID);
+                }
+
+                abilityID = AddMyActivatedAbility(
+                    Name: desiredName,
+                    Command: command,
+                    Class: "Physical Mutation",
+                    Description: desiredDescription
+                );
+
+                MutationMeddley_SetStateValue(
+                    MutationMeddley_PrimaryActionGuidKey,
+                    abilityID.ToString());
+                MutationMeddley_SetStateValue(
+                    MutationMeddley_PrimaryActionSignatureKey,
+                    desiredSignature);
+                return;
+            }
+
+            global::XRL.World.Parts.ActivatedAbilities activeAbilities = MutationMeddley_GetActivatedAbilitiesPart();
+            if (activeAbilities != null
+                && activeAbilities.AbilityByGuid != null
+                && activeAbilities.AbilityByGuid.ContainsKey(abilityID))
+            {
+                activeAbilities.AbilityByGuid[abilityID].Description = desiredDescription;
+            }
         }
 
         protected string MutationMeddley_GetCurrentModeName()
@@ -178,10 +359,6 @@ namespace XRL.World.Parts.Mutation
 
         protected void MutationMeddley_ClearCommonStatShifts()
         {
-            // 0.7.1: build a desired stat snapshot without touching live Qud stats.
-            // The previous clear-to-zero/reapply pattern briefly changed Toughness and
-            // therefore max HP on every refresh, which could retrigger vanilla
-            // low-health warnings during movement and Tighten Carapace turns.
             MutationMeddley_PendingStatShifts.Clear();
         }
 
@@ -248,6 +425,8 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_RefreshPassiveEffects();
             MutationMeddley_ApplyStaticFreezePassiveEffects();
             MutationMeddley_CommitCommonStatShifts();
+            MutationMeddley_SyncModeAbility();
+            MutationMeddley_SyncPrimaryActionAbility();
         }
 
         internal bool MutationMeddley_TryBiologyHeal(int amount)
@@ -381,15 +560,26 @@ namespace XRL.World.Parts.Mutation
 
         protected string MutationMeddley_GetUsageSummary()
         {
-            return "Every mutation rank strengthens the biology you already have.\n"
-                + "Ranks 3, 6, and 9 additionally unlock identity, specialization, and capstone choices.\n"
-                + "Use Evolve "
-                + MutationMeddley_EvolutionDisplayName
-                + " at those milestones.\n"
-                + "Use "
-                + MutationMeddley_ModeAbilityName
-                + " to switch stance after you have a path.\n"
-                + MutationMeddley_GetContinuousProgressionSummary();
+            StringBuilder result = new StringBuilder();
+            result.Append("Every mutation rank strengthens the biology you already have.\n");
+            result.Append("Ranks 3, 6, and 9 additionally unlock identity, specialization, and capstone choices.\n");
+            result.Append("Use Evolve ");
+            result.Append(MutationMeddley_EvolutionDisplayName);
+            result.Append(" at those milestones.\n");
+
+            if (MutationMeddley_IsFunctionallyActive() && MutationMeddley_GetModeChoices().Count > 0)
+            {
+                result.Append("Use ");
+                result.Append(MutationMeddley_ModeAbilityName);
+                result.Append(" to switch stance.\n");
+            }
+            else
+            {
+                result.Append("Stance controls unlock with the rank-3 identity.\n");
+            }
+
+            result.Append(MutationMeddley_GetContinuousProgressionSummary());
+            return result.ToString();
         }
 
         protected string MutationMeddley_GetCurrentMechanicsSummary()
@@ -519,21 +709,6 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_SetStateValue("mode", id);
         }
 
-        private void MutationMeddley_AddModeAbility()
-        {
-            if (MutationMeddley_ModeAbilityID != Guid.Empty)
-            {
-                return;
-            }
-
-            MutationMeddley_ModeAbilityID = AddMyActivatedAbility(
-                Name: MutationMeddley_ModeAbilityName,
-                Command: MutationMeddley_GetModeCommand(),
-                Class: MutationMeddley_ModeAbilityClass,
-                Description: MutationMeddley_ModeAbilityDescription
-            );
-        }
-
         private void MutationMeddley_EnsureValidMode()
         {
             List<MutationMeddley_ModeChoice> modes = MutationMeddley_GetModeChoices();
@@ -614,6 +789,7 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_RefreshPassiveEffects();
             MutationMeddley_ApplyStaticFreezePassiveEffects();
             MutationMeddley_CommitCommonStatShifts();
+            MutationMeddley_SyncPrimaryActionAbility();
             UseEnergy(1000, "Physical Mutation");
         }
 
@@ -670,7 +846,7 @@ namespace XRL.World.Parts.Mutation
                 && MutationMeddley_HasEvolution("fortress")
                 && MutationMeddley_GetCurrentModeId() == "spiteful_wall")
             {
-                yield return "Spiteful Wall keeps stationary brace for actual incoming pressure instead of discarding it merely for remaining engaged.";
+                yield return "Spiteful Wall preserves stationary brace for actual incoming pressure instead of burning it merely because an enemy is engaged.";
             }
 
             if (MutationMeddley_EvolutionDisplayName == "Brineborn"
@@ -696,19 +872,19 @@ namespace XRL.World.Parts.Mutation
 
             if (MutationMeddley_HasEvolution("thermal_baffles"))
             {
-                yield return "Thermal Baffles now preserve the stance-matched heat or rime attunement when environmental pressure lands.";
+                yield return "Thermal Baffles preserve the stance-matched heat or rime attunement when environmental pressure lands.";
             }
             if (MutationMeddley_HasEvolution("mire_sheath"))
             {
-                yield return "Mire Sheath now builds mire from wet pressure and can spend mire into an extra close-contact membrane strike.";
+                yield return "Mire Sheath builds mire from wet pressure and can spend mire into an extra close-contact membrane strike.";
             }
             if (MutationMeddley_HasEvolution("cool_sump"))
             {
-                yield return "Cool Sump now recovers reserve when hostile wet, saline, or hot pressure reaches a Cool Reserve body.";
+                yield return "Cool Sump recovers reserve when hostile wet, saline, or hot pressure reaches a Cool Reserve body.";
             }
             if (MutationMeddley_HasEvolution("porcupine_redoubt"))
             {
-                yield return "Porcupine Redoubt now adds a direct quill-backed retaliation while you hold ground.";
+                yield return "Porcupine Redoubt adds a direct quill-backed retaliation while you hold ground.";
             }
             if (MutationMeddley_HasEvolution("skitter_bulwark"))
             {
@@ -760,7 +936,7 @@ namespace XRL.World.Parts.Mutation
             }
             if (MutationMeddley_HasEvolution("cinder_jet"))
             {
-                yield return "Cinder Jet now lashes adjacent prey with a direct draft follow-up during smoky movement.";
+                yield return "Cinder Jet lashes adjacent prey with a direct draft follow-up during smoky movement.";
             }
             if (MutationMeddley_HasEvolution("ossuary_bloom"))
             {
@@ -889,19 +1065,8 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_HandleStanceCompletionEndTurn()
         {
-            if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution"
-                && MutationMeddley_HasEvolution("fortress")
-                && MutationMeddley_GetCurrentModeId() == "spiteful_wall"
-                && MutationMeddley_GetStateInt("carapace_stationary", 0) > 0
-                && ParentObject != null
-                && ParentObject.IsEngagedInMelee())
-            {
-                int braceCap = MutationMeddley_HasEvolution("living_fortress") ? 5 : 4;
-                MutationMeddley_SetStateInt(
-                    "carapace_brace",
-                    Math.Min(braceCap, MutationMeddley_GetStateInt("carapace_brace", 0) + 1)
-                );
-            }
+            // Spiteful Wall no longer needs a compensating brace grant here. The
+            // concrete shell turn no longer burns brace merely for being engaged.
 
             if (MutationMeddley_EvolutionDisplayName == "Brineborn"
                 && MutationMeddley_HasEvolution("wellspring_flesh")
@@ -1338,8 +1503,6 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("AV", 1);
                     if (MutationMeddley_GetStateInt("carapace_brace", 0) > 0)
                     {
-                        // Brace is a fast-changing combat resource. Do not toggle
-                        // Toughness/max HP from it; use shell defense instead.
                         MutationMeddley_SetShift("DV", 1);
                     }
                     break;
