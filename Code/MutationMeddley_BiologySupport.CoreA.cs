@@ -33,9 +33,20 @@ namespace XRL.World.Parts
         public string MutationMeddley_AshActionSignature = "";
         public string MutationMeddley_ColonyActionSignature = "";
 
-        internal static MutationMeddley_BiologySupport MutationMeddley_EnsureInstalled(GameObject Object)
+        internal static MutationMeddley_BiologySupport MutationMeddley_EnsureInstalled(
+            GameObject Object,
+            bool trustedPlayerObject = false)
         {
-            if (Object == null || !Object.IsPlayer())
+            if (Object == null)
+            {
+                return null;
+            }
+
+            // PlayerMutator and CallAfterGameLoaded hand us the player object by
+            // contract, so those paths must not depend on IsPlayer() already being
+            // observable during character-construction ordering. Mutation-side repair
+            // calls remain guarded so NPC mutations do not receive player UI parts.
+            if (!trustedPlayerObject && !Object.IsPlayer())
             {
                 return null;
             }
@@ -80,6 +91,15 @@ namespace XRL.World.Parts
                 // Biology owns only the aggregate inspector now. Mutation classes
                 // synchronize and receive their own primary action/stance commands.
                 MutationMeddley_RefreshAbilitySurface();
+
+                // The early new-game hook intentionally installs before mutation
+                // ordering is guaranteed. Once normal turns exist, remove the button
+                // from characters who truly own no MM mutation; a later mutation gain
+                // will re-add it through the mutation-side repair path.
+                if (MutationMeddley_GetOwnedMutations().Count == 0)
+                {
+                    MutationMeddley_RemoveAbility(ref MutationMeddley_BiologyAbilityID);
+                }
             }
 
             return base.FireEvent(E);
@@ -258,7 +278,7 @@ namespace XRL.World.Parts
             return MutationMeddley_GetActionSignature(mutation);
         }
 
-        internal string MutationMeddley_GetPrimaryActionNameForMutation(MutationMeddley_AdaptiveMutationBase mutation)
+        internal string MutationMeddley_GetPrimaryActionNameForMutation(MutationMledley_AdaptiveMutationBase mutation)
         {
             return MutationMeddley_GetActionName(mutation);
         }
