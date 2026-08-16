@@ -23,7 +23,27 @@ namespace XRL.World.Parts.Mutation
     [Serializable]
     public abstract class MutationMeddley_AdaptiveMutationBase : MutationMeddley_EvolvingMutationBase
     {
+        private static readonly string[] MutationMeddley_CommonStatNames = new string[]
+        {
+            "AV",
+            "DV",
+            "MoveSpeed",
+            "HeatResistance",
+            "ColdResistance",
+            "Quickness",
+            "Strength",
+            "Agility",
+            "Toughness",
+            "Willpower",
+            "Intelligence",
+            "Ego"
+        };
+
         private readonly Dictionary<string, int> MutationMeddley_PendingStatShifts =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
+        [NonSerialized]
+        private Dictionary<string, int> MutationMeddley_AppliedStatShifts =
             new Dictionary<string, int>(StringComparer.Ordinal);
 
         [NonSerialized]
@@ -81,6 +101,7 @@ namespace XRL.World.Parts.Mutation
                 // continuous rank scaling, and movement-sensitive passives in sync.
                 MutationMeddley_RefreshPassiveEffects();
                 MutationMeddley_ApplyStaticFreezePassiveEffects();
+                MutationMeddley_CommitCommonStatShifts();
             }
 
             if (E.ID == "EndTurn")
@@ -100,6 +121,7 @@ namespace XRL.World.Parts.Mutation
         public override bool Unmutate(GameObject GO)
         {
             MutationMeddley_ClearCommonStatShifts();
+            MutationMeddley_CommitCommonStatShifts();
             RemoveMyActivatedAbility(ref MutationMeddley_ModeAbilityID);
             return base.Unmutate(GO);
         }
@@ -110,6 +132,7 @@ namespace XRL.World.Parts.Mutation
             MutationMeddley_EnsureValidMode();
             MutationMeddley_RefreshPassiveEffects();
             MutationMeddley_ApplyStaticFreezePassiveEffects();
+            MutationMeddley_CommitCommonStatShifts();
         }
 
         protected string MutationMeddley_GetCurrentModeName()
@@ -155,28 +178,11 @@ namespace XRL.World.Parts.Mutation
 
         protected void MutationMeddley_ClearCommonStatShifts()
         {
-            string[] stats = new string[]
-            {
-                "AV",
-                "DV",
-                "MoveSpeed",
-                "HeatResistance",
-                "ColdResistance",
-                "Quickness",
-                "Strength",
-                "Agility",
-                "Toughness",
-                "Willpower",
-                "Intelligence",
-                "Ego"
-            };
-
+            // 0.7.1: build a desired stat snapshot without touching live Qud stats.
+            // The previous clear-to-zero/reapply pattern briefly changed Toughness and
+            // therefore max HP on every refresh, which could retrigger vanilla
+            // low-health warnings during movement and Tighten Carapace turns.
             MutationMeddley_PendingStatShifts.Clear();
-
-            for (int i = 0; i < stats.Length; i++)
-            {
-                StatShifter.SetStatShift(stats[i], 0, true);
-            }
         }
 
         protected void MutationMeddley_SetShift(string stat, int amount)
@@ -187,9 +193,91 @@ namespace XRL.World.Parts.Mutation
                 currentAmount = 0;
             }
 
-            currentAmount += amount;
-            MutationMeddley_PendingStatShifts[stat] = currentAmount;
-            StatShifter.SetStatShift(stat, currentAmount, true);
+            MutationMeddley_PendingStatShifts[stat] = currentAmount + amount;
+        }
+
+        private void MutationMeddley_EnsureAppliedStatShiftCache()
+        {
+            if (MutationMeddley_AppliedStatShifts == null)
+            {
+                MutationMeddley_AppliedStatShifts =
+                    new Dictionary<string, int>(StringComparer.Ordinal);
+            }
+        }
+
+        private void MutationMeddley_CommitCommonStatShifts()
+        {
+            MutationMeddley_EnsureAppliedStatShiftCache();
+
+            for (int i = 0; i < MutationMeddley_CommonStatNames.Length; i++)
+            {
+                string stat = MutationMeddley_CommonStatNames[i];
+                int desired;
+                int applied;
+
+                if (!MutationMeddley_PendingStatShifts.TryGetValue(stat, out desired))
+                {
+                    desired = 0;
+                }
+
+                if (!MutationMeddley_AppliedStatShifts.TryGetValue(stat, out applied))
+                {
+                    applied = 0;
+                }
+
+                if (desired == applied)
+                {
+                    continue;
+                }
+
+                StatShifter.SetStatShift(stat, desired, true);
+
+                if (desired == 0)
+                {
+                    MutationMeddley_AppliedStatShifts.Remove(stat);
+                }
+                else
+                {
+                    MutationMeddley_AppliedStatShifts[stat] = desired;
+                }
+            }
+        }
+
+        internal void MutationMeddley_RefreshForBiology()
+        {
+            MutationMeddley_RefreshPassiveEffects();
+            MutationMeddley_ApplyStaticFreezePassiveEffects();
+            MutationMeddley_CommitCommonStatShifts();
+        }
+
+        internal bool MutationMeddley_TryBiologyHeal(int amount)
+        {
+            return MutationMeddley_TryHeal(amount);
+        }
+
+        internal string MutationMeddley_PeekCurrentModeName()
+        {
+            return MutationMeddley_GetCurrentModeName();
+        }
+
+        internal string MutationMeddley_PeekEvolutionSummary()
+        {
+            return MutationMeddley_GetEvolutionSummary();
+        }
+
+        internal string MutationMeddley_PeekPassiveBonusSummary()
+        {
+            return MutationMeddley_GetPassiveBonusSummary();
+        }
+
+        internal string MutationMeddley_PeekSynergySummary()
+        {
+            return MutationMeddley_GetSynergySummary();
+        }
+
+        internal string MutationMeddley_PeekCurrentMechanicsSummary()
+        {
+            return MutationMeddley_GetCurrentMechanicsSummary();
         }
 
         protected int MutationMeddley_GetContinuousProgressionMaturity()
@@ -517,9 +605,15 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
+            if (modes[selection].Id == MutationMeddley_GetCurrentModeId())
+            {
+                return;
+            }
+
             MutationMeddley_SetCurrentModeId(modes[selection].Id);
             MutationMeddley_RefreshPassiveEffects();
             MutationMeddley_ApplyStaticFreezePassiveEffects();
+            MutationMeddley_CommitCommonStatShifts();
             UseEnergy(1000, "Physical Mutation");
         }
 
@@ -1244,7 +1338,9 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("AV", 1);
                     if (MutationMeddley_GetStateInt("carapace_brace", 0) > 0)
                     {
-                        MutationMeddley_SetShift("Toughness", 1);
+                        // Brace is a fast-changing combat resource. Do not toggle
+                        // Toughness/max HP from it; use shell defense instead.
+                        MutationMeddley_SetShift("DV", 1);
                     }
                     break;
                 case "Living Crystal":
