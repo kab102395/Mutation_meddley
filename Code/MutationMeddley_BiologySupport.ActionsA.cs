@@ -201,7 +201,7 @@ namespace XRL.World.Parts
             mutation.MutationMeddley_RefreshForBiology();
             MutationMeddley_RefreshAbilitySurface();
             ParentObject.UseEnergy(1000, "Physical Mutation");
-            if (!string.IsNullOrEmpty(message) && ParentObject.IsPlayer())
+            if (!string.IsNullOrEmpty(message))
             {
                 MessageQueue.AddPlayerMessage(message);
             }
