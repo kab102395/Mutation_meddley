@@ -1,11 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 using XRL;
 using XRL.Core;
-using XRL.Messages;
-using XRL.UI;
 using XRL.World.Parts.Mutation;
 
 namespace XRL.World.Parts
@@ -14,12 +10,16 @@ namespace XRL.World.Parts
     public partial class MutationMeddley_BiologySupport : IPart
     {
         private const string BiologyCommand = "MutationMeddley_OpenBiology";
-        private const string CarapaceCommand = "MutationMeddley_Action_Carapace";
-        private const string CrystalCommand = "MutationMeddley_Action_LivingCrystal";
-        private const string BrineCommand = "MutationMeddley_Action_Brineborn";
-        private const string AshCommand = "MutationMeddley_Action_AshMetabolism";
-        private const string ColonyCommand = "MutationMeddley_Action_WalkingColony";
+        internal const string CarapaceCommand = "MutationMeddley_Action_Carapace";
+        internal const string CrystalCommand = "MutationMeddley_Action_LivingCrystal";
+        internal const string BrineCommand = "MutationMeddley_Action_Brineborn";
+        internal const string AshCommand = "MutationMeddley_Action_AshMetabolism";
+        internal const string ColonyCommand = "MutationMeddley_Action_WalkingColony";
 
+        // Keep every public field introduced by the first 0.7.1 build so a save made
+        // with that build keeps the same serialized field layout. Mutation-specific
+        // action ownership has moved back to the mutations; these five action fields
+        // are migration-only and are cleaned up if they point to old abilities.
         public Guid MutationMeddley_BiologyAbilityID = Guid.Empty;
         public Guid MutationMeddley_CarapaceActionAbilityID = Guid.Empty;
         public Guid MutationMeddley_CrystalActionAbilityID = Guid.Empty;
@@ -35,14 +35,11 @@ namespace XRL.World.Parts
 
         internal static MutationMeddley_BiologySupport MutationMeddley_EnsureInstalled(GameObject Object)
         {
-            if (Object == null)
+            if (Object == null || !Object.IsPlayer())
             {
                 return null;
             }
 
-            // The player mutator can run before the character's mutation list and
-            // normal activated-ability surface are fully populated. Ensure both parts
-            // exist rather than depending on creation order.
             Object.RequirePart<ActivatedAbilities>();
             Object.RequirePart<MutationMeddley_BiologySupport>();
 
@@ -67,10 +64,6 @@ namespace XRL.World.Parts
             Object.RegisterPartEvent(this, "EndTurn");
             base.Register(Object);
 
-            // Always establish the universal inspector immediately. On a New Game,
-            // PlayerMutator may attach this part before mutations are applied. The
-            // inspector itself must still exist so opening it can perform a fresh
-            // post-character-creation synchronization.
             MutationMeddley_EnsureBiologyAbility();
             MutationMeddley_RefreshAbilitySurface();
         }
@@ -116,9 +109,8 @@ namespace XRL.World.Parts
 
             if (E.ID == "EndTurn")
             {
-                // This is the self-healing synchronization path. It catches late
-                // mutation creation, save migration, stale ability GUIDs, branch
-                // changes, and any unusual ordering during character generation.
+                // Biology owns only the aggregate inspector now. Mutation classes
+                // synchronize their own primary action and stance abilities.
                 MutationMeddley_RefreshAbilitySurface();
             }
 
@@ -210,57 +202,27 @@ namespace XRL.World.Parts
 
         private void MutationMeddley_RefreshAbilitySurface()
         {
-            // Biology is intentionally guaranteed before checking owned mutations.
-            // During New Game construction the player can exist before mutations do;
-            // removing the inspector at that moment made 0.7.1 appear to have no new
-            // player-facing UI at all.
+            // New-game PlayerMutator can run before mutations are populated. Biology
+            // therefore stays installed even if the first scan is empty.
             MutationMeddley_EnsureBiologyAbility();
+
+            // Clean up action buttons created by the first 0.7.1 implementation.
+            // Their GUID fields remain serialized for compatibility, but mutations now
+            // own their action buttons and persist those GUIDs in their state envelope.
+            MutationMeddley_RemoveLegacyActionAbilities();
 
             List<MutationMeddley_AdaptiveMutationBase> owned = MutationMeddley_GetOwnedMutations();
             if (owned.Count == 0)
             {
-                MutationMeddley_RemoveActionAbilities();
                 MutationMeddley_UpdateAbilityDescription(
                     MutationMeddley_BiologyAbilityID,
-                    "Mutation Meddley Biology is installed. No Mutation Meddley mutation is currently present on this body. The inspector will resynchronize automatically when biology becomes available.");
+                    "Free inspection. No Mutation Meddley mutation is currently present on this body. Biology will resynchronize automatically when one becomes available.");
                 return;
             }
-
-            MutationMeddley_EnsureActionAbility(
-                "Carapace Evolution",
-                CarapaceCommand,
-                ref MutationMeddley_CarapaceActionAbilityID,
-                ref MutationMeddley_CarapaceActionSignature);
-            MutationMeddley_EnsureActionAbility(
-                "Living Crystal",
-                CrystalCommand,
-                ref MutationMeddley_CrystalActionAbilityID,
-                ref MutationMeddley_CrystalActionSignature);
-            MutationMeddley_EnsureActionAbility(
-                "Brineborn",
-                BrineCommand,
-                ref MutationMeddley_BrineActionAbilityID,
-                ref MutationMeddley_BrineActionSignature);
-            MutationMeddley_EnsureActionAbility(
-                "Ash Metabolism",
-                AshCommand,
-                ref MutationMeddley_AshActionAbilityID,
-                ref MutationMeddley_AshActionSignature);
-            MutationMeddley_EnsureActionAbility(
-                "Walking Colony",
-                ColonyCommand,
-                ref MutationMeddley_ColonyActionAbilityID,
-                ref MutationMeddley_ColonyActionSignature);
 
             MutationMeddley_UpdateAbilityDescription(
                 MutationMeddley_BiologyAbilityID,
                 MutationMeddley_GetBiologyAbilityDescription());
-
-            MutationMeddley_UpdateActionDescription("Carapace Evolution", MutationMeddley_CarapaceActionAbilityID);
-            MutationMeddley_UpdateActionDescription("Living Crystal", MutationMeddley_CrystalActionAbilityID);
-            MutationMeddley_UpdateActionDescription("Brineborn", MutationMeddley_BrineActionAbilityID);
-            MutationMeddley_UpdateActionDescription("Ash Metabolism", MutationMeddley_AshActionAbilityID);
-            MutationMeddley_UpdateActionDescription("Walking Colony", MutationMeddley_ColonyActionAbilityID);
         }
 
         private void MutationMeddley_EnsureBiologyAbility()
@@ -274,57 +236,6 @@ namespace XRL.World.Parts
                 "Mutation Meddley Biology",
                 BiologyCommand,
                 MutationMeddley_GetBiologyAbilityDescription());
-        }
-
-        private void MutationMeddley_EnsureActionAbility(
-            string mutationName,
-            string command,
-            ref Guid abilityID,
-            ref string signature)
-        {
-            MutationMeddley_AdaptiveMutationBase mutation = MutationMeddley_GetMutation(mutationName);
-            if (mutation == null || !mutation.MutationMeddley_PeekIsFunctionallyActive())
-            {
-                MutationMeddley_RemoveAbility(ref abilityID);
-                signature = "";
-                return;
-            }
-
-            string desiredSignature = MutationMeddley_GetActionSignature(mutation);
-            string desiredName = MutationMeddley_GetActionName(mutation);
-
-            bool missing = !MutationMeddley_AbilityExists(abilityID);
-            if (!missing && signature == desiredSignature)
-            {
-                return;
-            }
-
-            if (!missing)
-            {
-                MutationMeddley_RemoveAbility(ref abilityID);
-            }
-
-            abilityID = MutationMeddley_AddAbility(
-                desiredName,
-                command,
-                MutationMeddley_GetActionDescription(mutation));
-            signature = desiredSignature;
-        }
-
-        private void MutationMeddley_UpdateActionDescription(string mutationName, Guid abilityID)
-        {
-            if (abilityID == Guid.Empty)
-            {
-                return;
-            }
-
-            MutationMeddley_AdaptiveMutationBase mutation = MutationMeddley_GetMutation(mutationName);
-            if (mutation == null)
-            {
-                return;
-            }
-
-            MutationMeddley_UpdateAbilityDescription(abilityID, MutationMeddley_GetActionDescription(mutation));
         }
 
         private void MutationMeddley_UpdateAbilityDescription(Guid abilityID, string description)
@@ -354,7 +265,7 @@ namespace XRL.World.Parts
             abilityID = Guid.Empty;
         }
 
-        private void MutationMeddley_RemoveActionAbilities()
+        private void MutationMeddley_RemoveLegacyActionAbilities()
         {
             MutationMeddley_RemoveAbility(ref MutationMeddley_CarapaceActionAbilityID);
             MutationMeddley_RemoveAbility(ref MutationMeddley_CrystalActionAbilityID);
@@ -369,5 +280,37 @@ namespace XRL.World.Parts
             MutationMeddley_ColonyActionSignature = "";
         }
 
+        internal string MutationMeddley_GetPrimaryActionCommandForMutation(MutationMeddley_AdaptiveMutationBase mutation)
+        {
+            if (mutation == null)
+            {
+                return "";
+            }
+
+            switch (mutation.MutationMeddley_EvolutionDisplayName)
+            {
+                case "Carapace Evolution": return CarapaceCommand;
+                case "Living Crystal": return CrystalCommand;
+                case "Brineborn": return BrineCommand;
+                case "Ash Metabolism": return AshCommand;
+                case "Walking Colony": return ColonyCommand;
+                default: return "";
+            }
+        }
+
+        internal string MutationMeddley_GetPrimaryActionSignatureForMutation(MutationMeddley_AdaptiveMutationBase mutation)
+        {
+            return MutationMeddley_GetActionSignature(mutation);
+        }
+
+        internal string MutationMeddley_GetPrimaryActionNameForMutation(MutationMeddley_AdaptiveMutationBase mutation)
+        {
+            return MutationMeddley_GetActionName(mutation);
+        }
+
+        internal string MutationMeddley_GetPrimaryActionDescriptionForMutation(MutationMeddley_AdaptiveMutationBase mutation)
+        {
+            return MutationMeddley_GetActionDescription(mutation);
+        }
     }
 }
