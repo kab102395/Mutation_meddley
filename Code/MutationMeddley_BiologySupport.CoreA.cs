@@ -278,7 +278,7 @@ namespace XRL.World.Parts
             return MutationMeddley_GetActionSignature(mutation);
         }
 
-        internal string MutationMeddley_GetPrimaryActionNameForMutation(MutationMledley_AdaptiveMutationBase mutation)
+        internal string MutationMeddley_GetPrimaryActionNameForMutation(MutationMeddley_AdaptiveMutationBase mutation)
         {
             return MutationMeddley_GetActionName(mutation);
         }
