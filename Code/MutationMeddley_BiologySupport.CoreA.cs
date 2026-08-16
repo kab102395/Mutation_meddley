@@ -77,6 +77,20 @@ namespace XRL.World.Parts
 
         public override bool FireEvent(Event E)
         {
+            // Biology is player-global UI, not body-global gameplay. If a body stops
+            // being the player (domination/body swap), leave the compatibility part
+            // inert and strip its UI instead of letting a former player body keep
+            // Mutation Meddley inspector abilities as an NPC.
+            if (ParentObject == null || !ParentObject.IsPlayer())
+            {
+                if (E.ID == "EndTurn")
+                {
+                    MutationMeddley_RemoveAbility(ref MutationMeddley_BiologyAbilityID);
+                    MutationMeddley_RemoveLegacyActionAbilities();
+                }
+                return base.FireEvent(E);
+            }
+
             if (E.ID == BiologyCommand)
             {
                 MutationMeddley_RefreshAbilitySurface();
