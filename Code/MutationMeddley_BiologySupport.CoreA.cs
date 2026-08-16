@@ -86,17 +86,22 @@ namespace XRL.World.Parts
 
             if (E.ID == "EndTurn")
             {
-                // One player-global refresh per turn is enough. Mutation classes own
-                // their own action/stance synchronization independently.
-                MutationMeddley_RefreshAbilitySurface();
-
-                // The early new-game hook intentionally installs before mutation
-                // ordering is guaranteed. Once normal turns exist, remove the button
-                // from characters who truly own no MM mutation; a later mutation gain
-                // will re-add it through the mutation-side repair path.
-                if (MutationMeddley_GetOwnedMutations().Count == 0)
+                List<MutationMeddley_AdaptiveMutationBase> owned = MutationMeddley_GetOwnedMutations();
+                if (owned.Count == 0)
                 {
+                    // Do not recreate-and-remove Biology every turn on a character
+                    // with no MM mutations. The PlayerMutator's early creation-time
+                    // button is pruned once gameplay begins. A future MM mutation gain
+                    // causes the mutation-side lifecycle to ensure the support again,
+                    // and this EndTurn path then restores the inspector.
                     MutationMeddley_RemoveAbility(ref MutationMeddley_BiologyAbilityID);
+                    MutationMeddley_RemoveLegacyActionAbilities();
+                }
+                else
+                {
+                    // One player-global refresh per turn is enough. Mutation classes
+                    // own their action/stance synchronization independently.
+                    MutationMeddley_RefreshAbilitySurface();
                 }
             }
 
