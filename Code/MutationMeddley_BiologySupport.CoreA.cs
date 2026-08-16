@@ -55,12 +55,10 @@ namespace XRL.World.Parts
 
         public override void Register(GameObject Object)
         {
+            // The player-global part owns only the player-global inspector. Mutation
+            // action command events are registered by the mutations themselves, just
+            // like normal Qud mutation abilities.
             Object.RegisterPartEvent(this, BiologyCommand);
-            Object.RegisterPartEvent(this, CarapaceCommand);
-            Object.RegisterPartEvent(this, CrystalCommand);
-            Object.RegisterPartEvent(this, BrineCommand);
-            Object.RegisterPartEvent(this, AshCommand);
-            Object.RegisterPartEvent(this, ColonyCommand);
             Object.RegisterPartEvent(this, "EndTurn");
             base.Register(Object);
 
@@ -77,40 +75,10 @@ namespace XRL.World.Parts
                 return false;
             }
 
-            if (E.ID == CarapaceCommand)
-            {
-                MutationMeddley_UseCarapaceAction();
-                return false;
-            }
-
-            if (E.ID == CrystalCommand)
-            {
-                MutationMeddley_UseCrystalAction();
-                return false;
-            }
-
-            if (E.ID == BrineCommand)
-            {
-                MutationMeddley_UseBrineAction();
-                return false;
-            }
-
-            if (E.ID == AshCommand)
-            {
-                MutationMeddley_UseAshAction();
-                return false;
-            }
-
-            if (E.ID == ColonyCommand)
-            {
-                MutationMeddley_UseColonyAction();
-                return false;
-            }
-
             if (E.ID == "EndTurn")
             {
                 // Biology owns only the aggregate inspector now. Mutation classes
-                // synchronize their own primary action and stance abilities.
+                // synchronize and receive their own primary action/stance commands.
                 MutationMeddley_RefreshAbilitySurface();
             }
 
@@ -282,20 +250,7 @@ namespace XRL.World.Parts
 
         internal string MutationMeddley_GetPrimaryActionCommandForMutation(MutationMeddley_AdaptiveMutationBase mutation)
         {
-            if (mutation == null)
-            {
-                return "";
-            }
-
-            switch (mutation.MutationMeddley_EvolutionDisplayName)
-            {
-                case "Carapace Evolution": return CarapaceCommand;
-                case "Living Crystal": return CrystalCommand;
-                case "Brineborn": return BrineCommand;
-                case "Ash Metabolism": return AshCommand;
-                case "Walking Colony": return ColonyCommand;
-                default: return "";
-            }
+            return mutation == null ? "" : mutation.MutationMeddley_PeekPrimaryActionCommand();
         }
 
         internal string MutationMeddley_GetPrimaryActionSignatureForMutation(MutationMeddley_AdaptiveMutationBase mutation)
@@ -311,6 +266,11 @@ namespace XRL.World.Parts
         internal string MutationMeddley_GetPrimaryActionDescriptionForMutation(MutationMeddley_AdaptiveMutationBase mutation)
         {
             return MutationMeddley_GetActionDescription(mutation);
+        }
+
+        internal bool MutationMeddley_InvokePrimaryAction(MutationMeddley_AdaptiveMutationBase mutation)
+        {
+            return MutationMeddley_UsePrimaryAction(mutation);
         }
     }
 }
