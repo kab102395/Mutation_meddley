@@ -71,9 +71,42 @@ namespace XRL.World.Parts.Mutation
             return "MutationMeddley_Mode_" + GetType().Name;
         }
 
+        private string MutationMeddley_GetPrimaryActionCommand()
+        {
+            switch (MutationMeddley_EvolutionDisplayName)
+            {
+                case "Carapace Evolution":
+                    return global::XRL.World.Parts.MutationMeddley_BiologySupport.CarapaceCommand;
+                case "Living Crystal":
+                    return global::XRL.World.Parts.MutationMeddley_BiologySupport.CrystalCommand;
+                case "Brineborn":
+                    return global::XRL.World.Parts.MutationMeddley_BiologySupport.BrineCommand;
+                case "Ash Metabolism":
+                    return global::XRL.World.Parts.MutationMeddley_BiologySupport.AshCommand;
+                case "Walking Colony":
+                    return global::XRL.World.Parts.MutationMeddley_BiologySupport.ColonyCommand;
+                default:
+                    return "";
+            }
+        }
+
+        internal string MutationMeddley_PeekPrimaryActionCommand()
+        {
+            return MutationMeddley_GetPrimaryActionCommand();
+        }
+
         public override void Register(GameObject Object)
         {
             Object.RegisterPartEvent(this, MutationMeddley_GetModeCommand());
+
+            string primaryActionCommand = MutationMeddley_GetPrimaryActionCommand();
+            if (!string.IsNullOrEmpty(primaryActionCommand))
+            {
+                // Follow the ordinary Qud mutation pattern: the mutation that owns
+                // the activated ability also receives its command event.
+                Object.RegisterPartEvent(this, primaryActionCommand);
+            }
+
             base.Register(Object);
             MutationMeddley_EnsureBiologySupport(Object);
             MutationMeddley_OnEvolutionStateChanged();
@@ -84,6 +117,18 @@ namespace XRL.World.Parts.Mutation
             if (E.ID == MutationMeddley_GetModeCommand())
             {
                 MutationMeddley_ShowModePicker();
+                return false;
+            }
+
+            string primaryActionCommand = MutationMeddley_GetPrimaryActionCommand();
+            if (!string.IsNullOrEmpty(primaryActionCommand) && E.ID == primaryActionCommand)
+            {
+                global::XRL.World.Parts.MutationMeddley_BiologySupport support =
+                    MutationMeddley_EnsureBiologySupport(ParentObject);
+                if (support != null)
+                {
+                    support.MutationMeddley_InvokePrimaryAction(this);
+                }
                 return false;
             }
 
@@ -260,7 +305,7 @@ namespace XRL.World.Parts.Mutation
                 return;
             }
 
-            string command = support.MutationMeddley_GetPrimaryActionCommandForMutation(this);
+            string command = MutationMeddley_GetPrimaryActionCommand();
             string desiredSignature = support.MutationMeddley_GetPrimaryActionSignatureForMutation(this);
             string desiredName = support.MutationMeddley_GetPrimaryActionNameForMutation(this);
             string desiredDescription = support.MutationMeddley_GetPrimaryActionDescriptionForMutation(this);
@@ -359,6 +404,8 @@ namespace XRL.World.Parts.Mutation
 
         protected void MutationMeddley_ClearCommonStatShifts()
         {
+            // 0.7.1 keeps live Qud stats untouched while collecting the next desired
+            // snapshot; commit only applies actual differences.
             MutationMeddley_PendingStatShifts.Clear();
         }
 
@@ -1065,8 +1112,24 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_HandleStanceCompletionEndTurn()
         {
-            // Spiteful Wall no longer needs a compensating brace grant here. The
-            // concrete shell turn no longer burns brace merely for being engaged.
+            // Spiteful Wall's concrete shell turn still performs its historical
+            // engaged brace decrement, so restore that one point here until the
+            // concrete routine can be normalized without changing the save contract.
+            // Net behavior: simply remaining engaged does not consume stored Brace;
+            // actual incoming pressure remains the place where Spiteful Wall spends.
+            if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution"
+                && MutationMeddley_HasEvolution("fortress")
+                && MutationMeddley_GetCurrentModeId() == "spiteful_wall"
+                && MutationMeddley_GetStateInt("carapace_stationary", 0) > 0
+                && ParentObject != null
+                && ParentObject.IsEngagedInMelee())
+            {
+                int braceCap = MutationMeddley_HasEvolution("living_fortress") ? 5 : 4;
+                MutationMeddley_SetStateInt(
+                    "carapace_brace",
+                    Math.Min(braceCap, MutationMeddley_GetStateInt("carapace_brace", 0) + 1)
+                );
+            }
 
             if (MutationMeddley_EvolutionDisplayName == "Brineborn"
                 && MutationMeddley_HasEvolution("wellspring_flesh")
@@ -1503,6 +1566,8 @@ namespace XRL.World.Parts.Mutation
                     MutationMeddley_SetShift("AV", 1);
                     if (MutationMeddley_GetStateInt("carapace_brace", 0) > 0)
                     {
+                        // Brace is a fast-changing combat resource. Keep it away from
+                        // Toughness/max HP; shell defense is the appropriate layer.
                         MutationMeddley_SetShift("DV", 1);
                     }
                     break;
