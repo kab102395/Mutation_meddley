@@ -10,7 +10,6 @@ using XRL.World.Parts.Mutation;
 
 namespace XRL.World.Parts
 {
-    [Serializable]
     public partial class MutationMeddley_BiologySupport : IPart
     {
         private const string BiologyCommand = "MutationMeddley_OpenBiology";
@@ -158,16 +157,10 @@ namespace XRL.World.Parts
             }
 
             return abilities.AddAbility(
-                name,
-                command,
-                "Physical Mutation",
-                -1,
-                false,
-                false,
-                description,
-                "-",
-                false,
-                false);
+                Name: name,
+                Command: command,
+                Class: "Physical Mutation",
+                Description: description);
         }
 
         private void MutationMeddley_RefreshAbilitySurface()
