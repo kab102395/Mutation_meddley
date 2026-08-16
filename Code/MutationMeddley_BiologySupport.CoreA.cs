@@ -54,14 +54,12 @@ namespace XRL.World.Parts
             Object.RequirePart<ActivatedAbilities>();
             Object.RequirePart<MutationMeddley_BiologySupport>();
 
-            MutationMeddley_BiologySupport support =
-                Object.GetPart("MutationMeddley_BiologySupport") as MutationMeddley_BiologySupport;
-            if (support != null)
-            {
-                support.MutationMeddley_RefreshAbilitySurface();
-            }
-
-            return support;
+            // Do not refresh here. Mutations call EnsureInstalled defensively during
+            // ordinary turn/event lifecycle; refreshing from this low-level helper
+            // made every owned mutation rescan the whole Biology surface each turn.
+            // Newly-added support refreshes itself from Register; documented global
+            // lifecycle hooks explicitly request a refresh after ensuring the part.
+            return Object.GetPart("MutationMeddley_BiologySupport") as MutationMeddley_BiologySupport;
         }
 
         public override void Register(GameObject Object)
@@ -88,8 +86,8 @@ namespace XRL.World.Parts
 
             if (E.ID == "EndTurn")
             {
-                // Biology owns only the aggregate inspector now. Mutation classes
-                // synchronize and receive their own primary action/stance commands.
+                // One player-global refresh per turn is enough. Mutation classes own
+                // their own action/stance synchronization independently.
                 MutationMeddley_RefreshAbilitySurface();
 
                 // The early new-game hook intentionally installs before mutation
@@ -188,7 +186,7 @@ namespace XRL.World.Parts
                 Description: description);
         }
 
-        private void MutationMeddley_RefreshAbilitySurface()
+        internal void MutationMeddley_RefreshAbilitySurface()
         {
             // New-game PlayerMutator can run before mutations are populated. Biology
             // therefore stays installed even if the first scan is empty.
