@@ -10,7 +10,6 @@ using XRL.World.Parts.Mutation;
 
 namespace XRL.World.Parts
 {
-    [Serializable]
     public partial class MutationMeddley_BiologySupport : IPart
     {
         private bool MutationMeddley_HasAnyEvolution(MutationMeddley_AdaptiveMutationBase mutation)
