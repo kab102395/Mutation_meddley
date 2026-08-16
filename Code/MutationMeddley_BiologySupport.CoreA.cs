@@ -10,6 +10,7 @@ using XRL.World.Parts.Mutation;
 
 namespace XRL.World.Parts
 {
+    [Serializable]
     public partial class MutationMeddley_BiologySupport : IPart
     {
         private const string BiologyCommand = "MutationMeddley_OpenBiology";
@@ -32,6 +33,29 @@ namespace XRL.World.Parts
         public string MutationMeddley_AshActionSignature = "";
         public string MutationMeddley_ColonyActionSignature = "";
 
+        internal static MutationMeddley_BiologySupport MutationMeddley_EnsureInstalled(GameObject Object)
+        {
+            if (Object == null)
+            {
+                return null;
+            }
+
+            // The player mutator can run before the character's mutation list and
+            // normal activated-ability surface are fully populated. Ensure both parts
+            // exist rather than depending on creation order.
+            Object.RequirePart<ActivatedAbilities>();
+            Object.RequirePart<MutationMeddley_BiologySupport>();
+
+            MutationMeddley_BiologySupport support =
+                Object.GetPart("MutationMeddley_BiologySupport") as MutationMeddley_BiologySupport;
+            if (support != null)
+            {
+                support.MutationMeddley_RefreshAbilitySurface();
+            }
+
+            return support;
+        }
+
         public override void Register(GameObject Object)
         {
             Object.RegisterPartEvent(this, BiologyCommand);
@@ -42,6 +66,12 @@ namespace XRL.World.Parts
             Object.RegisterPartEvent(this, ColonyCommand);
             Object.RegisterPartEvent(this, "EndTurn");
             base.Register(Object);
+
+            // Always establish the universal inspector immediately. On a New Game,
+            // PlayerMutator may attach this part before mutations are applied. The
+            // inspector itself must still exist so opening it can perform a fresh
+            // post-character-creation synchronization.
+            MutationMeddley_EnsureBiologyAbility();
             MutationMeddley_RefreshAbilitySurface();
         }
 
@@ -49,6 +79,7 @@ namespace XRL.World.Parts
         {
             if (E.ID == BiologyCommand)
             {
+                MutationMeddley_RefreshAbilitySurface();
                 MutationMeddley_ShowBiology();
                 return false;
             }
@@ -85,6 +116,9 @@ namespace XRL.World.Parts
 
             if (E.ID == "EndTurn")
             {
+                // This is the self-healing synchronization path. It catches late
+                // mutation creation, save migration, stale ability GUIDs, branch
+                // changes, and any unusual ordering during character generation.
                 MutationMeddley_RefreshAbilitySurface();
             }
 
@@ -134,9 +168,20 @@ namespace XRL.World.Parts
 
         private ActivatedAbilities MutationMeddley_GetActivatedAbilities()
         {
-            return ParentObject == null
-                ? null
-                : ParentObject.GetPart("ActivatedAbilities") as ActivatedAbilities;
+            if (ParentObject == null)
+            {
+                return null;
+            }
+
+            ActivatedAbilities abilities =
+                ParentObject.GetPart("ActivatedAbilities") as ActivatedAbilities;
+            if (abilities == null)
+            {
+                ParentObject.RequirePart<ActivatedAbilities>();
+                abilities = ParentObject.GetPart("ActivatedAbilities") as ActivatedAbilities;
+            }
+
+            return abilities;
         }
 
         private bool MutationMeddley_AbilityExists(Guid abilityID)
@@ -165,15 +210,22 @@ namespace XRL.World.Parts
 
         private void MutationMeddley_RefreshAbilitySurface()
         {
+            // Biology is intentionally guaranteed before checking owned mutations.
+            // During New Game construction the player can exist before mutations do;
+            // removing the inspector at that moment made 0.7.1 appear to have no new
+            // player-facing UI at all.
+            MutationMeddley_EnsureBiologyAbility();
+
             List<MutationMeddley_AdaptiveMutationBase> owned = MutationMeddley_GetOwnedMutations();
             if (owned.Count == 0)
             {
-                MutationMeddley_RemoveAbility(ref MutationMeddley_BiologyAbilityID);
                 MutationMeddley_RemoveActionAbilities();
+                MutationMeddley_UpdateAbilityDescription(
+                    MutationMeddley_BiologyAbilityID,
+                    "Mutation Meddley Biology is installed. No Mutation Meddley mutation is currently present on this body. The inspector will resynchronize automatically when biology becomes available.");
                 return;
             }
 
-            MutationMeddley_EnsureBiologyAbility();
             MutationMeddley_EnsureActionAbility(
                 "Carapace Evolution",
                 CarapaceCommand,
