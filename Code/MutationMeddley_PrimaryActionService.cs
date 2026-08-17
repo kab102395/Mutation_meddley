@@ -33,6 +33,7 @@ namespace XRL.World.Parts
             switch (signature)
             {
                 case "carapace_baseline":
+                {
                     int brace = support.MutationMeddley_GetStateInt(mutation, "carapace_brace");
                     int braceCap = support.MutationMeddley_GetCarapaceBraceCap(mutation);
                     if (owner.hitpoints < owner.baseHitpoints && brace > 0)
@@ -48,6 +49,7 @@ namespace XRL.World.Parts
                         message = "You set your shell and bank a deliberate brace.";
                     }
                     break;
+                }
 
                 case "carapace_fortress":
                     success = MutationMeddley_SpendForHeal(support, mutation, owner, "carapace_brace", 1);
@@ -60,6 +62,7 @@ namespace XRL.World.Parts
                     break;
 
                 case "carapace_adaptive":
+                {
                     if (owner.hitpoints < owner.baseHitpoints)
                     {
                         string attunementKey = MutationMeddley_GetHighestAttunementKey(support, mutation);
@@ -72,6 +75,7 @@ namespace XRL.World.Parts
                         }
                     }
                     break;
+                }
 
                 case "crystal_baseline":
                 case "crystal_diamond":
@@ -80,6 +84,7 @@ namespace XRL.World.Parts
                     break;
 
                 case "crystal_prismatic":
+                {
                     if (owner.hitpoints < owner.baseHitpoints)
                     {
                         int dawn = support.MutationMeddley_GetStateInt(mutation, "lc_dawn");
@@ -94,8 +99,10 @@ namespace XRL.World.Parts
                         }
                     }
                     break;
+                }
 
                 case "crystal_resonant":
+                {
                     int release = support.MutationMeddley_GetStateInt(mutation, "lc_release");
                     if (owner.hitpoints < owner.baseHitpoints && release > 0)
                     {
@@ -115,6 +122,7 @@ namespace XRL.World.Parts
                         }
                     }
                     break;
+                }
 
                 case "brine_baseline":
                     success = MutationMeddley_SpendForHeal(support, mutation, owner, "brine_reserve", 1);
@@ -162,6 +170,7 @@ namespace XRL.World.Parts
                     break;
 
                 case "colony_marrow":
+                {
                     int pressure = support.MutationMeddley_GetStateInt(mutation, "colony_charge");
                     int stitch = support.MutationMeddley_GetStateInt(mutation, "colony_stitch");
                     bool canHeal = owner.hitpoints < owner.baseHitpoints;
@@ -180,6 +189,7 @@ namespace XRL.World.Parts
                         message = "You order the colony to knit pressure into flesh and stitch.";
                     }
                     break;
+                }
 
                 case "colony_surveyor":
                     success = MutationMeddley_ConvertResource(support, mutation, "colony_charge", 1, "colony_scout", 1, 4);
