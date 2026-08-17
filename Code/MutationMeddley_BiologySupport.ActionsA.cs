@@ -7,7 +7,6 @@ namespace XRL.World.Parts
         private bool MutationMeddley_UsePrimaryAction(MutationMeddley_AdaptiveMutationBase mutation)
         {
             return MutationMeddley_PrimaryActionService.MutationMeddley_TryUse(
-                this,
                 mutation,
                 ParentObject,
                 MutationMeddley_GetActionSignature(mutation),
