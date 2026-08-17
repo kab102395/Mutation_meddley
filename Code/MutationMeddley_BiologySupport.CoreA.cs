@@ -232,6 +232,17 @@ namespace XRL.World.Parts
                 return;
             }
 
+            // Old saves can retain a non-empty Evolve GUID after the corresponding
+            // ActivatedAbilities entry disappears. Repair that migration state from a
+            // player-global maintenance pass while the mutation continues to own the
+            // actual command event and evolution mechanics.
+            for (int i = 0; i < owned.Count; i++)
+            {
+                MutationMeddley_AbilityRepair.MutationMeddley_EnsureEvolutionAbility(
+                    owned[i],
+                    ParentObject);
+            }
+
             MutationMeddley_UpdateAbilityDescription(
                 MutationMeddley_BiologyAbilityID,
                 MutationMeddley_GetBiologyAbilityDescription());
