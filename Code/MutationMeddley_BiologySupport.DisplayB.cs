@@ -110,23 +110,23 @@ namespace XRL.World.Parts
                 else if (MutationMeddley_HasEvolution(mutation, "wellspring_flesh"))
                 {
                     int mend = MutationMeddley_GetStateInt(mutation, "brine_mend");
-                    text.Append("Wellspring Recovery\nTrigger: qualifying incoming pressure while Mend/Reserve recovery state is available.\nCurrent chance: ");
-                    text.Append(mend > 0 || reserve > 0 ? "100% when the branch trigger qualifies" : "0%");
-                    text.Append("\nCost: branch-dependent Mend/Reserve.\nEffect: recovery routing and reserve recycling.");
+                    text.Append("Wellspring Recovery\nTrigger: qualifying incoming pressure while Mend is available.\nCurrent chance: ");
+                    text.Append(mend > 0 ? "100%" : "0%");
+                    text.Append("\nCost: 1 Mend.\nEffect: recovery; Tidal Marrows can recycle Reserve and Sacred Reservoir strengthens the heal.");
                 }
                 else if (MutationMeddley_HasEvolution(mutation, "saltglass_bloom"))
                 {
                     int bastion = MutationMeddley_GetStateInt(mutation, "brine_bastion");
-                    text.Append("Saltglass Response\nTrigger: qualifying pressure/contact with Bastion.\nCurrent chance: ");
+                    text.Append("Saltglass Response\nTrigger: qualifying incoming pressure or adjacent engaged melee contact while Bastion is stored.\nCurrent chance: ");
                     text.Append(bastion > 0 ? "100%" : "0%");
-                    text.Append("\nCost: Bastion as defined by the current shell route.\nEffect: mineral defense or edge retaliation.");
+                    text.Append("\nCost: 1 Bastion.\nEffect: mineral defense or edge retaliation.");
                 }
                 else
                 {
                     int wake = MutationMeddley_GetStateInt(mutation, "brine_wake");
-                    text.Append("Estuary Wake Spend\nTrigger: moving adjacent engaged melee contact.\nCurrent chance: ");
+                    text.Append("Estuary Wake Spend\nTrigger: adjacent engaged melee contact while Wake is stored.\nCurrent chance: ");
                     text.Append(wake > 0 ? "100%" : "0%");
-                    text.Append("\nCost: 1 Wake.\nEffect: pursuit bonus damage/pressure.");
+                    text.Append("\nCost: 1 Wake.\nEffect: pursuit bonus damage/pressure. Movement and tide stance are how Wake is generated, not an extra spend requirement.");
                 }
             }
             else if (name == "Ash Metabolism")
@@ -141,23 +141,23 @@ namespace XRL.World.Parts
                 else if (MutationMeddley_HasEvolution(mutation, "furnace_skin"))
                 {
                     int kiln = MutationMeddley_GetStateInt(mutation, "ash_kiln");
-                    text.Append("Kiln Response\nTrigger: qualifying pressure with stored Kiln/heat state.\nCurrent chance: ");
-                    text.Append(kiln > 0 || embers > 0 ? "100% when the branch trigger qualifies" : "0%");
-                    text.Append("\nCost: branch-defined Kiln/Ember state.\nEffect: defensive heat response or retaliation.");
+                    text.Append("Kiln Response\nTrigger: qualifying incoming pressure while Kiln is stored.\nCurrent chance: ");
+                    text.Append(kiln > 0 ? "100%" : "0%");
+                    text.Append("\nCost: 1 Kiln.\nEffect: heat retaliation when a source resolves; otherwise the stored heat absorbs pressure. Embers generate Kiln but are not spent by this reaction.");
                 }
                 else if (MutationMeddley_HasEvolution(mutation, "cinder_gut"))
                 {
                     int rush = MutationMeddley_GetStateInt(mutation, "ash_rush");
-                    text.Append("Cinder Rush Spend\nTrigger: moving adjacent engaged melee contact.\nCurrent chance: ");
+                    text.Append("Cinder Rush Spend\nTrigger: adjacent engaged melee contact while Rush is stored.\nCurrent chance: ");
                     text.Append(rush > 0 ? "100%" : "0%");
-                    text.Append("\nCost: Rush.\nEffect: pursuit bonus damage/tempo.");
+                    text.Append("\nCost: 1 Rush.\nEffect: pursuit bonus damage/tempo. Movement and heat feed Rush, but stored Rush can survive into the next qualifying contact.");
                 }
                 else
                 {
                     int haze = MutationMeddley_GetStateInt(mutation, "ash_haze");
-                    text.Append("Haze Response\nTrigger: qualifying smoky pressure/contact.\nCurrent chance: ");
-                    text.Append(haze > 0 || embers > 0 ? "100% when the smoke trigger qualifies" : "0%");
-                    text.Append("\nCost: Haze/Ember state.\nEffect: concealment pressure, recovery, or draft follow-through.");
+                    text.Append("Haze Response\nTrigger: qualifying smoky pressure, or smoky moving melee contact, while Haze is stored.\nCurrent chance: ");
+                    text.Append(haze > 0 ? "100% when the smoke trigger qualifies" : "0%");
+                    text.Append("\nCost: 1 Haze.\nEffect: pressure recovery or smoky contact follow-through. Embers generate Haze but are not spent by this reaction.");
                 }
             }
             else if (name == "Walking Colony")
@@ -180,7 +180,7 @@ namespace XRL.World.Parts
                 {
                     int scout = MutationMeddley_GetStateInt(mutation, "colony_scout");
                     text.Append("Surveyor Line Spend\nTrigger: moving adjacent engaged melee contact.\nCurrent chance: ");
-                    text.Append(scout > 0 ? "100%" : "0%");
+                    text.Append(scout > 0 ? "100% when movement/contact qualifies" : "0%");
                     text.Append("\nCost: 1 Scout.\nEffect: surveyor-line bonus damage/pressure.");
                 }
                 else
@@ -242,6 +242,5 @@ namespace XRL.World.Parts
                     return "No deliberate action is currently available.";
             }
         }
-
     }
 }
