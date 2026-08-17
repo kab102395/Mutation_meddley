@@ -1112,25 +1112,6 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_HandleStanceCompletionEndTurn()
         {
-            // Spiteful Wall's concrete shell turn still performs its historical
-            // engaged brace decrement, so restore that one point here until the
-            // concrete routine can be normalized without changing the save contract.
-            // Net behavior: simply remaining engaged does not consume stored Brace;
-            // actual incoming pressure remains the place where Spiteful Wall spends.
-            if (MutationMeddley_EvolutionDisplayName == "Carapace Evolution"
-                && MutationMeddley_HasEvolution("fortress")
-                && MutationMeddley_GetCurrentModeId() == "spiteful_wall"
-                && MutationMeddley_GetStateInt("carapace_stationary", 0) > 0
-                && ParentObject != null
-                && ParentObject.IsEngagedInMelee())
-            {
-                int braceCap = MutationMeddley_HasEvolution("living_fortress") ? 5 : 4;
-                MutationMeddley_SetStateInt(
-                    "carapace_brace",
-                    Math.Min(braceCap, MutationMeddley_GetStateInt("carapace_brace", 0) + 1)
-                );
-            }
-
             if (MutationMeddley_EvolutionDisplayName == "Brineborn"
                 && MutationMeddley_HasEvolution("wellspring_flesh")
                 && MutationMeddley_GetCurrentModeId() == "cool_reserve")
