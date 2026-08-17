@@ -86,7 +86,7 @@ namespace XRL.World.Parts.Mutation
                     && MutationMeddley_GetStateInt(MutationMeddley_StationaryKey, 0) > 0
                     && ParentObject != null)
                 {
-                    ParentObject.Heal(1);
+                    MutationMeddley_TryHeal(1);
                 }
 
                 MutationMeddley_ProcessShellTurn();
@@ -994,7 +994,7 @@ namespace XRL.World.Parts.Mutation
                     brace += 1;
                 }
 
-                if (MutationMeddley_GetCurrentModeId() == "spiteful_wall" && engaged && brace > 0)
+                if (MutationMeddley_GetCurrentModeId() == "spiteful_wall" && engaged && !stationary && brace > 0)
                 {
                     brace = Math.Max(0, brace - 1);
                 }
