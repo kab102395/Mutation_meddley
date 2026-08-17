@@ -12,12 +12,12 @@ namespace XRL.World.Parts
 {
     public partial class MutationMeddley_BiologySupport : IPart
     {
-        private bool MutationMeddley_HasAnyEvolution(MutationMeddley_AdaptiveMutationBase mutation)
+        internal bool MutationMeddley_HasAnyEvolution(MutationMeddley_AdaptiveMutationBase mutation)
         {
             return MutationMeddley_GetEvolutionIds(mutation).Count > 0;
         }
 
-        private bool MutationMeddley_HasEvolution(MutationMeddley_AdaptiveMutationBase mutation, string id)
+        internal bool MutationMeddley_HasEvolution(MutationMeddley_AdaptiveMutationBase mutation, string id)
         {
             List<string> ids = MutationMeddley_GetEvolutionIds(mutation);
             for (int i = 0; i < ids.Count; i++)
@@ -83,7 +83,7 @@ namespace XRL.World.Parts
             return metadata;
         }
 
-        private int MutationMeddley_GetStateInt(MutationMeddley_AdaptiveMutationBase mutation, string key)
+        internal int MutationMeddley_GetStateInt(MutationMeddley_AdaptiveMutationBase mutation, string key)
         {
             Dictionary<string, string> metadata = MutationMeddley_GetMetadata(mutation);
             string value;
@@ -96,7 +96,7 @@ namespace XRL.World.Parts
             return 0;
         }
 
-        private void MutationMeddley_SetStateInt(
+        internal void MutationMeddley_SetStateInt(
             MutationMeddley_AdaptiveMutationBase mutation,
             string key,
             int value)
