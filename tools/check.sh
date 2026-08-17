@@ -22,7 +22,10 @@ code_dir = root / "Code"
 installer = code_dir / "MutationMeddley_BiologySupport.Install.cs"
 biology_core = code_dir / "MutationMeddley_BiologySupport.CoreA.cs"
 biology_actions = code_dir / "MutationMeddley_BiologySupport.ActionsA.cs"
+biology_state = code_dir / "MutationMeddley_BiologySupport.StateA.cs"
 action_service = code_dir / "MutationMeddley_PrimaryActionService.cs"
+state_service = code_dir / "MutationMeddley_StateEnvelopeAccess.cs"
+ability_repair = code_dir / "MutationMeddley_AbilityRepair.cs"
 adaptive = code_dir / "MutationMeddley_AdaptiveMutationBase.cs"
 evolving = code_dir / "MutationMeddley_EvolvingMutationBase.cs"
 
@@ -132,6 +135,21 @@ else:
     ):
         if f"RegisterPartEvent(this, {command_name}" in biology_text:
             fail(f"Biology must not register mutation action command {command_name}")
+    if "MutationMeddley_AbilityRepair.MutationMeddley_EnsureEvolutionAbility" not in biology_text:
+        fail("Biology maintenance must repair stale Evolve ability GUIDs for owned adaptive mutations")
+
+if not ability_repair.exists():
+    fail("Missing MutationMeddley_AbilityRepair.cs")
+else:
+    ability_repair_text = ability_repair.read_text(encoding="utf-8")
+    for marker in (
+        "MutationMeddley_EnsureEvolutionAbility",
+        "MutationMeddley_EvolveAbilityID",
+        '"Evolve " + mutation.MutationMeddley_EvolutionDisplayName',
+        '"MutationMeddley_Evolve_" + mutation.GetType().Name',
+    ):
+        if marker not in ability_repair_text:
+            fail(f"Evolution ability repair is missing required marker: {marker}")
 
 if not action_service.exists():
     fail("Missing MutationMeddley_PrimaryActionService.cs")
@@ -163,6 +181,31 @@ else:
     ):
         if resource_key in biology_actions_text:
             fail(f"Biology ActionsA still owns mutation resource transaction {resource_key!r}")
+
+if not state_service.exists():
+    fail("Missing MutationMeddley_StateEnvelopeAccess.cs")
+else:
+    state_service_text = state_service.read_text(encoding="utf-8")
+    for marker in (
+        "class MutationMeddley_StateEnvelopeAccess",
+        "HasAnyEvolution(",
+        "HasEvolution(",
+        "GetInt(",
+        "SetInt(",
+        'metadata["statev"] = "1"',
+    ):
+        if marker not in state_service_text:
+            fail(f"State-envelope service is missing required marker: {marker}")
+
+if not biology_state.exists():
+    fail("Missing MutationMeddley_BiologySupport.StateA.cs")
+else:
+    biology_state_text = biology_state.read_text(encoding="utf-8")
+    if "MutationMeddley_StateEnvelopeAccess" not in biology_state_text:
+        fail("Biology StateA must delegate to MutationMeddley_StateEnvelopeAccess")
+    for forbidden in (".Split('|')", "IndexOf('=')", "CultureInfo", "new Dictionary<string, string>"):
+        if forbidden in biology_state_text:
+            fail(f"Biology StateA still contains duplicated envelope parsing marker: {forbidden}")
 
 if not adaptive.exists():
     fail("Missing MutationMeddley_AdaptiveMutationBase.cs")
@@ -209,6 +252,20 @@ if legacy_register_count:
 if option_list_count:
     warn(f"Popup.ShowOptionList calls present: {option_list_count}")
 
+# Damage-result consumers intentionally distinguish event dispatch from observed HP
+# loss. Keep every dispatch-only consumer visible in preflight until runtime tracing
+# confirms whether its branch semantics are correct on the supported Qud build.
+dispatch_consumers = []
+for path in cs_files:
+    for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if ".DamageDispatched" in line:
+            dispatch_consumers.append((path.relative_to(root), line_no, line.strip()))
+if dispatch_consumers:
+    warn(
+        "Bonus-damage consumers using DamageDispatched require runtime semantic review:\n"
+        + "\n".join(f"    {path}:{line_no}: {line}" for path, line_no, line in dispatch_consumers)
+    )
+
 if errors:
     print("Repository preflight FAILED:", file=sys.stderr)
     for error in errors:
@@ -229,6 +286,8 @@ print("  Biology serialization: exactly one [Serializable] declaration")
 print("  Biology lifecycle: new-game + load hooks present")
 print("  mutation action ownership: mutation-side registration verified")
 print("  primary action transactions: isolated from Biology UI")
+print("  state envelope parsing: centralized outside Biology UI")
+print("  evolution ability repair: stale-GUID maintenance present")
 print("  adaptive healing: shared helper is the only direct ParentObject.Heal path")
 print("  Harmony/unseeded RNG guards: clear")
 
