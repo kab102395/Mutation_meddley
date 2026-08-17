@@ -896,7 +896,7 @@ namespace XRL.World.Parts.Mutation
                 int healAmount = MutationMeddley_HasEvolution("tidal_marrows")
                     ? (MutationMeddley_HasMutation("Regeneration") ? 2 : 1)
                     : 1;
-                ParentObject.Heal(healAmount);
+                MutationMeddley_TryHeal(healAmount);
                 reserve -= 1;
                 mend = Math.Min(3, mend + 1 + (MutationMeddley_HasEvolution("sacred_reservoir") ? 1 : 0));
                 usedTidalMarrowsRecovery = MutationMeddley_HasEvolution("tidal_marrows");
