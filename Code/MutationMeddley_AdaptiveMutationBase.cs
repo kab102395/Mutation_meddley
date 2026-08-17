@@ -123,12 +123,22 @@ namespace XRL.World.Parts.Mutation
             string primaryActionCommand = MutationMeddley_GetPrimaryActionCommand();
             if (!string.IsNullOrEmpty(primaryActionCommand) && E.ID == primaryActionCommand)
             {
+                // The mutation owns and executes its own command path. Biology is an
+                // optional inspector/telemetry surface, never a gameplay dependency.
                 global::XRL.World.Parts.MutationMeddley_BiologySupport support =
                     MutationMeddley_EnsureBiologySupport(ParentObject);
-                if (support != null)
-                {
-                    support.MutationMeddley_InvokePrimaryAction(this);
-                }
+                string signature = global::XRL.World.Parts.MutationMeddley_PrimaryActionCatalog.GetSignature(this);
+                string actionName = global::XRL.World.Parts.MutationMeddley_PrimaryActionCatalog.GetName(this);
+                string actionDescription = support != null
+                    ? support.MutationMeddley_GetPrimaryActionDescriptionForMutation(this)
+                    : global::XRL.World.Parts.MutationMeddley_PrimaryActionCatalog.GetDescription(this);
+
+                global::XRL.World.Parts.MutationMeddley_PrimaryActionService.MutationMeddley_TryUse(
+                    this,
+                    ParentObject,
+                    signature,
+                    actionName,
+                    actionDescription);
                 return false;
             }
 
@@ -196,7 +206,23 @@ namespace XRL.World.Parts.Mutation
 
         private global::XRL.World.Parts.MutationMeddley_BiologySupport MutationMeddley_EnsureBiologySupport(GameObject Object)
         {
-            if (Object == null || !Object.IsPlayer())
+            if (Object == null)
+            {
+                return null;
+            }
+
+            // PlayerMutator may install Biology before IsPlayer() becomes observable
+            // during character construction. Existing support is therefore a trusted
+            // player-UI marker and must be accepted before the ordinary NPC guard.
+            global::XRL.World.Parts.MutationMeddley_BiologySupport existing =
+                Object.GetPart("MutationMeddley_BiologySupport")
+                    as global::XRL.World.Parts.MutationMeddley_BiologySupport;
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            if (!Object.IsPlayer())
             {
                 return null;
             }
@@ -293,11 +319,14 @@ namespace XRL.World.Parts.Mutation
 
         private void MutationMeddley_SyncPrimaryActionAbility()
         {
-            if (ParentObject == null || !ParentObject.IsPlayer())
+            if (ParentObject == null)
             {
                 return;
             }
 
+            // Requiring the player-only Biology marker instead of re-checking
+            // IsPlayer() closes early-new-game ordering gaps without giving NPC
+            // mutations player UI abilities.
             global::XRL.World.Parts.MutationMeddley_BiologySupport support =
                 MutationMeddley_EnsureBiologySupport(ParentObject);
             if (support == null)
@@ -306,8 +335,8 @@ namespace XRL.World.Parts.Mutation
             }
 
             string command = MutationMeddley_GetPrimaryActionCommand();
-            string desiredSignature = support.MutationMeddley_GetPrimaryActionSignatureForMutation(this);
-            string desiredName = support.MutationMeddley_GetPrimaryActionNameForMutation(this);
+            string desiredSignature = global::XRL.World.Parts.MutationMeddley_PrimaryActionCatalog.GetSignature(this);
+            string desiredName = global::XRL.World.Parts.MutationMeddley_PrimaryActionCatalog.GetName(this);
             string desiredDescription = support.MutationMeddley_GetPrimaryActionDescriptionForMutation(this);
 
             bool shouldExist = MutationMeddley_IsFunctionallyActive()
