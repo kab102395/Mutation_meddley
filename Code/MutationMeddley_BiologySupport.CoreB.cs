@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
-using XRL;
-using XRL.Core;
-using XRL.Messages;
 using XRL.UI;
 using XRL.World.Parts.Mutation;
 
@@ -14,99 +10,19 @@ namespace XRL.World.Parts
     {
         private string MutationMeddley_GetActionSignature(MutationMeddley_AdaptiveMutationBase mutation)
         {
-            if (mutation == null)
-            {
-                return "";
-            }
-
-            string name = mutation.MutationMeddley_EvolutionDisplayName;
-            if (name == "Carapace Evolution")
-            {
-                if (MutationMeddley_HasEvolution(mutation, "fortress")) return "carapace_fortress";
-                if (MutationMeddley_HasEvolution(mutation, "hunter_shell")) return "carapace_hunter";
-                if (MutationMeddley_HasEvolution(mutation, "adaptive_carapace")) return "carapace_adaptive";
-                return "carapace_baseline";
-            }
-
-            if (name == "Living Crystal")
-            {
-                if (MutationMeddley_HasEvolution(mutation, "diamond_lattice")) return "crystal_diamond";
-                if (MutationMeddley_HasEvolution(mutation, "prismatic_matrix")) return "crystal_prismatic";
-                if (MutationMeddley_HasEvolution(mutation, "resonant_crystal")) return "crystal_resonant";
-                return "crystal_baseline";
-            }
-
-            if (name == "Brineborn")
-            {
-                if (MutationMeddley_HasEvolution(mutation, "wellspring_flesh")) return "brine_wellspring";
-                if (MutationMeddley_HasEvolution(mutation, "saltglass_bloom")) return "brine_saltglass";
-                if (MutationMeddley_HasEvolution(mutation, "scouring_estuary")) return "brine_scouring";
-                return "brine_baseline";
-            }
-
-            if (name == "Ash Metabolism")
-            {
-                if (MutationMeddley_HasEvolution(mutation, "furnace_skin")) return "ash_furnace";
-                if (MutationMeddley_HasEvolution(mutation, "cinder_gut")) return "ash_cinder";
-                if (MutationMeddley_HasEvolution(mutation, "smoke_organ")) return "ash_smoke";
-                return "ash_baseline";
-            }
-
-            if (name == "Walking Colony")
-            {
-                if (MutationMeddley_HasEvolution(mutation, "marrow_hive")) return "colony_marrow";
-                if (MutationMeddley_HasEvolution(mutation, "surveyor_swarm")) return "colony_surveyor";
-                if (MutationMeddley_HasEvolution(mutation, "graft_parliament")) return "colony_parliament";
-                return "colony_baseline";
-            }
-
-            return "";
+            return MutationMeddley_PrimaryActionCatalog.GetSignature(mutation);
         }
 
         private string MutationMeddley_GetActionName(MutationMeddley_AdaptiveMutationBase mutation)
         {
-            switch (MutationMeddley_GetActionSignature(mutation))
-            {
-                case "carapace_fortress": return "Fortify Shell";
-                case "carapace_hunter": return "Drive Shell";
-                case "carapace_adaptive": return "Discharge Attunement";
-                case "carapace_baseline": return "Brace Shell";
-                case "crystal_diamond": return "Resolve Crystal Stress";
-                case "crystal_prismatic": return "Refract Lattice";
-                case "crystal_resonant": return "Resonant Release";
-                case "crystal_baseline": return "Resolve Crystal Stress";
-                case "brine_wellspring": return "Draw Brine";
-                case "brine_saltglass": return "Raise Saltglass";
-                case "brine_scouring": return "Release Wake";
-                case "brine_baseline": return "Draw Brine";
-                case "ash_furnace": return "Bank Kiln";
-                case "ash_cinder": return "Stoke Rush";
-                case "ash_smoke": return "Gather Haze";
-                case "ash_baseline": return "Cauterize";
-                case "colony_marrow": return "Knit Flesh";
-                case "colony_surveyor": return "Map Pursuit";
-                case "colony_parliament": return "Delegate Load";
-                case "colony_baseline": return "Redistribute Pressure";
-                default: return "Use Mutation Meddley Biology";
-            }
+            return MutationMeddley_PrimaryActionCatalog.GetName(mutation);
         }
 
         private string MutationMeddley_GetActionDescription(MutationMeddley_AdaptiveMutationBase mutation)
         {
-            if (mutation == null)
-            {
-                return "Mutation Meddley action.";
-            }
-
-            StringBuilder text = new StringBuilder();
-            text.Append(MutationMeddley_GetResourceSummary(mutation));
-            text.Append("\n\n");
-            text.Append("Active action: ");
-            text.Append(MutationMeddley_GetActionName(mutation));
-            text.Append("\nChance: 100% when requirements are met.\nEnergy: 1000.\n");
-            text.Append(MutationMeddley_GetActiveActionRules(mutation));
-            text.Append("\n\nAutomatic reactions, exact trigger conditions, and current Mutation Meddley modifiers are listed in Mutation Meddley Biology.");
-            return text.ToString();
+            return MutationMeddley_PrimaryActionCatalog.GetDescription(
+                mutation,
+                mutation == null ? "" : MutationMeddley_GetResourceSummary(mutation));
         }
 
         private string MutationMeddley_GetBiologyAbilityDescription()
@@ -281,6 +197,5 @@ namespace XRL.World.Parts
 
             return path + " | Stance: " + stance;
         }
-
     }
 }
