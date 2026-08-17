@@ -191,16 +191,17 @@ if re.search(r"\bnew\s+(?:System\.)?Random\s*\(", all_code):
 if "HarmonyLib" in all_code or re.search(r"\[Harmony(?:Patch|Prefix|Postfix|Transpiler)", all_code):
     fail("Harmony usage found in Code/; v0.7.1 stabilization is intentionally Qud-native")
 
-# Known technical debt stays visible in every preflight instead of disappearing from
-# the engineering checklist. These direct heals predate shared verb scaling.
+# All adaptive healing must now flow through MutationMeddley_TryHeal so continuous
+# verb growth, player feedback, and future healing policy have one path. A direct
+# ParentObject.Heal call is a structural regression, not merely technical debt.
 direct_heals = []
 for path in cs_files:
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if "ParentObject.Heal(" in line:
             direct_heals.append((path.relative_to(root), line_no, line.strip()))
 if direct_heals:
-    warn(
-        "Direct ParentObject.Heal calls still bypass shared continuous verb scaling:\n"
+    fail(
+        "Direct ParentObject.Heal calls bypass shared continuous verb scaling:\n"
         + "\n".join(f"    {path}:{line_no}: {line}" for path, line_no, line in direct_heals)
     )
 
@@ -233,6 +234,7 @@ print("  Biology serialization: exactly one [Serializable] declaration")
 print("  Biology lifecycle: new-game + load hooks present")
 print("  mutation action ownership: mutation-side registration verified")
 print("  primary action transactions: isolated from Biology UI")
+print("  adaptive healing: no direct ParentObject.Heal bypasses")
 print("  Harmony/unseeded RNG guards: clear")
 
 if warnings:
