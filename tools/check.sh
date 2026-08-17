@@ -21,6 +21,8 @@ mutations = root / "Mutations.xml"
 code_dir = root / "Code"
 installer = code_dir / "MutationMeddley_BiologySupport.Install.cs"
 biology_core = code_dir / "MutationMeddley_BiologySupport.CoreA.cs"
+biology_actions = code_dir / "MutationMeddley_BiologySupport.ActionsA.cs"
+action_service = code_dir / "MutationMeddley_PrimaryActionService.cs"
 adaptive = code_dir / "MutationMeddley_AdaptiveMutationBase.cs"
 
 errors = []
@@ -68,9 +70,17 @@ if dll_files:
 # and ensure every registered class actually exists in the source set.
 if mutation_tree is not None:
     mutation_nodes = mutation_tree.findall(".//mutation")
+    seen_names = set()
+    seen_classes = set()
     for node in mutation_nodes:
         class_name = (node.get("Class") or "").strip()
         mutation_name = (node.get("Name") or "<unnamed>").strip()
+        if mutation_name in seen_names:
+            fail(f"Mutations.xml contains duplicate mutation name {mutation_name!r}")
+        seen_names.add(mutation_name)
+        if class_name in seen_classes:
+            fail(f"Mutations.xml contains duplicate mutation class {class_name!r}")
+        seen_classes.add(class_name)
         if not class_name:
             fail(f"Mutations.xml mutation {mutation_name!r} has no Class")
             continue
@@ -126,6 +136,39 @@ else:
         if f"RegisterPartEvent(this, {command_name}" in biology_text:
             fail(f"Biology must not register mutation action command {command_name}")
 
+if not action_service.exists():
+    fail("Missing MutationMeddley_PrimaryActionService.cs")
+else:
+    action_service_text = action_service.read_text(encoding="utf-8")
+    for marker in (
+        "class MutationMeddley_PrimaryActionService",
+        "MutationMeddley_TryUse(",
+        'owner.UseEnergy(1000, "Physical Mutation")',
+        "MutationMeddley_TryBiologyHeal",
+    ):
+        if marker not in action_service_text:
+            fail(f"Primary action service is missing required transaction marker: {marker}")
+
+if not biology_actions.exists():
+    fail("Missing MutationMeddley_BiologySupport.ActionsA.cs")
+else:
+    biology_actions_text = biology_actions.read_text(encoding="utf-8")
+    if "MutationMeddley_PrimaryActionService.MutationMeddley_TryUse" not in biology_actions_text:
+        fail("Biology action bridge must delegate to MutationMeddley_PrimaryActionService")
+    # The player-global inspector may route an action, but it must not own resource
+    # transaction details or the turn cost itself.
+    if "UseEnergy(" in biology_actions_text:
+        fail("Biology ActionsA must not spend energy directly")
+    for resource_key in (
+        "carapace_brace",
+        "lc_stress",
+        "brine_reserve",
+        "ash_embers",
+        "colony_charge",
+    ):
+        if resource_key in biology_actions_text:
+            fail(f"Biology ActionsA still owns mutation resource transaction {resource_key!r}")
+
 if not adaptive.exists():
     fail("Missing MutationMeddley_AdaptiveMutationBase.cs")
 else:
@@ -148,10 +191,8 @@ if re.search(r"\bnew\s+(?:System\.)?Random\s*\(", all_code):
 if "HarmonyLib" in all_code or re.search(r"\[Harmony(?:Patch|Prefix|Postfix|Transpiler)", all_code):
     fail("Harmony usage found in Code/; v0.7.1 stabilization is intentionally Qud-native")
 
-# Known technical debt should stay visible in every preflight instead of silently
-# disappearing from the engineering checklist. Do not fail the build: these direct
-# heals predate the shared continuous-verb helper and require branch-local runtime
-# regression before conversion.
+# Known technical debt stays visible in every preflight instead of disappearing from
+# the engineering checklist. These direct heals predate shared verb scaling.
 direct_heals = []
 for path in cs_files:
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
@@ -187,10 +228,11 @@ print("Repository preflight passed:")
 print(f"  manifest: {data.get('Title')} {data.get('Version')} ({data.get('ID')})")
 print("  Mutations.xml: well-formed XML")
 print(f"  C# sources: {len(cs_files)} file(s)")
-print("  registered mutation classes: present and prefixed")
+print("  registered mutation classes: present, unique, and prefixed")
 print("  Biology serialization: exactly one [Serializable] declaration")
 print("  Biology lifecycle: new-game + load hooks present")
 print("  mutation action ownership: mutation-side registration verified")
+print("  primary action transactions: isolated from Biology UI")
 print("  Harmony/unseeded RNG guards: clear")
 
 if warnings:
