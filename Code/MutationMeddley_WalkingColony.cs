@@ -836,7 +836,7 @@ namespace XRL.World.Parts.Mutation
                 && !moved
                 && ParentObject.hitpoints < ParentObject.baseHitpoints)
             {
-                ParentObject.Heal(MutationMeddley_HasMutation("Regeneration") ? 2 : 1);
+                MutationMeddley_TryHeal(MutationMeddley_HasMutation("Regeneration") ? 2 : 1);
                 pressure -= 1;
                 stitch = Math.Min(4, stitch + 1 + (MutationMeddley_HasEvolution("bone_nursery") ? 1 : 0));
             }
