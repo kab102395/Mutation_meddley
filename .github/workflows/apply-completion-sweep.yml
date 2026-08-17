@@ -1,0 +1,43 @@
+name: Apply completion sweep patch
+
+on:
+  push:
+    branches:
+      - fix/v0.7.1-completion-sweep
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: contains(github.event.head_commit.message, '[apply-completion-sweep]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out completion branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply exact source transformations
+        run: python3 .github/scripts/apply_completion_sweep.py
+
+      - name: Validate transformed tree
+        run: |
+          git diff --check
+          bash tools/check.sh
+          bash -n tools/check.sh
+          bash -n tools/deploy.sh
+          bash -n tools/logs.sh
+          bash -n tools/import-mods-csproj.sh
+
+      - name: Commit transformed sources
+        run: |
+          if git diff --quiet; then
+            echo 'No transformations were required.'
+            exit 0
+          fi
+          git config user.name 'Mutation Meddley CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add Code/MutationMeddley_AdaptiveMutationBase.cs
+          git commit -m 'Finalize mutation-owned action routing'
+          git push origin HEAD:fix/v0.7.1-completion-sweep
