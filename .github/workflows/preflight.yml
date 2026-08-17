@@ -1,0 +1,25 @@
+name: Mutation Meddley preflight
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+  pull_request:
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run repository preflight
+        run: bash tools/check.sh
+
+      - name: Validate shell syntax
+        run: |
+          bash -n tools/check.sh
+          bash -n tools/deploy.sh
+          bash -n tools/logs.sh
+          bash -n tools/import-mods-csproj.sh
