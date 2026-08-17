@@ -24,6 +24,7 @@ biology_core = code_dir / "MutationMeddley_BiologySupport.CoreA.cs"
 biology_actions = code_dir / "MutationMeddley_BiologySupport.ActionsA.cs"
 action_service = code_dir / "MutationMeddley_PrimaryActionService.cs"
 adaptive = code_dir / "MutationMeddley_AdaptiveMutationBase.cs"
+evolving = code_dir / "MutationMeddley_EvolvingMutationBase.cs"
 
 errors = []
 warnings = []
@@ -102,8 +103,6 @@ if len(biology_serializable) != 1:
         f"declaration; found {len(biology_serializable)}"
     )
 
-# Common typo class of failure: this misspelling is close enough to compile review to
-# be easy to overlook but guarantees a missing-type compiler error.
 if "MutationMledley_" in all_code:
     fail("Found misspelled identifier prefix MutationMledley_; use MutationMeddley_")
 
@@ -124,8 +123,6 @@ if not biology_core.exists():
     fail("Missing MutationMeddley_BiologySupport.CoreA.cs")
 else:
     biology_text = biology_core.read_text(encoding="utf-8")
-    # Mutation-specific command events must be received by the owning mutation, not
-    # by the player-global inspector. This is the Qud-native ownership boundary.
     for command_name in (
         "CarapaceCommand",
         "CrystalCommand",
@@ -155,8 +152,6 @@ else:
     biology_actions_text = biology_actions.read_text(encoding="utf-8")
     if "MutationMeddley_PrimaryActionService.MutationMeddley_TryUse" not in biology_actions_text:
         fail("Biology action bridge must delegate to MutationMeddley_PrimaryActionService")
-    # The player-global inspector may route an action, but it must not own resource
-    # transaction details or the turn cost itself.
     if "UseEnergy(" in biology_actions_text:
         fail("Biology ActionsA must not spend energy directly")
     for resource_key in (
@@ -184,29 +179,29 @@ else:
         if marker not in adaptive_text:
             fail(f"Adaptive mutation lifecycle is missing required marker: {marker}")
 
-# Scope guards. This stabilization release intentionally uses Qud-native parts/events
-# only and does not introduce unseeded System.Random behavior.
 if re.search(r"\bnew\s+(?:System\.)?Random\s*\(", all_code):
     fail("Unseeded Random construction found in Code/; use a verified Qud-compatible RNG path")
 if "HarmonyLib" in all_code or re.search(r"\[Harmony(?:Patch|Prefix|Postfix|Transpiler)", all_code):
     fail("Harmony usage found in Code/; v0.7.1 stabilization is intentionally Qud-native")
 
-# All adaptive healing must now flow through MutationMeddley_TryHeal so continuous
-# verb growth, player feedback, and future healing policy have one path. A direct
-# ParentObject.Heal call is a structural regression, not merely technical debt.
-direct_heals = []
+# The one legitimate raw Heal call is the shared framework helper itself. Every
+# concrete/adaptive path must route through that helper so continuous verb growth has
+# exactly one healing policy.
+raw_heals = []
 for path in cs_files:
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if "ParentObject.Heal(" in line:
-            direct_heals.append((path.relative_to(root), line_no, line.strip()))
-if direct_heals:
-    fail(
-        "Direct ParentObject.Heal calls bypass shared continuous verb scaling:\n"
-        + "\n".join(f"    {path}:{line_no}: {line}" for path, line_no, line in direct_heals)
-    )
+            raw_heals.append((path.relative_to(root), line_no, line.strip()))
 
-# Keep deprecated surfaces visible without blocking the supported target build; Qud's
-# installed compiler remains the authority for whether/when these must migrate.
+expected_heal_path = pathlib.Path("Code/MutationMeddley_EvolvingMutationBase.cs")
+if len(raw_heals) != 1 or raw_heals[0][0] != expected_heal_path:
+    fail(
+        "The shared EvolvingMutationBase helper must be the only direct ParentObject.Heal path. Found:\n"
+        + ("\n".join(f"    {path}:{line_no}: {line}" for path, line_no, line in raw_heals) if raw_heals else "    none")
+    )
+elif not evolving.exists() or "protected bool MutationMeddley_TryHeal(int amount)" not in evolving.read_text(encoding="utf-8"):
+    fail("MutationMeddley_EvolvingMutationBase must retain the shared MutationMeddley_TryHeal helper")
+
 legacy_register_count = all_code.count("override void Register(GameObject Object)")
 option_list_count = all_code.count("Popup.ShowOptionList(")
 if legacy_register_count:
@@ -234,7 +229,7 @@ print("  Biology serialization: exactly one [Serializable] declaration")
 print("  Biology lifecycle: new-game + load hooks present")
 print("  mutation action ownership: mutation-side registration verified")
 print("  primary action transactions: isolated from Biology UI")
-print("  adaptive healing: no direct ParentObject.Heal bypasses")
+print("  adaptive healing: shared helper is the only direct ParentObject.Heal path")
 print("  Harmony/unseeded RNG guards: clear")
 
 if warnings:
