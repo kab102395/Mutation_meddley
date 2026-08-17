@@ -54,12 +54,19 @@ namespace XRL.World.Parts
             Object.RequirePart<ActivatedAbilities>();
             Object.RequirePart<MutationMeddley_BiologySupport>();
 
-            // Do not refresh here. Mutations call EnsureInstalled defensively during
-            // ordinary turn/event lifecycle; refreshing from this low-level helper
-            // made every owned mutation rescan the whole Biology surface each turn.
-            // Newly-added support refreshes itself from Register; documented global
-            // lifecycle hooks explicitly request a refresh after ensuring the part.
-            return Object.GetPart("MutationMeddley_BiologySupport") as MutationMeddley_BiologySupport;
+            MutationMeddley_BiologySupport support =
+                Object.GetPart("MutationMeddley_BiologySupport") as MutationMeddley_BiologySupport;
+
+            // Ensure the one global inspector immediately even when this support part
+            // already existed with its button pruned. This is cheap and idempotent,
+            // and closes the late-mutation-gain/new-game ordering hole without doing
+            // a full owned-mutation scan from every mutation-side repair call.
+            if (support != null)
+            {
+                support.MutationMeddley_EnsureBiologyAbility();
+            }
+
+            return support;
         }
 
         public override void Register(GameObject Object)
@@ -107,7 +114,7 @@ namespace XRL.World.Parts
                     // with no MM mutations. The PlayerMutator's early creation-time
                     // button is pruned once gameplay begins. A future MM mutation gain
                     // causes the mutation-side lifecycle to ensure the support again,
-                    // and this EndTurn path then restores the inspector.
+                    // which immediately restores the inspector.
                     MutationMeddley_RemoveAbility(ref MutationMeddley_BiologyAbilityID);
                     MutationMeddley_RemoveLegacyActionAbilities();
                 }
