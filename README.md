@@ -27,13 +27,17 @@ Version `0.7.1` is the player-agency and biological-telemetry recovery candidate
 - live mechanics, continuous-growth, next-rank, and current-passive readouts in mutation level text
 - a shared runtime semantic-tag and synergy-query layer
 - a universal `Mutation Meddley Biology` activated-ability inspector for owned MM mutations, resources, reactions, modifiers, and active ecology
-- branch-aware deliberate primary actions for Carapace Evolution, Living Crystal, Brineborn, Ash Metabolism, and Walking Colony
+- mutation-owned branch-aware deliberate primary actions for Carapace Evolution, Living Crystal, Brineborn, Ash Metabolism, and Walking Colony
+- a shared primary-action catalog so Biology and the normal ability bar use one action identity/rules source
+- a Biology-independent primary-action transaction service backed by the shared serialized-state access layer
+- defensive new-game and loaded-save Biology installation with mutation-side repair and stale-Evolve-GUID repair
 - current/max telemetry for Brace/Impact/attunements, crystal state, brine state, ash state, and colony state
-- automatic-reaction telemetry that reports current deterministic `0%`/`100%` eligibility or the exact qualifying condition instead of hiding proc behavior
+- automatic-reaction telemetry that reports deterministic `0%`/`100%` readiness or the exact qualifying condition instead of hiding proc behavior
 - a delta-commit passive-stat path that no longer clears live MM stat shifts to zero before rebuilding them
-- removal of fast-changing Brace-driven Toughness/max-HP oscillation; unevolved active Brace now reinforces shell defense instead
+- removal of fast-changing Brace-driven Toughness/max-HP oscillation; unevolved active Brace reinforces shell defense instead
 - free same-stance re-selection; only an actual stance change spends normal action energy
-- new-game and existing-save bootstrap for the Biology support part
+- one shared direct-healing policy so concrete Carapace/Brine/Colony recovery participates in continuous verb scaling
+- repository and GitHub Actions preflight contracts that reject known 0.7.1 structural regressions
 - a developer regression mutation, `Evolution Seed [DEV]`, including live environment-predicate diagnostics
 - four Mutation Meddley-owned flagship mutations: `Living Crystal`, `Brineborn`, `Ash Metabolism`, and `Walking Colony`
 - a narrow companion adapter for vanilla `Carapace`: `Carapace Evolution`
@@ -46,7 +50,7 @@ The `0.6.3` pass closed the known static actionability gaps: pre-rank-3 dead zon
 
 The `0.7.0` pass closed the progression gap that remained after that static freeze. Mutation points no longer act primarily as tickets to ranks 3, 6, and 9. Existing biology matures between those milestones, while the milestone ranks still provide the larger qualitative branch changes. See `docs/CONTINUOUS_PROGRESSION_PLAN.md` for the formulas and acceptance contract.
 
-The `0.7.1` pass addresses failures exposed by hands-on playtesting: important stored-state resources were too hidden, strategically meaningful spends were often only automatic, reaction probabilities were not surfaced, and passive stat refresh could churn Toughness/max HP around fast-changing states such as Brace. The recovery contract and test matrix are in `docs/V0.7.1_PLAYER_AGENCY_RECOVERY_PLAN.md`.
+The `0.7.1` pass addresses failures exposed by hands-on playtesting: important stored-state resources were too hidden, strategically meaningful spends were often only automatic, reaction probabilities were not surfaced, and passive stat refresh could churn Toughness/max HP around fast-changing states such as Brace. The recovery contract is in `docs/V0.7.1_PLAYER_AGENCY_RECOVERY_PLAN.md`; the Qud-native architecture sweep is in `docs/V0.7.1_QUD_NATIVE_STABILIZATION_SWEEP.md`; the final static completion state and remaining runtime-only gates are in `docs/V0.7.1_COMPLETION_SWEEP_RESULT.md`.
 
 `Carapace Evolution` is intentionally a companion mutation rather than a full replacement of Qud's built-in `Carapace` class. If vanilla `Carapace` is lost, the companion mutation becomes dormant but keeps its chosen path and stance for later reactivation. Continuous progression is also dormant while the companion is inactive.
 
@@ -77,6 +81,7 @@ From the repository root:
 
 ```bash
 bash tools/check.sh
+python3 tools/check_completion_contract.py
 bash tools/deploy.sh
 ```
 
@@ -128,31 +133,32 @@ That copies the Qud-generated project file into the repository root for use with
 
 ## Testing in Caves of Qud
 
-The static verb/passive matrix remains in `docs/TESTING.md`; continuous-rank tests are in `docs/CONTINUOUS_PROGRESSION_PLAN.md`; the player-agency/telemetry recovery gate is in `docs/V0.7.1_PLAYER_AGENCY_RECOVERY_PLAN.md`.
+The static verb/passive matrix remains in `docs/TESTING.md`; continuous-rank tests are in `docs/CONTINUOUS_PROGRESSION_PLAN.md`; the player-agency/telemetry recovery gate is in `docs/V0.7.1_PLAYER_AGENCY_RECOVERY_PLAN.md`; and the exact completion-sweep runtime boundary is in `docs/V0.7.1_COMPLETION_SWEEP_RESULT.md`.
 
 The minimum `0.7.1` local gate is:
 
 1. Run `bash tools/check.sh`.
-2. Run `bash tools/deploy.sh`.
-3. Fully restart Caves of Qud.
-4. Confirm a fresh successful scripting-mod compile for the exact `0.7.1` commit.
-5. On a new character with at least one MM mutation, confirm `Mutation Meddley Biology` appears.
-6. Load an existing `0.7.0` save and confirm the Biology ability is added without duplication.
-7. Open Biology with controller only; verify owned mutations, rank/path/stance, relevant current/max resources, reactions, current MM modifiers, and active ecology.
-8. At rank 1, verify Carapace Evolution shows Brace plus `Brace Shell`, and Walking Colony shows Pressure plus `Redistribute Pressure`.
-9. Verify invalid deliberate actions spend neither resource nor energy; successful deliberate actions spend one normal 1000-energy action.
-10. Verify deterministic automatic wound reactions display `100%` when ready and `0%` when their required resource is absent.
-11. Use vanilla `Tighten Carapace` while wounded near the low-health threshold; wait/move repeatedly and verify Brace no longer changes Toughness/max HP or retriggers low-health warnings through MM stat churn.
-12. Select the currently active MM stance and verify no turn is spent; actually change stance and verify the normal action cost occurs.
-13. Choose a rank-3 identity and verify the branch-aware primary action updates without duplicate ability entries.
-14. Save/reload repeatedly and verify Biology/action abilities and stored resources remain coherent.
-15. Verify a primed contact meter still spends on adjacent melee contact but survives a non-adjacent ranged hit.
-16. With `Evolution Seed [DEV]`, inspect environment diagnostics on representative cells and verify no bonus-damage recursion regression.
-17. Run a stacked multi-mutation movement/combat stress test before drawing balance conclusions.
+2. Run `python3 tools/check_completion_contract.py`.
+3. Run `bash tools/deploy.sh`.
+4. Fully restart Caves of Qud.
+5. Confirm a fresh successful scripting-mod compile for the exact `0.7.1` commit.
+6. On a new character with at least one MM mutation, confirm `Mutation Meddley Biology` appears.
+7. Load an existing `0.7.0` save and confirm the Biology ability is added without duplication.
+8. Open Biology with controller only; verify owned mutations, rank/path/stance, relevant current/max resources, reactions, current MM modifiers, and active ecology.
+9. At rank 1, verify Carapace Evolution shows Brace plus `Brace Shell`, and Walking Colony shows Pressure plus `Redistribute Pressure`.
+10. Verify invalid deliberate actions spend neither resource nor energy; successful deliberate actions spend one normal 1000-energy action.
+11. Verify deterministic automatic wound reactions display `100%` when ready and `0%` when their required resource is absent.
+12. Use vanilla `Tighten Carapace` while wounded near the low-health threshold; wait/move repeatedly and verify Brace no longer changes Toughness/max HP or retriggers low-health warnings through MM stat churn.
+13. Select the currently active MM stance and verify no turn is spent; actually change stance and verify the normal action cost occurs.
+14. Choose a rank-3 identity and verify the branch-aware primary action updates without duplicate ability entries.
+15. Save/reload repeatedly and verify Biology/action abilities and stored resources remain coherent.
+16. Verify a primed contact meter still spends on adjacent melee contact but survives a non-adjacent ranged hit.
+17. With `Evolution Seed [DEV]`, inspect environment diagnostics and controlled damage-event traces before changing any runtime-gated event semantics.
+18. Run a stacked multi-mutation movement/combat stress test before drawing balance conclusions.
 
-All five gameplay mutations expose `Retune ...` after a path exists. Normal gameplay interaction uses option lists rather than typed numbers.
+All five gameplay mutations expose `Retune ...` only after a path with an actual stance exists. Normal gameplay interaction uses option lists rather than typed numbers.
 
-Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly. `0.7.1` keeps the same persistent evolution-state/public-field contract as `0.7.0`; the new Biology support reads and writes existing resource metadata in that envelope while preserving unknown keys.
+Existing pre-envelope saves that only store semicolon-separated evolution IDs should still load cleanly. `0.7.1` keeps the same persistent evolution-state/public-field contract as `0.7.0`; the new Biology/action support reads and writes existing resource metadata in that envelope while preserving unknown keys.
 
 For controlled proc validation, `Evolution Seed [DEV]` exposes `Toggle Mutation Meddley Damage Trace [DEV]`. Leave it off for normal play. Turn it on only when verifying target/source resolution, close-contact classification, one-proc-per-spend behavior, event-continuation semantics, observed HP loss, or bonus-damage failure paths.
 
@@ -182,6 +188,9 @@ When testing a subscribed Workshop build, avoid loading the separate offline dev
 ## Design documents
 
 - `docs/V0.7.1_PLAYER_AGENCY_RECOVERY_PLAN.md` - v0.7.1 resource visibility, player agency, reaction telemetry, health/stat regression, and release gate
+- `docs/V0.7.1_QUD_NATIVE_STABILIZATION_SWEEP.md` - Qud-native structure and bug-sweep plan
+- `docs/V0.7.1_QUD_NATIVE_STABILIZATION_IMPLEMENTATION.md` - implementation audit and runtime research gates
+- `docs/V0.7.1_COMPLETION_SWEEP_RESULT.md` - final static completion state and exact remaining runtime gates
 - `docs/CONTINUOUS_PROGRESSION_PLAN.md` - v0.7 continuous rank formulas, per-mutation scaling, and acceptance tests
 - `docs/STATIC_FREEZE_PLAN.md` - issue-by-issue v0.6.3 verb/passive correction plan and acceptance contract
 - `docs/ARCHITECTURE.md` - framework boundaries and evolution model
