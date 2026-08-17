@@ -17,6 +17,9 @@ jobs:
       - name: Run repository preflight
         run: bash tools/check.sh
 
+      - name: Run completion structural contract
+        run: python3 tools/check_completion_contract.py
+
       - name: Validate shell syntax
         run: |
           bash -n tools/check.sh
