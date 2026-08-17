@@ -12,7 +12,7 @@ namespace XRL.World.Parts
 {
     public partial class MutationMeddley_BiologySupport : IPart
     {
-        private int MutationMeddley_GetCarapaceBraceCap(MutationMeddley_AdaptiveMutationBase mutation)
+        internal int MutationMeddley_GetCarapaceBraceCap(MutationMeddley_AdaptiveMutationBase mutation)
         {
             if (!MutationMeddley_HasEvolution(mutation, "fortress"))
             {
